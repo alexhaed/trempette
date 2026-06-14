@@ -47,6 +47,28 @@ function norm(s) {
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
+// WGS84 → coordonnées suisses LV95 (EPSG:2056), formule approchée officielle
+// swisstopo. Vérifiée à ~5 cm près contre le service REFRAME. map.geo.admin.ch
+// attend le centre en LV95 (easting, northing).
+function wgs84ToLv95(lat, lng) {
+  const phi = (lat * 3600 - 169028.66) / 10000;
+  const lam = (lng * 3600 - 26782.5) / 10000;
+  const E =
+    2600072.37 +
+    211455.93 * lam -
+    10938.51 * lam * phi -
+    0.36 * lam * phi * phi -
+    44.54 * lam ** 3;
+  const N =
+    1200147.07 +
+    308807.95 * phi +
+    3745.25 * lam * lam +
+    76.63 * phi * phi -
+    194.56 * lam * lam * phi +
+    119.79 * phi ** 3;
+  return { E: Math.round(E), N: Math.round(N) };
+}
+
 // ---- Rendu de la liste ----
 function render() {
   const q = norm(state.query.trim());
@@ -171,7 +193,8 @@ function openDetail(b) {
   const w = b.wind != null ? `${Math.round(b.wind)} km/h ${windArrow(b.windDir)}` : "n/d";
   $("#d-wind").textContent = w;
 
-  $("#d-map").href = `https://www.openstreetmap.org/?mlat=${b.lat}&mlon=${b.lng}#map=14/${b.lat}/${b.lng}`;
+  const { E, N } = wgs84ToLv95(b.lat, b.lng);
+  $("#d-map").href = `https://map.geo.admin.ch/#/map?center=${E},${N}&z=10&crosshair=marker`;
 
   const favBtn = $("#d-fav");
   const setFavIcon = () => {

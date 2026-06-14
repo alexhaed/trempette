@@ -2,7 +2,10 @@
 // - Coquille de l'app (HTML/CSS/JS/icônes) : cache-first (chargement instantané, hors-ligne).
 // - data.json : network-first (toujours la donnée la plus fraîche), repli cache si hors-ligne.
 
-const VERSION = "v1";
+// À incrémenter à chaque release pour que le cache-first récupère le nouveau
+// shell (sinon les visiteurs récurrents gardent l'ancien JS/CSS). Aligné sur
+// le numéro de version affiché en bas de page.
+const VERSION = "v1.1";
 const SHELL = `templac-shell-${VERSION}`;
 const DATA = `templac-data-${VERSION}`;
 

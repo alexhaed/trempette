@@ -169,7 +169,15 @@ body {
   font-size: 12px;
   margin: 4px 16px;
 }
-.credits { padding-bottom: calc(20px + var(--safe-bottom)); }
+.version {
+  text-align: center;
+  color: var(--muted);
+  opacity: 0.55;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+  margin: 6px 16px;
+  padding-bottom: calc(20px + var(--safe-bottom));
+}
 
 /* ---- Détail ---- */
 .detail {
