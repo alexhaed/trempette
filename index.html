@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a1628" />
+  <title>Temp'Lac — Températures des plages romandes</title>
+  <meta name="description" content="Température de l'eau des plages des lacs romands (Léman, Neuchâtel, Bienne, Morat, Joux), avec air et vent." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="app-bar">
+    <div class="app-bar-inner">
+      <h1>🌊 Temp'Lac</h1>
+      <button id="refresh" class="icon-btn" title="Rafraîchir" aria-label="Rafraîchir">↻</button>
+    </div>
+    <div class="toolbar">
+      <div class="search">
+        <input id="search" type="search" inputmode="search" placeholder="Rechercher une plage…" autocomplete="off" />
+      </div>
+      <div class="seg" role="tablist" aria-label="Tri">
+        <button class="seg-btn is-active" data-sort="lake" role="tab">Par lac</button>
+        <button class="seg-btn" data-sort="warm" role="tab">Plus chaude</button>
+        <button class="seg-btn" data-sort="fav" role="tab">★ Favoris</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="list" class="list" aria-live="polite">
+    <p class="loading">Chargement…</p>
+  </main>
+
+  <p id="updated" class="updated"></p>
+  <footer class="credits">Eau : Alplakes (Eawag) · Air &amp; vent : open-meteo.com</footer>
+
+  <!-- Vue détail (overlay) -->
+  <div id="detail" class="detail" hidden>
+    <div class="detail-card" role="dialog" aria-modal="true" aria-labelledby="d-name">
+      <button id="d-close" class="icon-btn d-close" aria-label="Fermer">✕</button>
+      <button id="d-fav" class="d-fav" aria-label="Favori">☆</button>
+      <p id="d-lake" class="d-lake"></p>
+      <h2 id="d-name"></h2>
+      <div class="d-water">
+        <span id="d-water-val" class="d-water-val">–</span>
+        <span id="d-trend" class="d-trend"></span>
+      </div>
+      <p id="d-trend-txt" class="d-trend-txt"></p>
+      <div class="d-grid">
+        <div class="d-cell"><span class="d-cell-label">🌡 Air</span><span id="d-air" class="d-cell-val">–</span></div>
+        <div class="d-cell"><span class="d-cell-label">💨 Vent</span><span id="d-wind" class="d-cell-val">–</span></div>
+      </div>
+      <a id="d-map" class="d-map" target="_blank" rel="noopener">Voir sur la carte ↗</a>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

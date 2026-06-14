@@ -1,0 +1,45 @@
+name: Mise à jour des températures
+
+on:
+  schedule:
+    # Toutes les 45 min (UTC). GitHub peut décaler/sauter des exécutions en cas de charge.
+    - cron: "*/45 * * * *"
+  workflow_dispatch: {} # déclenchement manuel
+  push:
+    branches: [main]
+    paths:
+      - "scripts/**"
+      - ".github/workflows/update-data.yml"
+
+permissions:
+  contents: write
+
+# Évite que deux exécutions se marchent dessus.
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Récupérer les données
+        run: node scripts/fetch-data.mjs
+
+      - name: Commit si data.json a changé
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain data.json)" ]; then
+            git add data.json
+            git commit -m "data: maj températures $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+          else
+            echo "Aucun changement."
+          fi
