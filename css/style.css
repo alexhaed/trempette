@@ -183,6 +183,9 @@ body {
   backdrop-filter: blur(4px);
   animation: fade .15s ease;
 }
+/* L'attribut `hidden` doit l'emporter sur `display:flex` ci-dessus
+   (même spécificité, donc la règle d'auteur la plus tardive gagne). */
+.detail[hidden] { display: none; }
 @keyframes fade { from { opacity: 0; } }
 .detail-card {
   position: relative;
