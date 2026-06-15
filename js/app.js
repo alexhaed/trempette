@@ -8,7 +8,7 @@ const COLLAPSE_KEY = "trempette_lacs_replies"; // lacs repliés en mode « Par l
 const state = {
   beaches: [],
   updatedAt: null,
-  sort: "warm", // défaut : Plus chaude
+  sort: "lake", // défaut : Par lac
   query: "",
   favOrder: loadFavOrder(), // tableau ordonné d'ids favoris
   collapsed: loadCollapsed(), // Set de noms de lacs repliés
@@ -577,14 +577,6 @@ if ("serviceWorker" in navigator) {
       /* hors-ligne ou non supporté : on ignore */
     }
   });
-}
-
-// Au démarrage, ouvrir l'onglet Favoris si l'utilisateur en a déjà.
-if (state.favOrder.length > 0) {
-  state.sort = "fav";
-  document.querySelectorAll(".seg-btn").forEach((b) =>
-    b.classList.toggle("is-active", b.dataset.sort === "fav")
-  );
 }
 
 load();
