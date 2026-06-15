@@ -419,12 +419,84 @@ $("#search-clear").addEventListener("click", () => {
   searchInput.focus();
 });
 
-$("#refresh").addEventListener("click", async () => {
+let refreshing = false;
+async function refresh() {
+  if (refreshing) return;
+  refreshing = true;
   const btn = $("#refresh");
   btn.classList.add("is-spinning");
+  // durée mini pour que le retour visuel soit perceptible même si le fetch est instantané
   await Promise.all([load(), new Promise((r) => setTimeout(r, 600))]);
   btn.classList.remove("is-spinning");
-});
+  refreshing = false;
+}
+$("#refresh").addEventListener("click", refresh);
+
+// ---- Pull-to-refresh (tactile) ----
+(() => {
+  const ptr = $("#ptr");
+  const icon = ptr.querySelector(".ptr-icon");
+  const THRESHOLD = 70; // distance de déclenchement
+  const MAX = 110; // amplitude max de tirage
+  let startY = null, startX = 0, pull = 0, engaged = false;
+
+  const atTop = () => window.scrollY <= 0;
+  const setPtr = (p) => {
+    ptr.style.transform = `translateY(${p - 52}px)`;
+    ptr.style.opacity = Math.min(1, p / THRESHOLD).toFixed(2);
+    icon.style.transform = `rotate(${(p / MAX) * 270}deg)`;
+  };
+  const reset = () => {
+    ptr.classList.remove("refreshing");
+    ptr.style.transition = "transform .2s ease, opacity .2s ease";
+    ptr.style.transform = "translateY(-52px)";
+    ptr.style.opacity = "0";
+    icon.style.transform = "";
+    setTimeout(() => { ptr.style.transition = ""; }, 220);
+  };
+
+  window.addEventListener("touchstart", (e) => {
+    if (refreshing || e.touches.length !== 1 || !atTop()) { startY = null; return; }
+    startY = e.touches[0].clientY;
+    startX = e.touches[0].clientX;
+    engaged = false;
+  }, { passive: true });
+
+  window.addEventListener("touchmove", (e) => {
+    if (startY == null || refreshing) return;
+    const dy = e.touches[0].clientY - startY;
+    const dx = e.touches[0].clientX - startX;
+    // N'engage que sur un tirage vers le bas franc et vertical (laisse passer le
+    // défilement horizontal du carrousel et le scroll normal).
+    if (!engaged) {
+      if (dy > 8 && dy > Math.abs(dx) && atTop()) engaged = true;
+      else if (dy <= 0 || Math.abs(dx) > dy) { startY = null; return; }
+      else return;
+    }
+    if (!atTop()) { startY = null; reset(); return; }
+    e.preventDefault(); // empêche le rebond natif pendant le tirage
+    pull = Math.min(MAX, dy * 0.5);
+    setPtr(pull);
+  }, { passive: false });
+
+  const finish = () => {
+    if (startY == null || refreshing) { startY = null; return; }
+    startY = null;
+    if (engaged && pull >= THRESHOLD) {
+      ptr.style.transition = "transform .2s ease";
+      ptr.style.transform = "translateY(0)";
+      ptr.style.opacity = "1";
+      ptr.classList.add("refreshing");
+      refresh().then(reset);
+    } else if (engaged) {
+      reset();
+    }
+    pull = 0;
+    engaged = false;
+  };
+  window.addEventListener("touchend", finish, { passive: true });
+  window.addEventListener("touchcancel", finish, { passive: true });
+})();
 
 $("#d-close").addEventListener("click", closeDetail);
 $("#detail").addEventListener("click", (e) => {

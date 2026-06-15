@@ -40,7 +40,37 @@ body {
   min-height: 100vh;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
+  /* Évite le rebond natif vertical pour que notre pull-to-refresh prenne la main. */
+  overscroll-behavior-y: contain;
 }
+
+/* ---- Pull-to-refresh ---- */
+.ptr {
+  position: fixed;
+  top: calc(var(--safe-top) + 4px);
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 40;
+  transform: translateY(-52px);
+  opacity: 0;
+}
+.ptr-spinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(247, 242, 231, 0.16);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--creme);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ptr.refreshing .ptr-icon { animation: spin 0.6s linear infinite; }
 ::selection { background: rgba(52, 180, 194, 0.35); }
 
 .app {
@@ -236,6 +266,7 @@ body {
   transform: translateY(-50%);
   color: rgba(247, 242, 231, 0.7);
   pointer-events: none;
+  z-index: 2; /* au-dessus du fond « verre » de l'input (backdrop-filter) */
 }
 .search input {
   width: 100%;
