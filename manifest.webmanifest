@@ -1,14 +1,14 @@
 {
-  "name": "Temp'Lac — Plages romandes",
-  "short_name": "Temp'Lac",
+  "name": "Trempette — Plages romandes",
+  "short_name": "Trempette",
   "description": "Température de l'eau des plages des lacs romands, avec air et vent.",
   "lang": "fr",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0a1628",
-  "theme_color": "#0a1628",
+  "background_color": "#08323D",
+  "theme_color": "#34B4C2",
   "icons": [
     { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },

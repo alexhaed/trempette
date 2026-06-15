@@ -1,22 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Temp'Lac">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#13476b"/>
-      <stop offset="1" stop-color="#0a1628"/>
-    </linearGradient>
-    <linearGradient id="wave" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5bc0ff"/>
-      <stop offset="1" stop-color="#4fb8e8"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <!-- thermomètre -->
-  <g>
-    <rect x="238" y="96" width="36" height="210" rx="18" fill="#eaf2fb"/>
-    <circle cx="256" cy="330" r="46" fill="#ff8a4c"/>
-    <rect x="248" y="150" width="16" height="170" rx="8" fill="#ff8a4c"/>
-  </g>
-  <!-- vagues -->
-  <path d="M48 400 q40 -34 80 0 t80 0 t80 0 t80 0 t80 0 v80 H48 Z" fill="url(#wave)" opacity="0.95"/>
-  <path d="M48 436 q40 -34 80 0 t80 0 t80 0 t80 0 t80 0 v44 H48 Z" fill="#5bc0ff" opacity="0.5"/>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#34B4C2"/><stop offset="1" stop-color="#0E6273"/></linearGradient></defs>
+  <rect width="1024" height="1024" rx="232" fill="url(#bg)"/>
+  <rect x="466" y="210" width="92" height="470" rx="46" fill="#F7F2E7"/>
+  <circle cx="512" cy="752" r="118" fill="#F7F2E7"/>
+  <rect x="488" y="440" width="48" height="312" rx="24" fill="#F46B5A"/>
+  <circle cx="512" cy="752" r="86" fill="#F46B5A"/>
+  <g stroke="#1F97A8" stroke-width="16" stroke-linecap="round">
+    <line x1="520" y1="300" x2="552" y2="300"/><line x1="520" y1="390" x2="552" y2="390"/>
+    <line x1="520" y1="480" x2="552" y2="480"/><line x1="520" y1="570" x2="552" y2="570"/></g>
+  <path d="M320 905 q64 -36 128 0 t128 0 t128 0" fill="none" stroke="#F7F2E7"
+        stroke-width="20" stroke-linecap="round" opacity="0.6"/>
 </svg>

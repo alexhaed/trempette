@@ -3,57 +3,127 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0a1628" />
-  <title>Temp'Lac — Températures des plages romandes</title>
+  <meta name="theme-color" content="#34B4C2" />
+  <title>Trempette — Températures des plages romandes</title>
   <meta name="description" content="Température de l'eau des plages des lacs romands (Léman, Neuchâtel, Bienne, Morat, Joux), avec air et vent." />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <header class="app-bar">
-    <div class="app-bar-inner">
-      <h1>🌊 Temp'Lac</h1>
-      <button id="refresh" class="icon-btn" title="Rafraîchir" aria-label="Rafraîchir"><span class="refresh-icon">↻</span></button>
-    </div>
-    <div class="toolbar">
-      <div class="search">
-        <input id="search" type="search" inputmode="search" placeholder="Rechercher une plage…" autocomplete="off" />
-      </div>
-      <div class="seg" role="tablist" aria-label="Tri">
-        <button class="seg-btn is-active" data-sort="lake" role="tab">Par lac</button>
-        <button class="seg-btn" data-sort="warm" role="tab">Plus chaude</button>
-        <button class="seg-btn" data-sort="fav" role="tab">★ Favoris</button>
-      </div>
-    </div>
-  </header>
+  <!-- Jeu d'icônes linéaires (recréées d'après le design). -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-wind" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"></path><path d="M9.6 4.6A2 2 0 1 1 11 8H2"></path><path d="M12.6 19.4A2 2 0 1 0 14 16H2"></path></g></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></g></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></g></symbol>
+      <symbol id="i-waves" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c.9.6 1.6 1 2.7 1 2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2c.9 0 1.5.3 2.3.8"></path><path d="M2 12c.9.6 1.6 1 2.7 1 2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2c.9 0 1.5.3 2.3.8"></path><path d="M2 18c.9.6 1.6 1 2.7 1 2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2c.9 0 1.5.3 2.3.8"></path></g></symbol>
+      <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 2.6 2.9 5.9 6.5.95-4.7 4.58 1.1 6.47L12 17.9 6.2 20.5l1.1-6.47-4.7-4.58 6.5-.95z" stroke-width="1.6" stroke-linejoin="round"></path></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></g></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"></path><path d="M8 7h9v9"></path></g></symbol>
+      <symbol id="i-arrowup" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V5M6 11l6-6 6 6"></path></g></symbol>
+      <symbol id="i-grip" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="9" cy="5" r="1.6"></circle><circle cx="15" cy="5" r="1.6"></circle><circle cx="9" cy="12" r="1.6"></circle><circle cx="15" cy="12" r="1.6"></circle><circle cx="9" cy="19" r="1.6"></circle><circle cx="15" cy="19" r="1.6"></circle></g></symbol>
+      <symbol id="i-thermo" viewBox="0 0 24 24"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4 4 0 1 0 4 0Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
+    </defs>
+  </svg>
 
-  <main id="list" class="list" aria-live="polite">
-    <p class="loading">Chargement…</p>
-  </main>
+  <div class="app">
+    <!-- En-tête : logo + marque + rafraîchir -->
+    <header class="head">
+      <div class="brand">
+        <img class="brand-logo" src="img/logo.png" alt="" width="34" height="34" />
+        <span class="brand-name">Trempette</span>
+      </div>
+      <button id="refresh" class="icon-btn" title="Rafraîchir" aria-label="Rafraîchir">
+        <svg class="refresh-icon" width="18" height="18" aria-hidden="true"><use href="#i-refresh"></use></svg>
+      </button>
+    </header>
 
-  <p id="updated" class="updated"></p>
-  <footer class="credits">Eau : Alplakes (Eawag) · Air &amp; vent : open-meteo.com</footer>
-  <p class="version">v1.14</p>
+    <!-- Hero « Mes plages » : carrousel des favoris -->
+    <section class="hero" aria-label="Mes plages">
+      <div class="hero-top">
+        <span class="hero-label">Mes plages</span>
+        <span id="hero-dots" class="hero-dots"></span>
+      </div>
+      <div id="hero-track" class="hero-track"></div>
+      <div class="map-link-wrap">
+        <a id="map-link" class="map-link" target="_blank" rel="noopener">Voir sur la carte
+          <svg width="13" height="13" aria-hidden="true"><use href="#i-arrow"></use></svg>
+        </a>
+      </div>
+    </section>
+
+    <!-- Recherche -->
+    <div class="search">
+      <svg class="search-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+      <input id="search" type="search" inputmode="search" placeholder="Rechercher une plage…" autocomplete="off" aria-label="Rechercher une plage" />
+      <button id="search-clear" class="search-clear" type="button" aria-label="Effacer" hidden>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+      </button>
+    </div>
+
+    <!-- Onglets de tri -->
+    <div class="seg" role="tablist" aria-label="Tri">
+      <button class="seg-btn" data-sort="lake" role="tab">Par lac</button>
+      <button class="seg-btn is-active" data-sort="warm" role="tab">Plus chaude</button>
+      <button class="seg-btn" data-sort="fav" role="tab">Favoris</button>
+    </div>
+
+    <!-- Indice de réordonnancement (mode Favoris) -->
+    <p id="reorder-hint" class="reorder-hint" hidden>
+      <svg width="14" height="14" aria-hidden="true"><use href="#i-grip"></use></svg>
+      Glissez la poignée pour réordonner — l'ordre pilote le carrousel.
+    </p>
+
+    <!-- Liste des plages -->
+    <main id="list" class="list" aria-live="polite">
+      <p class="loading">Chargement…</p>
+    </main>
+
+    <!-- Pied de page -->
+    <footer class="foot">
+      <p id="updated" class="updated"></p>
+      <p class="credits">Eau : Alplakes (Eawag) · Air &amp; vent : open-meteo.com</p>
+      <p class="version">v1.15</p>
+    </footer>
+  </div>
 
   <!-- Vue détail (overlay) -->
   <div id="detail" class="detail" hidden>
     <div class="detail-card" role="dialog" aria-modal="true" aria-labelledby="d-name">
-      <button id="d-close" class="icon-btn d-close" aria-label="Fermer">✕</button>
-      <button id="d-fav" class="d-fav" aria-label="Favori">☆</button>
+      <button id="d-fav" class="d-fav" aria-label="Favori">
+        <svg width="26" height="26" aria-hidden="true"><use href="#i-star"></use></svg>
+      </button>
+      <button id="d-close" class="icon-btn d-close" aria-label="Fermer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+      </button>
       <p id="d-lake" class="d-lake"></p>
       <h2 id="d-name"></h2>
       <div class="d-water">
         <span id="d-water-val" class="d-water-val">–</span>
-        <span id="d-trend" class="d-trend"></span>
       </div>
+      <p id="d-verdict" class="d-verdict"></p>
       <p id="d-trend-txt" class="d-trend-txt"></p>
       <div class="d-grid">
-        <div class="d-cell"><span class="d-cell-label">🌡 Air</span><span id="d-air" class="d-cell-val">–</span></div>
-        <div class="d-cell"><span class="d-cell-label">💨 Vent</span><span id="d-wind" class="d-cell-val">–</span></div>
+        <div class="d-cell">
+          <span class="d-cell-label"><svg width="15" height="15" aria-hidden="true"><use href="#i-sun"></use></svg> Air</span>
+          <span id="d-air" class="d-cell-val">–</span>
+        </div>
+        <div class="d-cell">
+          <span class="d-cell-label"><svg width="15" height="15" aria-hidden="true"><use href="#i-wind"></use></svg> Vent</span>
+          <span class="d-cell-val d-wind-val">
+            <span class="wind-pill"><svg id="d-wind-arrow" width="15" height="15" aria-hidden="true"><use href="#i-arrowup"></use></svg></span>
+            <span id="d-wind"></span>
+          </span>
+        </div>
       </div>
-      <a id="d-map" class="d-map" target="_blank" rel="noopener">Voir sur la carte ↗</a>
+      <a id="d-map" class="d-map" target="_blank" rel="noopener">Voir sur la carte
+        <svg width="13" height="13" aria-hidden="true"><use href="#i-arrow"></use></svg>
+      </a>
     </div>
   </div>
 

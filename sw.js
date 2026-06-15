@@ -5,9 +5,9 @@
 // À incrémenter à chaque release pour que le cache-first récupère le nouveau
 // shell (sinon les visiteurs récurrents gardent l'ancien JS/CSS). Aligné sur
 // le numéro de version affiché en bas de page.
-const VERSION = "v1.14";
-const SHELL = `templac-shell-${VERSION}`;
-const DATA = `templac-data-${VERSION}`;
+const VERSION = "v1.15";
+const SHELL = `trempette-shell-${VERSION}`;
+const DATA = `trempette-data-${VERSION}`;
 
 const SHELL_ASSETS = [
   ".",
@@ -15,6 +15,7 @@ const SHELL_ASSETS = [
   "css/style.css",
   "js/app.js",
   "manifest.webmanifest",
+  "img/logo.png",
   "icons/icon.svg",
   "icons/icon-192.png",
   "icons/icon-512.png",
