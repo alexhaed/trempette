@@ -3,6 +3,7 @@
 // pré-calculé côté Action.
 
 const FAV_KEY = "templac_favoris"; // ordre des favoris (tableau d'ids), conservé d'avant le renommage
+const COLLAPSE_KEY = "trempette_lacs_replies"; // lacs repliés en mode « Par lac »
 
 const state = {
   beaches: [],
@@ -10,6 +11,7 @@ const state = {
   sort: "warm", // défaut : Plus chaude
   query: "",
   favOrder: loadFavOrder(), // tableau ordonné d'ids favoris
+  collapsed: loadCollapsed(), // Set de noms de lacs repliés
   heroIdx: 0,
 };
 
@@ -28,6 +30,20 @@ function saveFavOrder() {
   localStorage.setItem(FAV_KEY, JSON.stringify(state.favOrder));
 }
 const isFav = (id) => state.favOrder.includes(id);
+
+function loadCollapsed() {
+  try {
+    const v = JSON.parse(localStorage.getItem(COLLAPSE_KEY) || "[]");
+    return new Set(Array.isArray(v) ? v : []);
+  } catch {
+    return new Set();
+  }
+}
+function toggleLake(lake) {
+  if (state.collapsed.has(lake)) state.collapsed.delete(lake);
+  else state.collapsed.add(lake);
+  localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...state.collapsed]));
+}
 
 // ---- Chargement des données ----
 async function load() {
@@ -235,13 +251,25 @@ function renderList() {
   const frag = document.createDocumentFragment();
   for (const g of groups) {
     if (g.header) {
-      const h = document.createElement("h2");
-      h.className = "group-title";
       // Vrai nom du lac : on garde "Lac de …" tel quel et on ne préfixe "Lac "
       // que lorsqu'il manque (cas du Léman, stocké sans préfixe).
-      const header = /^lac\b/i.test(g.header) ? g.header : `Lac ${g.header}`;
-      h.innerHTML = `${svgUse("i-waves", 14)} ${header}`;
+      const label = /^lac\b/i.test(g.header) ? g.header : `Lac ${g.header}`;
+      const collapsed = state.collapsed.has(g.header);
+      const h = document.createElement("button");
+      h.type = "button";
+      h.className = "group-title" + (collapsed ? " collapsed" : "");
+      h.setAttribute("aria-expanded", String(!collapsed));
+      h.innerHTML =
+        `${svgUse("i-waves", 14)}<span class="gt-name">${label}</span>` +
+        `<span class="gt-count">${g.items.length}</span>` +
+        `${svgUse("i-chevron", 16, "")}`;
+      h.querySelector("svg:last-child").classList.add("gt-chev");
+      h.addEventListener("click", () => {
+        toggleLake(g.header);
+        renderList();
+      });
       frag.appendChild(h);
+      if (collapsed) continue; // plages masquées tant que le lac est replié
     }
     for (const b of g.items) frag.appendChild(beachRow(b, isFavMode));
   }

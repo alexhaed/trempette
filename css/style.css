@@ -347,8 +347,13 @@ body {
 .group-title {
   display: flex;
   align-items: center;
-  gap: 7px;
-  margin: 8px 4px 1px;
+  gap: 8px;
+  width: 100%;
+  margin: 8px 0 1px;
+  padding: 6px 4px;
+  border: none;
+  background: none;
+  cursor: pointer;
   font-family: "Bricolage Grotesque", sans-serif;
   font-weight: 800;
   font-size: 12px;
@@ -356,8 +361,22 @@ body {
   text-transform: uppercase;
   color: var(--glacier);
   line-height: 1.2;
+  text-align: left;
 }
 .group-title svg { color: var(--glacier-2); flex: none; }
+.group-title .gt-name { flex: 1; min-width: 0; }
+.group-title .gt-count {
+  font-family: "Hanken Grotesk", sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0;
+  color: var(--glacier);
+  background: rgba(247, 242, 231, 0.12);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.group-title .gt-chev { transition: transform 0.18s ease; }
+.group-title.collapsed .gt-chev { transform: rotate(-90deg); }
 
 .beach {
   display: flex;
