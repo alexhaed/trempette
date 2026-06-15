@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-15T04:54:21.964Z",
+  "updatedAt": "2026-06-15T06:52:10.587Z",
   "counts": {
     "total": 40,
     "water": 40
@@ -14,10 +14,10 @@
       "lake": "geneva",
       "group": "Genève / La Côte",
       "water": 21.1,
-      "trend": -0.02,
-      "air": 15.1,
-      "wind": 1.8,
-      "windDir": 270
+      "trend": 0.06,
+      "air": 18,
+      "wind": 1.1,
+      "windDir": 342
     },
     {
       "id": "geneva-geneve-plage",
@@ -27,11 +27,11 @@
       "lakeName": "Léman",
       "lake": "geneva",
       "group": "Genève / La Côte",
-      "water": 20.6,
-      "trend": -0.01,
-      "air": 13.8,
-      "wind": 2.9,
-      "windDir": 97
+      "water": 20.7,
+      "trend": 0.08,
+      "air": 17.7,
+      "wind": 1.1,
+      "windDir": 342
     },
     {
       "id": "geneva-versoix",
@@ -42,10 +42,10 @@
       "lake": "geneva",
       "group": "Genève / La Côte",
       "water": 21.2,
-      "trend": -0.03,
-      "air": 14,
-      "wind": 4.4,
-      "windDir": 279
+      "trend": 0.04,
+      "air": 18.1,
+      "wind": 0.8,
+      "windDir": 27
     },
     {
       "id": "geneva-nyon",
@@ -55,11 +55,11 @@
       "lakeName": "Léman",
       "lake": "geneva",
       "group": "Genève / La Côte",
-      "water": 20.7,
-      "trend": -0.05,
-      "air": 14.4,
-      "wind": 5.4,
-      "windDir": 307
+      "water": 20.6,
+      "trend": 0.05,
+      "air": 18.3,
+      "wind": 0.8,
+      "windDir": 333
     },
     {
       "id": "geneva-rolle",
@@ -70,10 +70,10 @@
       "lake": "geneva",
       "group": "Genève / La Côte",
       "water": 20.8,
-      "trend": -0.01,
-      "air": 16.7,
-      "wind": 9.7,
-      "windDir": 333
+      "trend": 0.06,
+      "air": 19.2,
+      "wind": 1.8,
+      "windDir": 143
     },
     {
       "id": "geneva-morges",
@@ -83,11 +83,11 @@
       "lakeName": "Léman",
       "lake": "geneva",
       "group": "Genève / La Côte",
-      "water": 20.1,
-      "trend": -0.03,
-      "air": 17.4,
-      "wind": 6.8,
-      "windDir": 342
+      "water": 20.2,
+      "trend": 0.05,
+      "air": 19.8,
+      "wind": 5.4,
+      "windDir": 8
     },
     {
       "id": "geneva-saint-sulpice",
@@ -97,11 +97,11 @@
       "lakeName": "Léman",
       "lake": "geneva",
       "group": "Genève / La Côte",
-      "water": 19.9,
-      "trend": -0.02,
-      "air": 14.6,
-      "wind": 7.3,
-      "windDir": 340
+      "water": 20,
+      "trend": 0.08,
+      "air": 18.2,
+      "wind": 6.6,
+      "windDir": 331
     },
     {
       "id": "geneva-preverenges",
@@ -111,11 +111,11 @@
       "lakeName": "Léman",
       "lake": "geneva",
       "group": "Genève / La Côte",
-      "water": 19.4,
-      "trend": -0.08,
-      "air": 15.3,
-      "wind": 9.2,
-      "windDir": 349
+      "water": 19.3,
+      "trend": 0.04,
+      "air": 18.4,
+      "wind": 7.8,
+      "windDir": 347
     },
     {
       "id": "geneva-vidy",
@@ -125,11 +125,11 @@
       "lakeName": "Léman",
       "lake": "geneva",
       "group": "Lausanne / Lavaux",
-      "water": 20.3,
-      "trend": -0.03,
-      "air": 17.5,
-      "wind": 5.1,
-      "windDir": 356
+      "water": 20.4,
+      "trend": 0.08,
+      "air": 19.6,
+      "wind": 3.9,
+      "windDir": 292
     },
     {
       "id": "geneva-ouchy",
@@ -140,10 +140,10 @@
       "lake": "geneva",
       "group": "Lausanne / Lavaux",
       "water": 20.5,
-      "trend": 0.01,
-      "air": 17.9,
-      "wind": 5.1,
-      "windDir": 8
+      "trend": 0.07,
+      "air": 19.9,
+      "wind": 3.3,
+      "windDir": 283
     },
     {
       "id": "geneva-pully",
@@ -154,10 +154,10 @@
       "lake": "geneva",
       "group": "Lausanne / Lavaux",
       "water": 20.7,
-      "trend": 0.01,
-      "air": 18.1,
-      "wind": 7.9,
-      "windDir": 24
+      "trend": 0.06,
+      "air": 20.1,
+      "wind": 2.3,
+      "windDir": 252
     },
     {
       "id": "geneva-lutry",
@@ -168,10 +168,10 @@
       "lake": "geneva",
       "group": "Lausanne / Lavaux",
       "water": 20.4,
-      "trend": 0,
-      "air": 18.1,
-      "wind": 7.9,
-      "windDir": 24
+      "trend": 0.09,
+      "air": 20.1,
+      "wind": 2.3,
+      "windDir": 252
     },
     {
       "id": "geneva-cully",
@@ -182,10 +182,10 @@
       "lake": "geneva",
       "group": "Lausanne / Lavaux",
       "water": 20.3,
-      "trend": -0.03,
-      "air": 18,
-      "wind": 11.2,
-      "windDir": 21
+      "trend": 0.05,
+      "air": 19.9,
+      "wind": 3.8,
+      "windDir": 319
     },
     {
       "id": "geneva-vevey",
@@ -196,10 +196,10 @@
       "lake": "geneva",
       "group": "Riviera / Chablais",
       "water": 21,
-      "trend": -0.01,
-      "air": 18,
-      "wind": 9.7,
-      "windDir": 22
+      "trend": 0.06,
+      "air": 20.7,
+      "wind": 0.5,
+      "windDir": 225
     },
     {
       "id": "geneva-la-tour-de-peilz",
@@ -210,10 +210,10 @@
       "lake": "geneva",
       "group": "Riviera / Chablais",
       "water": 21,
-      "trend": 0.01,
-      "air": 17.5,
-      "wind": 8.7,
-      "windDir": 45
+      "trend": 0.05,
+      "air": 20.7,
+      "wind": 1.6,
+      "windDir": 243
     },
     {
       "id": "geneva-montreux",
@@ -224,10 +224,10 @@
       "lake": "geneva",
       "group": "Riviera / Chablais",
       "water": 21.2,
-      "trend": -0.02,
-      "air": 16.9,
-      "wind": 11.6,
-      "windDir": 54
+      "trend": 0.06,
+      "air": 20,
+      "wind": 1.5,
+      "windDir": 256
     },
     {
       "id": "geneva-villeneuve",
@@ -237,11 +237,11 @@
       "lakeName": "Léman",
       "lake": "geneva",
       "group": "Riviera / Chablais",
-      "water": 22.2,
-      "trend": -0.06,
-      "air": 15.1,
-      "wind": 6.1,
-      "windDir": 177
+      "water": 22.1,
+      "trend": 0.02,
+      "air": 19,
+      "wind": 0.8,
+      "windDir": 117
     },
     {
       "id": "geneva-le-bouveret",
@@ -252,10 +252,10 @@
       "lake": "geneva",
       "group": "Riviera / Chablais",
       "water": 21.6,
-      "trend": -0.02,
-      "air": 14.7,
-      "wind": 6,
-      "windDir": 155
+      "trend": 0.03,
+      "air": 18.7,
+      "wind": 1.1,
+      "windDir": 342
     },
     {
       "id": "geneva-yvoire",
@@ -265,11 +265,11 @@
       "lakeName": "Léman",
       "lake": "geneva",
       "group": "France",
-      "water": 20.6,
-      "trend": -0.09,
-      "air": 15,
-      "wind": 3.1,
-      "windDir": 234
+      "water": 20.5,
+      "trend": 0.02,
+      "air": 18.4,
+      "wind": 1.4,
+      "windDir": 360
     },
     {
       "id": "geneva-excenevex",
@@ -279,11 +279,11 @@
       "lakeName": "Léman",
       "lake": "geneva",
       "group": "France",
-      "water": 20.7,
-      "trend": -0.09,
-      "air": 15.4,
-      "wind": 4.7,
-      "windDir": 189
+      "water": 20.6,
+      "trend": 0.01,
+      "air": 18.4,
+      "wind": 0.8,
+      "windDir": 27
     },
     {
       "id": "geneva-thonon-les-bains",
@@ -294,10 +294,10 @@
       "lake": "geneva",
       "group": "France",
       "water": 20.4,
-      "trend": -0.06,
-      "air": 14.7,
-      "wind": 5.5,
-      "windDir": 157
+      "trend": 0.06,
+      "air": 18.7,
+      "wind": 1.9,
+      "windDir": 338
     },
     {
       "id": "geneva-evian-les-bains",
@@ -308,10 +308,10 @@
       "lake": "geneva",
       "group": "France",
       "water": 20.4,
-      "trend": -0.05,
-      "air": 16.9,
-      "wind": 6.6,
-      "windDir": 167
+      "trend": 0.08,
+      "air": 19.3,
+      "wind": 2.4,
+      "windDir": 333
     },
     {
       "id": "neuchatel-neuchatel",
@@ -322,10 +322,10 @@
       "lake": "neuchatel",
       "group": null,
       "water": 19.4,
-      "trend": -0.03,
-      "air": 16.4,
-      "wind": 5.9,
-      "windDir": 349
+      "trend": 0.01,
+      "air": 17.7,
+      "wind": 2,
+      "windDir": 135
     },
     {
       "id": "neuchatel-pointe-du-grain",
@@ -336,10 +336,10 @@
       "lake": "neuchatel",
       "group": null,
       "water": 18.8,
-      "trend": -0.08,
-      "air": 14.3,
-      "wind": 2.3,
-      "windDir": 108
+      "trend": 0.05,
+      "air": 17.2,
+      "wind": 5.7,
+      "windDir": 125
     },
     {
       "id": "neuchatel-grandson",
@@ -350,10 +350,10 @@
       "lake": "neuchatel",
       "group": null,
       "water": 18.4,
-      "trend": -0.02,
-      "air": 13.2,
-      "wind": 3.1,
-      "windDir": 234
+      "trend": 0.03,
+      "air": 16.3,
+      "wind": 2.7,
+      "windDir": 157
     },
     {
       "id": "neuchatel-yverdon-les-bains",
@@ -363,11 +363,11 @@
       "lakeName": "Lac de Neuchâtel",
       "lake": "neuchatel",
       "group": null,
-      "water": 18.9,
-      "trend": -0.09,
-      "air": 12.3,
-      "wind": 4,
-      "windDir": 170
+      "water": 18.8,
+      "trend": 0.06,
+      "air": 16.1,
+      "wind": 2.1,
+      "windDir": 31
     },
     {
       "id": "neuchatel-yvonand",
@@ -378,10 +378,10 @@
       "lake": "neuchatel",
       "group": null,
       "water": 20,
-      "trend": -0.06,
-      "air": 14.4,
-      "wind": 3.6,
-      "windDir": 174
+      "trend": 0.03,
+      "air": 17.9,
+      "wind": 2.9,
+      "windDir": 60
     },
     {
       "id": "neuchatel-cheyres",
@@ -391,11 +391,11 @@
       "lakeName": "Lac de Neuchâtel",
       "lake": "neuchatel",
       "group": null,
-      "water": 20.2,
-      "trend": -0.1,
-      "air": 14.4,
-      "wind": 1.4,
-      "windDir": 180
+      "water": 20.1,
+      "trend": 0.03,
+      "air": 16.9,
+      "wind": 3.4,
+      "windDir": 58
     },
     {
       "id": "neuchatel-estavayer-le-lac",
@@ -405,11 +405,11 @@
       "lakeName": "Lac de Neuchâtel",
       "lake": "neuchatel",
       "group": null,
-      "water": 20,
-      "trend": -0.08,
-      "air": 13,
-      "wind": 3.7,
-      "windDir": 151
+      "water": 19.9,
+      "trend": 0.06,
+      "air": 16.8,
+      "wind": 3.1,
+      "windDir": 111
     },
     {
       "id": "neuchatel-portalban",
@@ -419,11 +419,11 @@
       "lakeName": "Lac de Neuchâtel",
       "lake": "neuchatel",
       "group": null,
-      "water": 19.3,
-      "trend": -0.04,
-      "air": 12.9,
-      "wind": 5.8,
-      "windDir": 150
+      "water": 19.2,
+      "trend": 0.01,
+      "air": 17.3,
+      "wind": 2.8,
+      "windDir": 140
     },
     {
       "id": "neuchatel-cudrefin",
@@ -433,11 +433,11 @@
       "lakeName": "Lac de Neuchâtel",
       "lake": "neuchatel",
       "group": null,
-      "water": 19.5,
-      "trend": -0.07,
-      "air": 13.6,
-      "wind": 3.8,
-      "windDir": 139
+      "water": 19.4,
+      "trend": 0.01,
+      "air": 17.4,
+      "wind": 2.4,
+      "windDir": 117
     },
     {
       "id": "biel-bienne",
@@ -448,10 +448,10 @@
       "lake": "biel",
       "group": null,
       "water": 19.6,
-      "trend": -0.04,
-      "air": 13.7,
-      "wind": 2.6,
-      "windDir": 164
+      "trend": 0.05,
+      "air": 17.4,
+      "wind": 3.4,
+      "windDir": 212
     },
     {
       "id": "biel-douanne",
@@ -462,10 +462,10 @@
       "lake": "biel",
       "group": null,
       "water": 18.8,
-      "trend": -0.05,
-      "air": 15.3,
-      "wind": 4.7,
-      "windDir": 293
+      "trend": 0.07,
+      "air": 17.1,
+      "wind": 5.2,
+      "windDir": 196
     },
     {
       "id": "biel-la-neuveville",
@@ -476,10 +476,10 @@
       "lake": "biel",
       "group": null,
       "water": 18.8,
-      "trend": -0.03,
-      "air": 13.5,
-      "wind": 2.1,
-      "windDir": 121
+      "trend": 0.06,
+      "air": 17.1,
+      "wind": 2.3,
+      "windDir": 129
     },
     {
       "id": "murten-morat",
@@ -489,11 +489,11 @@
       "lakeName": "Lac de Morat",
       "lake": "murten",
       "group": null,
-      "water": 22.7,
-      "trend": -0.08,
-      "air": 13.5,
-      "wind": 5.6,
-      "windDir": 140
+      "water": 22.6,
+      "trend": 0.06,
+      "air": 17.2,
+      "wind": 1.3,
+      "windDir": 236
     },
     {
       "id": "murten-avenches",
@@ -503,11 +503,11 @@
       "lakeName": "Lac de Morat",
       "lake": "murten",
       "group": null,
-      "water": 22,
-      "trend": -0.11,
-      "air": 13,
-      "wind": 2.8,
-      "windDir": 230
+      "water": 21.9,
+      "trend": 0.06,
+      "air": 15.7,
+      "wind": 2.1,
+      "windDir": 149
     },
     {
       "id": "murten-praz-vully",
@@ -518,10 +518,10 @@
       "lake": "murten",
       "group": null,
       "water": 22,
-      "trend": -0.03,
-      "air": 13.9,
-      "wind": 3.4,
-      "windDir": 162
+      "trend": 0.07,
+      "air": 16.6,
+      "wind": 2.6,
+      "windDir": 146
     },
     {
       "id": "joux-le-pont",
@@ -532,10 +532,10 @@
       "lake": "joux",
       "group": null,
       "water": 17.9,
-      "trend": -0.05,
-      "air": 11.9,
-      "wind": 2.2,
-      "windDir": 171
+      "trend": 0.04,
+      "air": 14.8,
+      "wind": 0.4,
+      "windDir": 180
     },
     {
       "id": "joux-l-abbaye",
@@ -546,10 +546,10 @@
       "lake": "joux",
       "group": null,
       "water": 17.7,
-      "trend": -0.05,
-      "air": 10.9,
-      "wind": 3,
-      "windDir": 284
+      "trend": 0.04,
+      "air": 16.3,
+      "wind": 1.1,
+      "windDir": 162
     },
     {
       "id": "joux-le-rocheray",
@@ -559,11 +559,11 @@
       "lakeName": "Lac de Joux",
       "lake": "joux",
       "group": null,
-      "water": 17.6,
-      "trend": -0.04,
-      "air": 10.9,
-      "wind": 2.3,
-      "windDir": 309
+      "water": 17.8,
+      "trend": 0.21,
+      "air": 14.5,
+      "wind": 1.8,
+      "windDir": 101
     }
   ]
 }
