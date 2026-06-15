@@ -32,17 +32,22 @@ function saveFavOrder() {
 const isFav = (id) => state.favOrder.includes(id);
 
 function loadCollapsed() {
+  const raw = localStorage.getItem(COLLAPSE_KEY);
+  if (raw === null) return null; // aucune préférence : défaut calculé au 1er rendu « Par lac »
   try {
-    const v = JSON.parse(localStorage.getItem(COLLAPSE_KEY) || "[]");
+    const v = JSON.parse(raw);
     return new Set(Array.isArray(v) ? v : []);
   } catch {
     return new Set();
   }
 }
+function saveCollapsed() {
+  localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...state.collapsed]));
+}
 function toggleLake(lake) {
   if (state.collapsed.has(lake)) state.collapsed.delete(lake);
   else state.collapsed.add(lake);
-  localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...state.collapsed]));
+  saveCollapsed();
 }
 
 // ---- Chargement des données ----
@@ -225,6 +230,12 @@ function visibleBeaches() {
   const lakes = [...byLake.keys()].sort(
     (a, b) => byLake.get(b).length - byLake.get(a).length || a.localeCompare(b)
   );
+  // Défaut au tout 1er affichage (aucune préférence enregistrée) : seul le
+  // Léman ouvert, les autres lacs repliés.
+  if (state.collapsed === null) {
+    state.collapsed = new Set(lakes.filter((l) => l !== "Léman"));
+    saveCollapsed();
+  }
   return { groups: lakes.map((lake) => ({ header: lake, items: byLake.get(lake) })) };
 }
 const sortWarm = (arr) => [...arr].sort((a, b) => (b.water ?? -99) - (a.water ?? -99));
