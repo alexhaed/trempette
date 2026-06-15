@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-15T04:49:49.826Z",
+  "updatedAt": "2026-06-15T04:54:21.964Z",
   "counts": {
     "total": 40,
     "water": 40
@@ -335,7 +335,7 @@
       "lakeName": "Lac de Neuchâtel",
       "lake": "neuchatel",
       "group": null,
-      "water": 18.9,
+      "water": 18.8,
       "trend": -0.08,
       "air": 14.3,
       "wind": 2.3,
