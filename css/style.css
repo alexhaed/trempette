@@ -258,8 +258,27 @@ body {
   text-decoration: none;
 }
 
-/* ---- Recherche ---- */
-.search { position: relative; margin: 18px var(--gutter) 0; }
+/* ---- Recherche + géolocalisation ---- */
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px var(--gutter) 0;
+}
+.search { position: relative; flex: 1; min-width: 0; }
+.locate-btn { width: 46px; height: 46px; border-radius: 14px; }
+.locate-btn.is-active {
+  background: var(--creme);
+  border-color: transparent;
+  color: var(--turq-deep);
+}
+.locate-btn.is-locating { pointer-events: none; }
+.locate-btn.is-locating .locate-icon { animation: spin 0.8s linear infinite; }
+.dist-badge {
+  font-family: "Hanken Grotesk", sans-serif;
+  font-weight: 700;
+  color: var(--glacier);
+}
 .search-ico {
   position: absolute;
   left: 14px;

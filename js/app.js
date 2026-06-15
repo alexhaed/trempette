@@ -12,8 +12,23 @@ const state = {
   query: "",
   favOrder: loadFavOrder(), // tableau ordonné d'ids favoris
   collapsed: loadCollapsed(), // Set de noms de lacs repliés
+  userPos: null, // {lat,lng} si géolocalisé (mode « proximité »)
   heroIdx: 0,
 };
+
+// Distance haversine (km) entre deux points lat/lng.
+function distanceKm(aLat, aLng, bLat, bLng) {
+  const R = 6371;
+  const dLat = ((bLat - aLat) * Math.PI) / 180;
+  const dLng = ((bLng - aLng) * Math.PI) / 180;
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((aLat * Math.PI) / 180) * Math.cos((bLat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+function fmtDist(km) {
+  return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1).replace(".", ",")} km`;
+}
 
 const $ = (sel) => document.querySelector(sel);
 const listEl = $("#list");
@@ -220,6 +235,14 @@ function visibleBeaches() {
     return { groups: [{ header: null, items: sortWarm(state.beaches) }] };
   }
 
+  if (state.sort === "near" && state.userPos) {
+    const { lat, lng } = state.userPos;
+    const items = [...state.beaches].sort(
+      (a, b) => distanceKm(lat, lng, a.lat, a.lng) - distanceKm(lat, lng, b.lat, b.lng)
+    );
+    return { groups: [{ header: null, items }] };
+  }
+
   // Par lac : groupes ordonnés par nombre de plages décroissant (égalité →
   // alphabétique). À l'intérieur, on garde l'ordre du fichier (≈ géographique).
   const byLake = new Map();
@@ -294,7 +317,12 @@ function beachRow(b, isFavMode) {
 
   const water = fmt(b.water);
   // Par lac : sous-titre = commune/région ; sinon = lac.
-  const sub = state.sort === "lake" && !state.query.trim() ? b.group || b.lakeName : b.lakeName;
+  let sub = state.sort === "lake" && !state.query.trim() ? b.group || b.lakeName : b.lakeName;
+  // Mode proximité : préfixe la distance depuis la position de l'utilisateur.
+  if (state.sort === "near" && state.userPos && !state.query.trim()) {
+    const km = distanceKm(state.userPos.lat, state.userPos.lng, b.lat, b.lng);
+    sub = `<span class="dist-badge">${fmtDist(km)}</span> · ${b.lakeName}`;
+  }
   const fav = isFav(b.id);
 
   row.innerHTML = `
@@ -442,9 +470,45 @@ document.querySelectorAll(".seg-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".seg-btn").forEach((b) => b.classList.remove("is-active"));
     btn.classList.add("is-active");
+    $("#locate").classList.remove("is-active"); // sort d'un éventuel mode proximité
     state.sort = btn.dataset.sort;
     renderList();
   });
+});
+
+// ---- Géolocalisation : plages les plus proches ----
+$("#locate").addEventListener("click", () => {
+  const btn = $("#locate");
+  // Re-cliquer en mode proximité : on quitte et on revient à « Par lac ».
+  if (btn.classList.contains("is-active")) {
+    btn.classList.remove("is-active");
+    document.querySelector('.seg-btn[data-sort="lake"]').click();
+    return;
+  }
+  if (!navigator.geolocation) {
+    listEl.innerHTML = `<p class="empty">La géolocalisation n'est pas disponible sur cet appareil.</p>`;
+    return;
+  }
+  btn.classList.add("is-locating");
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      btn.classList.remove("is-locating");
+      state.userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      state.sort = "near";
+      document.querySelectorAll(".seg-btn").forEach((b) => b.classList.remove("is-active"));
+      btn.classList.add("is-active");
+      renderList();
+    },
+    (err) => {
+      btn.classList.remove("is-locating");
+      const msg =
+        err.code === err.PERMISSION_DENIED
+          ? "Géolocalisation refusée. Autorisez l'accès à votre position pour voir les plages les plus proches."
+          : "Position indisponible. Réessayez dans un instant.";
+      listEl.innerHTML = `<p class="empty">${msg}</p>`;
+    },
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+  );
 });
 
 const searchInput = $("#search");
