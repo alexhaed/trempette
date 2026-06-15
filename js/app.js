@@ -110,7 +110,7 @@ function renderHero() {
 
   if (favs.length === 0) {
     track.innerHTML = `<div class="hero-empty">${svgUse("i-star", 26)}
-      <p>Ajouter une plage en favori pour la voir ici.</p></div>`;
+      <p>Ajouter une plage en favori pour la voir ici</p></div>`;
     dots.innerHTML = "";
     $("#map-link").style.display = "none";
     return;
