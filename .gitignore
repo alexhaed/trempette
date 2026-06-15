@@ -1,3 +1,4 @@
 node_modules/
 .DS_Store
 design_handoff_trempette_accueil/
+.wrangler/

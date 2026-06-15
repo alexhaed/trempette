@@ -36,8 +36,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if [ -n "$(git status --porcelain data.json)" ]; then
-            git add data.json
+          if [ -n "$(git status --porcelain public/data.json)" ]; then
+            git add public/data.json
             git commit -m "data: maj températures $(date -u +'%Y-%m-%d %H:%M UTC')"
             git push
           else

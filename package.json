@@ -1,0 +1,13 @@
+{
+  "name": "trempette",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "data": "node scripts/fetch-data.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.100.0"
+  }
+}
