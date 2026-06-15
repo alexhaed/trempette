@@ -218,7 +218,13 @@ document.querySelectorAll(".seg-btn").forEach((btn) => {
   });
 });
 $("#search").addEventListener("input", (e) => { state.query = e.target.value; render(); });
-$("#refresh").addEventListener("click", load);
+$("#refresh").addEventListener("click", async () => {
+  const btn = $("#refresh");
+  btn.classList.add("is-spinning");
+  // durée mini pour que le retour visuel soit perceptible même si le fetch est instantané
+  await Promise.all([load(), new Promise((r) => setTimeout(r, 600))]);
+  btn.classList.remove("is-spinning");
+});
 $("#d-close").addEventListener("click", closeDetail);
 $("#detail").addEventListener("click", (e) => { if (e.target.id === "detail") closeDetail(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDetail(); });
