@@ -228,4 +228,12 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 }
 
+// Au démarrage, ouvrir directement l'onglet Favoris si l'utilisateur en a déjà.
+if (state.favoris.size > 0) {
+  state.sort = "fav";
+  document.querySelectorAll(".seg-btn").forEach((b) =>
+    b.classList.toggle("is-active", b.dataset.sort === "fav")
+  );
+}
+
 load();

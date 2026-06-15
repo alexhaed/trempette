@@ -5,7 +5,7 @@
 // À incrémenter à chaque release pour que le cache-first récupère le nouveau
 // shell (sinon les visiteurs récurrents gardent l'ancien JS/CSS). Aligné sur
 // le numéro de version affiché en bas de page.
-const VERSION = "v1.11";
+const VERSION = "v1.12";
 const SHELL = `templac-shell-${VERSION}`;
 const DATA = `templac-data-${VERSION}`;
 
