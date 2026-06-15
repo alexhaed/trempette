@@ -44,12 +44,18 @@ async function fetchJSON(url, tries = 3) {
 // Température de l'eau pour une plage : Alplakes ne donne qu'un point toutes
 // les ~3 h. On récupère une fenêtre ±4 h, on interpole linéairement à
 // l'instant présent, et la pente (°C/h) donne la tendance.
+// Profondeur cible : ~20 cm sous la surface (température de baignade ressentie).
+// Le modèle est stratifié : l'API renvoie le point de grille le plus proche.
+// La couche la plus haute varie selon le lac (~10–25 cm), et 0.2 retombe sur
+// cette couche de surface pour les 5 lacs (identique à 0, mais intention claire).
+const DEPTH = 0.2;
+
 async function getWater(beach, now) {
   const start = new Date(now - 4 * 3600e3);
   const end = new Date(now + 4 * 3600e3);
   const url =
     `https://alplakes-api.eawag.ch/simulations/point/${beach.model}/${beach.lake}/` +
-    `${ymdhm(start)}/${ymdhm(end)}/0/${beach.lat}/${beach.lng}?variables=temperature`;
+    `${ymdhm(start)}/${ymdhm(end)}/${DEPTH}/${beach.lat}/${beach.lng}?variables=temperature`;
 
   const r = await fetchJSON(url);
   const temps = r?.variables?.temperature?.data ?? [];
