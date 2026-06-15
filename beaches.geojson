@@ -1,0 +1,605 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bains des Pâquis",
+    "lac": "Léman",
+    "eau_C": 21.7
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.1545,
+     46.211
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Genève-Plage",
+    "lac": "Léman",
+    "eau_C": 21.4
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.17,
+     46.2126
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Versoix",
+    "lac": "Léman",
+    "eau_C": 21.7
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.175,
+     46.287
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Nyon",
+    "lac": "Léman",
+    "eau_C": 21.7
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.2411,
+     46.378
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Rolle",
+    "lac": "Léman",
+    "eau_C": 22.4
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.34,
+     46.456
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Morges",
+    "lac": "Léman",
+    "eau_C": 20.8
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.498,
+     46.503
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Saint-Sulpice",
+    "lac": "Léman",
+    "eau_C": 21.6
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.5575,
+     46.5062
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Préverenges",
+    "lac": "Léman",
+    "eau_C": 21.1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.5331,
+     46.5079
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Vidy",
+    "lac": "Léman",
+    "eau_C": 21.8
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.601,
+     46.508
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Ouchy",
+    "lac": "Léman",
+    "eau_C": 21.8
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.627,
+     46.504
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Pully",
+    "lac": "Léman",
+    "eau_C": 21.3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.663,
+     46.504
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Lutry",
+    "lac": "Léman",
+    "eau_C": 20.7
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.688,
+     46.501
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Cully",
+    "lac": "Léman",
+    "eau_C": 21
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.73,
+     46.485
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Vevey",
+    "lac": "Léman",
+    "eau_C": 21.2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.846,
+     46.456
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "La Tour-de-Peilz",
+    "lac": "Léman",
+    "eau_C": 21.3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.8564,
+     46.4494
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Montreux",
+    "lac": "Léman",
+    "eau_C": 21.6
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.9071,
+     46.4321
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Villeneuve",
+    "lac": "Léman",
+    "eau_C": 23.2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.9213,
+     46.3979
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Le Bouveret",
+    "lac": "Léman",
+    "eau_C": 22.4
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.8559,
+     46.3872
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Yvoire",
+    "lac": "Léman",
+    "eau_C": 21.4
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.3297,
+     46.3716
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Excenevex",
+    "lac": "Léman",
+    "eau_C": 21.8
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.3601,
+     46.367
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Thonon-les-Bains",
+    "lac": "Léman",
+    "eau_C": 19.5
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.4769,
+     46.3774
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Évian-les-Bains",
+    "lac": "Léman",
+    "eau_C": 21.6
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.588,
+     46.4038
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Neuchâtel",
+    "lac": "Lac de Neuchâtel",
+    "eau_C": 20
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.9507,
+     46.995
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Pointe du Grain",
+    "lac": "Lac de Neuchâtel",
+    "eau_C": 19.8
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.8325,
+     46.9254
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Grandson",
+    "lac": "Lac de Neuchâtel",
+    "eau_C": 19.2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.6532,
+     46.8097
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Yverdon-les-Bains",
+    "lac": "Lac de Neuchâtel",
+    "eau_C": 19.5
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.655,
+     46.7868
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Yvonand",
+    "lac": "Lac de Neuchâtel",
+    "eau_C": 21
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.738,
+     46.808
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Cheyres",
+    "lac": "Lac de Neuchâtel",
+    "eau_C": 21.2
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.7659,
+     46.8099
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Estavayer-le-Lac",
+    "lac": "Lac de Neuchâtel",
+    "eau_C": 21.4
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.8411,
+     46.8542
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Portalban",
+    "lac": "Lac de Neuchâtel",
+    "eau_C": 19.8
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.945,
+     46.928
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Cudrefin",
+    "lac": "Lac de Neuchâtel",
+    "eau_C": 20.1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     7.0106,
+     46.9577
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Bienne",
+    "lac": "Lac de Bienne",
+    "eau_C": 20.4
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     7.2236,
+     47.1301
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Douanne",
+    "lac": "Lac de Bienne",
+    "eau_C": 19.5
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     7.1587,
+     47.0924
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "La Neuveville",
+    "lac": "Lac de Bienne",
+    "eau_C": 19.5
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     7.1096,
+     47.0648
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Morat",
+    "lac": "Lac de Morat",
+    "eau_C": 23.7
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     7.108,
+     46.929
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Avenches",
+    "lac": "Lac de Morat",
+    "eau_C": 23.1
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     7.05,
+     46.918
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Praz (Vully)",
+    "lac": "Lac de Morat",
+    "eau_C": 23.3
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     7.085,
+     46.945
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Le Pont",
+    "lac": "Lac de Joux",
+    "eau_C": 18.4
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.321,
+     46.666
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "L'Abbaye",
+    "lac": "Lac de Joux",
+    "eau_C": 18.5
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.295,
+     46.648
+    ]
+   }
+  },
+  {
+   "type": "Feature",
+   "properties": {
+    "name": "Le Rocheray",
+    "lac": "Lac de Joux",
+    "eau_C": 18.8
+   },
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     6.25,
+     46.6209
+    ]
+   }
+  }
+ ]
+}
