@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#34B4C2" />
+  <!-- PWA iOS : le dégradé passe sous la barre d'état (sinon bande blanche),
+       texte de la barre en blanc. Le contenu reste protégé par --safe-top. -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Trempette" />
   <title>Trempette — Températures des plages romandes</title>
   <meta name="description" content="Température de l'eau des plages des lacs romands (Léman, Neuchâtel, Bienne, Morat, Joux), avec air et vent." />
   <link rel="manifest" href="manifest.webmanifest" />
@@ -95,7 +101,7 @@
     <footer class="foot">
       <p id="updated" class="updated"></p>
       <p class="credits">Eau : Alplakes (Eawag) · Air &amp; vent : open-meteo.com</p>
-      <p class="version">v1.17</p>
+      <p class="version">v1.18</p>
     </footer>
   </div>
 
