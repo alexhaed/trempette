@@ -161,9 +161,9 @@ function renderUpdated() {
   const el = $("#updated");
   if (!state.updatedAt) { el.textContent = ""; return; }
   const d = new Date(state.updatedAt);
-  el.textContent = "Mis à jour le " + d.toLocaleString("fr-CH", {
-    day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
-  });
+  const date = d.toLocaleDateString("fr-CH", { day: "2-digit", month: "2-digit" });
+  const heure = d.toLocaleTimeString("fr-CH", { hour: "2-digit", minute: "2-digit" });
+  el.textContent = `Mis à jour le ${date} à ${heure}`;
 }
 
 // ---- Favoris ----
