@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-15T18:08:28.229Z",
+  "updatedAt": "2026-06-15T18:09:58.557Z",
   "counts": {
     "total": 40,
     "water": 40
@@ -139,7 +139,7 @@
       "lakeName": "Léman",
       "lake": "geneva",
       "group": "Lausanne / Lavaux",
-      "water": 22.2,
+      "water": 22.1,
       "trend": -0.12,
       "air": 25.2,
       "wind": 11.3,
@@ -293,7 +293,7 @@
       "lakeName": "Léman",
       "lake": "geneva",
       "group": "France",
-      "water": 19.8,
+      "water": 19.7,
       "trend": -0.21,
       "air": 24.9,
       "wind": 16.4,
