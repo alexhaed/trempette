@@ -8,13 +8,13 @@
         "group": "Genève / La Côte",
         "beaches": [
           { "name": "Bains des Pâquis", "lat": 46.211, "lng": 6.1545 },
-          { "name": "Genève-Plage", "lat": 46.209, "lng": 6.17 },
+          { "name": "Genève-Plage", "lat": 46.2126, "lng": 6.17 },
           { "name": "Versoix", "lat": 46.287, "lng": 6.175 },
-          { "name": "Nyon", "lat": 46.38, "lng": 6.236 },
+          { "name": "Nyon", "lat": 46.378, "lng": 6.2411 },
           { "name": "Rolle", "lat": 46.456, "lng": 6.34 },
           { "name": "Morges", "lat": 46.503, "lng": 6.498 },
-          { "name": "Saint-Sulpice", "lat": 46.511, "lng": 6.556 },
-          { "name": "Préverenges", "lat": 46.511, "lng": 6.534 }
+          { "name": "Saint-Sulpice", "lat": 46.5062, "lng": 6.5575 },
+          { "name": "Préverenges", "lat": 46.5079, "lng": 6.5331 }
         ]
       },
       {
@@ -31,19 +31,19 @@
         "group": "Riviera / Chablais",
         "beaches": [
           { "name": "Vevey", "lat": 46.456, "lng": 6.846 },
-          { "name": "La Tour-de-Peilz", "lat": 46.452, "lng": 6.86 },
-          { "name": "Montreux", "lat": 46.432, "lng": 6.913 },
-          { "name": "Villeneuve", "lat": 46.396, "lng": 6.923 },
-          { "name": "Le Bouveret", "lat": 46.385, "lng": 6.855 }
+          { "name": "La Tour-de-Peilz", "lat": 46.4494, "lng": 6.8564 },
+          { "name": "Montreux", "lat": 46.4321, "lng": 6.9071 },
+          { "name": "Villeneuve", "lat": 46.3979, "lng": 6.9213 },
+          { "name": "Le Bouveret", "lat": 46.3872, "lng": 6.8559 }
         ]
       },
       {
         "group": "France",
         "beaches": [
-          { "name": "Yvoire", "lat": 46.368, "lng": 6.329 },
-          { "name": "Excenevex", "lat": 46.347, "lng": 6.356 },
-          { "name": "Thonon-les-Bains", "lat": 46.376, "lng": 6.481 },
-          { "name": "Évian-les-Bains", "lat": 46.402, "lng": 6.588 }
+          { "name": "Yvoire", "lat": 46.3716, "lng": 6.3297 },
+          { "name": "Excenevex", "lat": 46.367, "lng": 6.3601 },
+          { "name": "Thonon-les-Bains", "lat": 46.3774, "lng": 6.4769 },
+          { "name": "Évian-les-Bains", "lat": 46.4038, "lng": 6.588 }
         ]
       }
     ]
@@ -53,15 +53,15 @@
     "model": "mitgcm",
     "lake": "neuchatel",
     "beaches": [
-      { "name": "Neuchâtel", "lat": 46.998, "lng": 6.945 },
-      { "name": "Pointe du Grain", "lat": 46.93, "lng": 6.83 },
-      { "name": "Grandson", "lat": 46.812, "lng": 6.65 },
-      { "name": "Yverdon-les-Bains", "lat": 46.785, "lng": 6.655 },
+      { "name": "Neuchâtel", "lat": 46.995, "lng": 6.9507 },
+      { "name": "Pointe du Grain", "lat": 46.9254, "lng": 6.8325 },
+      { "name": "Grandson", "lat": 46.8097, "lng": 6.6532 },
+      { "name": "Yverdon-les-Bains", "lat": 46.7868, "lng": 6.655 },
       { "name": "Yvonand", "lat": 46.808, "lng": 6.738 },
-      { "name": "Cheyres", "lat": 46.8, "lng": 6.782 },
-      { "name": "Estavayer-le-Lac", "lat": 46.847, "lng": 6.85 },
+      { "name": "Cheyres", "lat": 46.8099, "lng": 6.7659 },
+      { "name": "Estavayer-le-Lac", "lat": 46.8542, "lng": 6.8411 },
       { "name": "Portalban", "lat": 46.928, "lng": 6.945 },
-      { "name": "Cudrefin", "lat": 46.955, "lng": 7.015 }
+      { "name": "Cudrefin", "lat": 46.9577, "lng": 7.0106 }
     ]
   },
   {
@@ -69,9 +69,9 @@
     "model": "delft3d-flow",
     "lake": "biel",
     "beaches": [
-      { "name": "Bienne", "lat": 47.132, "lng": 7.22 },
-      { "name": "Douanne", "lat": 47.095, "lng": 7.155 },
-      { "name": "La Neuveville", "lat": 47.068, "lng": 7.105 }
+      { "name": "Bienne", "lat": 47.1301, "lng": 7.2236 },
+      { "name": "Douanne", "lat": 47.0924, "lng": 7.1587 },
+      { "name": "La Neuveville", "lat": 47.0648, "lng": 7.1096 }
     ]
   },
   {
@@ -91,7 +91,7 @@
     "beaches": [
       { "name": "Le Pont", "lat": 46.666, "lng": 6.321 },
       { "name": "L'Abbaye", "lat": 46.648, "lng": 6.295 },
-      { "name": "Le Rocheray", "lat": 46.628, "lng": 6.24 }
+      { "name": "Le Rocheray", "lat": 46.6209, "lng": 6.25 }
     ]
   }
 ]
