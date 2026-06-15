@@ -15,7 +15,7 @@ run_worker_first = ["/data.json"]
 # son id :  npx wrangler kv namespace create DATA
 [[kv_namespaces]]
 binding = "DATA"
-id = "REMPLACER_PAR_ID_KV"
+id = "33ea916d941a4a9da24d077190b7ceea"
 
 # Régénération toutes les 30 min.
 [triggers]
