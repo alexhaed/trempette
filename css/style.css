@@ -234,6 +234,7 @@ body {
 
 /* Hero vide (aucun favori) */
 .hero-empty {
+  flex: 1; /* remplit la largeur du carrousel (= champ de recherche, liste…) */
   margin: 6px var(--gutter) 0;
   padding: 26px 20px;
   text-align: center;

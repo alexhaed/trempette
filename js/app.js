@@ -110,7 +110,7 @@ function renderHero() {
 
   if (favs.length === 0) {
     track.innerHTML = `<div class="hero-empty">${svgUse("i-star", 26)}
-      <p>Touchez l'étoile d'une plage pour la suivre ici.</p></div>`;
+      <p>Ajouter une plage en favori pour la voir ici.</p></div>`;
     dots.innerHTML = "";
     $("#map-link").style.display = "none";
     return;
@@ -506,9 +506,35 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeDetail();
 });
 
-// ---- Service worker (offline) ----
+// ---- Service worker (offline) + hard-refresh automatique ----
+// Quand une nouvelle version est déployée (VERSION de sw.js modifiée), le SW se
+// met à jour, prend le contrôle (skipWaiting + clients.claim côté sw.js) et on
+// recharge la page une fois → équivalent d'un hard-refresh, utile sur iOS où le
+// shell est tenace en cache. `updateViaCache:none` force la re-récupération du
+// script sw.js (jamais servi depuis le cache HTTP).
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  let reloading = false;
+  // Ne recharge que si la page était déjà contrôlée (évite un reload au tout
+  // premier chargement, où le SW prend le contrôle pour la 1re fois).
+  if (navigator.serviceWorker.controller) {
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (reloading) return;
+      reloading = true;
+      window.location.reload();
+    });
+  }
+  window.addEventListener("load", async () => {
+    try {
+      const reg = await navigator.serviceWorker.register("sw.js", { updateViaCache: "none" });
+      // Cherche une mise à jour à chaque retour au premier plan (les PWA iOS
+      // restent « ouvertes » longtemps).
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") reg.update();
+      });
+    } catch {
+      /* hors-ligne ou non supporté : on ignore */
+    }
+  });
 }
 
 // Au démarrage, ouvrir l'onglet Favoris si l'utilisateur en a déjà.
