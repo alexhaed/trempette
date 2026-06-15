@@ -237,7 +237,10 @@ function renderList() {
     if (g.header) {
       const h = document.createElement("h2");
       h.className = "group-title";
-      h.innerHTML = `${svgUse("i-waves", 14)} Lac ${g.header.replace(/^Lac (de |du |de la )?/i, "")}`;
+      // Vrai nom du lac : on garde "Lac de …" tel quel et on ne préfixe "Lac "
+      // que lorsqu'il manque (cas du Léman, stocké sans préfixe).
+      const header = /^lac\b/i.test(g.header) ? g.header : `Lac ${g.header}`;
+      h.innerHTML = `${svgUse("i-waves", 14)} ${header}`;
       frag.appendChild(h);
     }
     for (const b of g.items) frag.appendChild(beachRow(b, isFavMode));
