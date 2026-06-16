@@ -497,6 +497,12 @@ $("#locate").addEventListener("click", () => {
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       btn.classList.remove("is-locating");
+      // Recherche par nom et géoloc sont exclusives : on vide le champ.
+      if (state.query) {
+        searchInput.value = "";
+        state.query = "";
+        $("#search-clear").hidden = true;
+      }
       state.userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       state.sort = "near";
       document.querySelectorAll(".seg-btn").forEach((b) => b.classList.remove("is-active"));
