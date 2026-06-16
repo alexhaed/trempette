@@ -23,6 +23,34 @@ async function regenerate(env) {
     concurrency: CONCURRENCY,
     tries: TRIES,
   });
+
+  // Plan gratuit : sans reprises (TRIES=1) et avec Alplakes parfois capricieux,
+  // un cycle peut manquer quelques plages. On fusionne avec le dernier état
+  // connu (KV) : une plage sans donnée ce cycle garde sa valeur précédente
+  // plutôt que d'afficher « n/d ». La donnée se complète sur quelques cycles.
+  try {
+    const prevRaw = await env.DATA.get(DATA_KEY);
+    if (prevRaw) {
+      const prevById = new Map(JSON.parse(prevRaw).beaches.map((b) => [b.id, b]));
+      for (const b of payload.beaches) {
+        const p = prevById.get(b.id);
+        if (!p) continue;
+        if (b.water == null && p.water != null) {
+          b.water = p.water;
+          b.trend = p.trend;
+        }
+        if (b.air == null && p.air != null) b.air = p.air;
+        if (b.wind == null && p.wind != null) {
+          b.wind = p.wind;
+          b.windDir = p.windDir;
+        }
+      }
+      payload.counts.water = payload.beaches.filter((b) => b.water != null).length;
+    }
+  } catch {
+    // pas d'état précédent exploitable : on garde le payload tel quel
+  }
+
   await env.DATA.put(DATA_KEY, JSON.stringify(payload));
   return payload;
 }
