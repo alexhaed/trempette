@@ -1,11 +1,14 @@
-// Logique portable de construction de data.json.
-//
-// Sans API spécifique à Node : prend `fetch` et la liste des lacs en paramètres.
-// Utilisé par worker/index.js (Cron Trigger Cloudflare).
+// Primitives portables de récupération des données (sans état, sans API Node).
+// Utilisées par worker/index.js, qui orchestre le cache KV.
 //
 // Rappel : Alplakes (eau) n'envoie pas de CORS → fetch impossible côté
-// navigateur, d'où ce pré-calcul côté serveur. open-meteo (air/vent) est
-// récupéré ici aussi pour que l'app n'ait qu'un seul fichier à lire.
+// navigateur, d'où ce pré-calcul côté serveur. open-meteo (air/vent) y est aussi
+// récupéré pour que l'app n'ait qu'un seul fichier à lire.
+//
+// Les simulations Alplakes ne sont mises à jour qu'UNE fois par jour (confirmé
+// par l'Eawag). Le Worker met donc en cache la fenêtre brute par plage et ne la
+// re-télécharge que lorsqu'un nouveau run paraît (end_date avancé) ou que la
+// fenêtre ne couvre plus l'instant présent ; entre-temps il réinterpole en local.
 
 // Aplatit la structure des lacs en une liste de plages, chacune portant les
 // infos de son lac (et son groupe régional pour le Léman). id stable = lake+slug.
@@ -70,56 +73,84 @@ async function fetchJSON(fetchFn, url, tries) {
   throw lastErr;
 }
 
+const BASE = "https://alplakes-api.eawag.ch";
+
 // Profondeur cible : ~20 cm sous la surface (température de baignade ressentie).
 // Le modèle est stratifié : l'API renvoie le point de grille le plus proche.
 // La couche la plus haute varie selon le lac (~10–25 cm), et 0.2 retombe sur
 // cette couche de surface pour les 5 lacs (identique à 0, mais intention claire).
 const DEPTH = 0.2;
 
-// Température de l'eau : Alplakes ne donne qu'un point toutes les ~3 h. On
-// récupère une fenêtre ±4 h, on interpole linéairement à l'instant présent,
-// et la pente (°C/h) donne la tendance.
-async function getWater(fetchFn, beach, now, tries) {
-  const start = new Date(now - 4 * 3600e3);
-  const end = new Date(now + 4 * 3600e3);
-  const url =
-    `https://alplakes-api.eawag.ch/simulations/point/${beach.model}/${beach.lake}/` +
-    `${ymdhm(start)}/${ymdhm(end)}/${DEPTH}/${beach.lat}/${beach.lng}?variables=temperature`;
+// Fenêtre large : assez de points (passé + futur) pour interpoler « maintenant »
+// pendant ~24 h, jusqu'au prochain run quotidien, sans re-télécharger.
+const WINDOW_BEFORE_H = 6;
+const WINDOW_AFTER_H = 30;
 
+// Récupère la fenêtre brute de température d'eau d'une plage (points 3 h UTC).
+// Renvoie des tableaux parallèles { times:[ms], temps:[°C] }, valeurs finies.
+export async function fetchWindow(fetchFn, beach, now, tries = 1) {
+  const start = new Date(now - WINDOW_BEFORE_H * 3600e3);
+  const end = new Date(now + WINDOW_AFTER_H * 3600e3);
+  const url =
+    `${BASE}/simulations/point/${beach.model}/${beach.lake}/` +
+    `${ymdhm(start)}/${ymdhm(end)}/${DEPTH}/${beach.lat}/${beach.lng}?variables=temperature`;
   const r = await fetchJSON(fetchFn, url, tries);
   const temps = r?.variables?.temperature?.data ?? [];
   const times = (r?.time ?? []).map((t) => new Date(t).getTime());
-
-  const pts = [];
+  const T = [];
+  const V = [];
   for (let i = 0; i < temps.length; i++) {
-    if (temps[i] !== null && temps[i] !== undefined && Number.isFinite(temps[i])) {
-      pts.push({ t: times[i], v: temps[i] });
+    if (Number.isFinite(temps[i])) {
+      T.push(times[i]);
+      V.push(temps[i]);
     }
   }
-  // Prochain point de prévision Alplakes après maintenant (marques fixes 3 h UTC).
-  const nextPt = pts.find((p) => p.t > now);
-  const next = nextPt ? { at: new Date(nextPt.t).toISOString(), temp: round1(nextPt.v) } : null;
+  return { times: T, temps: V };
+}
 
-  if (pts.length === 0) return { water: null, trend: null, next: null };
-  if (pts.length === 1) return { water: round1(pts[0].v), trend: null, next };
+// Interpole la température d'eau à `now` depuis une fenêtre en cache. Renvoie
+// aussi la tendance (°C/h) et le prochain point de prévision (marque 3 h UTC).
+export function interpolate(win, now) {
+  const times = win?.times ?? [];
+  const temps = win?.temps ?? [];
+  const n = times.length;
+  const nextIdx = times.findIndex((t) => t > now);
+  const next =
+    nextIdx >= 0 ? { at: new Date(times[nextIdx]).toISOString(), temp: round1(temps[nextIdx]) } : null;
 
-  for (let i = 0; i < pts.length - 1; i++) {
-    const a = pts[i];
-    const b = pts[i + 1];
-    if (now >= a.t && now <= b.t) {
-      const water = a.v + ((b.v - a.v) * (now - a.t)) / (b.t - a.t);
-      const trend = (b.v - a.v) / ((b.t - a.t) / 3600000);
+  if (n === 0) return { water: null, trend: null, next: null };
+  if (n === 1) return { water: round1(temps[0]), trend: null, next };
+
+  for (let i = 0; i < n - 1; i++) {
+    const at = times[i];
+    const bt = times[i + 1];
+    if (now >= at && now <= bt) {
+      const av = temps[i];
+      const bv = temps[i + 1];
+      const water = av + ((bv - av) * (now - at)) / (bt - at);
+      const trend = (bv - av) / ((bt - at) / 3600000);
       return { water: round1(water), trend: round2(trend), next };
     }
   }
   // Hors fenêtre encadrante : point le plus proche, sans tendance fiable.
-  const v = now < pts[0].t ? pts[0].v : pts[pts.length - 1].v;
+  const v = now < times[0] ? temps[0] : temps[n - 1];
   return { water: round1(v), trend: null, next };
+}
+
+// Fin de prévision (end_date) par clé "model/lake" — avance à chaque nouveau run
+// quotidien, ce qui permet de détecter quand re-télécharger les fenêtres.
+export async function fetchLakeEndDates(fetchFn, tries = 1) {
+  const j = await fetchJSON(fetchFn, `${BASE}/simulations/metadata`, tries);
+  const map = {};
+  for (const m of Array.isArray(j) ? j : []) {
+    for (const lk of m.lakes ?? []) map[`${m.model}/${lk.name}`] = lk.end_date;
+  }
+  return map;
 }
 
 // Air + vent pour toutes les plages en un seul appel open-meteo
 // (coordonnées séparées par des virgules → réponse = tableau ordonné).
-async function getWeatherAll(fetchFn, beaches, tries) {
+export async function fetchWeatherAll(fetchFn, beaches, tries = 1) {
   const lat = beaches.map((b) => b.lat).join(",");
   const lng = beaches.map((b) => b.lng).join(",");
   const url =
@@ -135,8 +166,8 @@ async function getWeatherAll(fetchFn, beaches, tries) {
 }
 
 // Exécute des tâches async avec une concurrence limitée (courtois envers les
-// API publiques, et compatible avec les limites de sous-requêtes d'un Worker).
-async function pool(items, concurrency, worker) {
+// API publiques, et compatible avec la limite de sous-requêtes d'un Worker).
+export async function pool(items, concurrency, worker) {
   const results = new Array(items.length);
   let next = 0;
   async function run() {
@@ -147,51 +178,4 @@ async function pool(items, concurrency, worker) {
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, run));
   return results;
-}
-
-// Construit le payload data.json complet.
-// `concurrency` et `tries` sont passés par l'appelant (le Worker : 1 et 1, pour
-// rester sous la limite de 50 sous-requêtes du plan gratuit ; voir worker/index.js).
-export async function buildPayload(lakes, fetchFn, now = Date.now(), opts = {}) {
-  const { concurrency = 1, tries = 1 } = opts;
-  const beaches = flattenLakes(lakes);
-
-  let weather;
-  try {
-    weather = await getWeatherAll(fetchFn, beaches, tries);
-  } catch (e) {
-    weather = beaches.map(() => ({ air: null, wind: null, windDir: null }));
-  }
-
-  const out = await pool(beaches, concurrency, async (b, i) => {
-    let water = { water: null, trend: null, next: null };
-    try {
-      water = await getWater(fetchFn, b, now, tries);
-    } catch {
-      // plage sans donnée ce cycle : restera null (corrigée au prochain passage)
-    }
-    const w = weather[i] ?? { air: null, wind: null, windDir: null };
-    return {
-      id: b.id,
-      name: b.name,
-      lat: b.lat,
-      lng: b.lng,
-      lakeName: b.lakeName,
-      lake: b.lake,
-      group: b.group,
-      water: water.water,
-      trend: water.trend,
-      next: water.next,
-      air: w.air,
-      wind: w.wind,
-      windDir: w.windDir,
-    };
-  });
-
-  const okWater = out.filter((b) => b.water != null).length;
-  return {
-    updatedAt: new Date(now).toISOString(),
-    counts: { total: out.length, water: okWater },
-    beaches: out,
-  };
 }
