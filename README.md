@@ -7,7 +7,7 @@ Eau (Alplakes / Eawag) + air & vent (open-meteo), pour chaque plage, avec
 tendance de réchauffement de l'eau. Tri par lac / « plage la plus chaude » /
 favoris, recherche, géolocalisation « plages les plus proches », vue détail.
 
-## Architecture (0 €, sans serveur à maintenir)
+## Architecture
 
 Un **unique Worker Cloudflare** fait tout :
 
