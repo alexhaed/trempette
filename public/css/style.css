@@ -478,7 +478,7 @@ body {
 .foot { text-align: center; padding: 16px var(--gutter) 8px; line-height: 1.6; }
 .foot .updated { margin: 0; font-size: 12px; font-weight: 600; color: var(--glacier); }
 .foot .credits { margin: 3px 0 0; font-size: 11px; color: rgba(247, 242, 231, 0.5); }
-.foot .version { margin: 8px 0 0; font-size: 11px; letter-spacing: 0.3px; color: rgba(247, 242, 231, 0.4); }
+.foot .version { margin: 3px 0 0; font-size: 11px; letter-spacing: 0.3px; color: rgba(247, 242, 231, 0.4); }
 
 /* ---- Détail (overlay) ---- */
 .detail {
