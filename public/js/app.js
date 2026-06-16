@@ -428,8 +428,21 @@ function endDrag() {
 }
 
 // ---- Vue détail (overlay) ----
+// Texte de prévision : prochain point du modèle Alplakes (marques 3 h UTC),
+// affiché à l'heure locale. Repli sur la tendance si pas de point de prévision.
+function forecastText(b) {
+  if (b.next && b.next.temp != null) {
+    const d = new Date(b.next.at);
+    const [hh, mm] = d
+      .toLocaleTimeString("fr-CH", { hour: "2-digit", minute: "2-digit", hour12: false })
+      .split(":");
+    const heure = mm === "00" ? `${parseInt(hh, 10)}h` : `${hh}h${mm}`;
+    return `Température prévue à ${heure} : ${fmt(b.next.temp)}°`;
+  }
+  return trendInfo(b.trend).txt;
+}
+
 function openDetail(b) {
-  const t = trendInfo(b.trend);
   const water = fmt(b.water);
 
   $("#d-lake").textContent = b.lakeName + (b.group ? " · " + b.group : "");
@@ -441,7 +454,7 @@ function openDetail(b) {
 
   const v = verdict(b.water);
   $("#d-verdict").innerHTML = v ? `<span>${v}</span>` : "";
-  $("#d-trend-txt").textContent = t.txt;
+  $("#d-trend-txt").textContent = forecastText(b);
 
   $("#d-air").textContent = b.air != null ? `${Math.round(b.air)}°` : "n/d";
   $("#d-wind").textContent = b.wind != null ? `${Math.round(b.wind)} km/h` : "n/d";

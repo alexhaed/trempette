@@ -96,8 +96,12 @@ async function getWater(fetchFn, beach, now, tries) {
       pts.push({ t: times[i], v: temps[i] });
     }
   }
-  if (pts.length === 0) return { water: null, trend: null };
-  if (pts.length === 1) return { water: round1(pts[0].v), trend: null };
+  // Prochain point de prévision Alplakes après maintenant (marques fixes 3 h UTC).
+  const nextPt = pts.find((p) => p.t > now);
+  const next = nextPt ? { at: new Date(nextPt.t).toISOString(), temp: round1(nextPt.v) } : null;
+
+  if (pts.length === 0) return { water: null, trend: null, next: null };
+  if (pts.length === 1) return { water: round1(pts[0].v), trend: null, next };
 
   for (let i = 0; i < pts.length - 1; i++) {
     const a = pts[i];
@@ -105,12 +109,12 @@ async function getWater(fetchFn, beach, now, tries) {
     if (now >= a.t && now <= b.t) {
       const water = a.v + ((b.v - a.v) * (now - a.t)) / (b.t - a.t);
       const trend = (b.v - a.v) / ((b.t - a.t) / 3600000);
-      return { water: round1(water), trend: round2(trend) };
+      return { water: round1(water), trend: round2(trend), next };
     }
   }
   // Hors fenêtre encadrante : point le plus proche, sans tendance fiable.
   const v = now < pts[0].t ? pts[0].v : pts[pts.length - 1].v;
-  return { water: round1(v), trend: null };
+  return { water: round1(v), trend: null, next };
 }
 
 // Air + vent pour toutes les plages en un seul appel open-meteo
@@ -178,6 +182,7 @@ export async function buildPayload(lakes, fetchFn, now = Date.now(), opts = {}) 
       group: b.group,
       water: water.water,
       trend: water.trend,
+      next: water.next,
       air: w.air,
       wind: w.wind,
       windDir: w.windDir,
