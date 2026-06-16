@@ -1,10 +1,10 @@
 // Worker Cloudflare unique pour Trempette :
 //  - sert le site statique (binding ASSETS) ;
 //  - régénère data.json toutes les 30 min (Cron Trigger) et le stocke dans KV ;
-//  - sert /data.json depuis KV (le fichier statique est exclu via .assetsignore).
+//  - sert /data.json depuis KV (route gérée par le Worker via run_worker_first
+//    dans wrangler.toml ; data.json n'est pas un asset statique).
 //
-// La logique de récupération vit dans scripts/build-data.mjs (partagée avec le
-// script Node de transition).
+// La logique de récupération vit dans scripts/build-data.mjs.
 
 import lakes from "../scripts/lakes.json";
 import { buildPayload } from "../scripts/build-data.mjs";

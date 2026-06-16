@@ -150,10 +150,10 @@ async function pool(items, concurrency, worker) {
 }
 
 // Construit le payload data.json complet.
-// `tries` : tentatives par requête (3 en Node, 1 en Worker pour rester sous la
-// limite de 50 sous-requêtes du plan gratuit). `onProgress` : callback facultatif.
+// `concurrency` et `tries` sont passés par l'appelant (le Worker : 1 et 1, pour
+// rester sous la limite de 50 sous-requêtes du plan gratuit ; voir worker/index.js).
 export async function buildPayload(lakes, fetchFn, now = Date.now(), opts = {}) {
-  const { concurrency = 6, tries = 3, onProgress } = opts;
+  const { concurrency = 1, tries = 1 } = opts;
   const beaches = flattenLakes(lakes);
 
   let weather;
@@ -164,14 +164,13 @@ export async function buildPayload(lakes, fetchFn, now = Date.now(), opts = {}) 
   }
 
   const out = await pool(beaches, concurrency, async (b, i) => {
-    let water = { water: null, trend: null };
+    let water = { water: null, trend: null, next: null };
     try {
       water = await getWater(fetchFn, b, now, tries);
     } catch {
       // plage sans donnée ce cycle : restera null (corrigée au prochain passage)
     }
     const w = weather[i] ?? { air: null, wind: null, windDir: null };
-    if (onProgress) onProgress(i, beaches.length, b, water, w);
     return {
       id: b.id,
       name: b.name,

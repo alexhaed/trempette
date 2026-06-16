@@ -1,6 +1,6 @@
-// App web statique : lit data.json (généré par la GitHub Action) et l'affiche.
+// App web statique : lit data.json (généré par le Worker Cloudflare) et l'affiche.
 // Écran d'accueil « Immersif aquatique ». Aucun appel API direct ici — tout est
-// pré-calculé côté Action.
+// pré-calculé côté Worker (cron).
 
 const FAV_KEY = "templac_favoris"; // ordre des favoris (tableau d'ids), conservé d'avant le renommage
 const COLLAPSE_KEY = "trempette_lacs_replies"; // lacs repliés en mode « Par lac »
