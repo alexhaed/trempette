@@ -66,6 +66,8 @@ function toggleLake(lake) {
 }
 
 // ---- Chargement des données ----
+let lastLoadedAt = 0;
+
 async function load() {
   try {
     const r = await fetch(`data.json?t=${Math.floor(Date.now() / 60000)}`);
@@ -76,11 +78,27 @@ async function load() {
     // Purge les favoris dont la plage n'existe plus.
     const ids = new Set(state.beaches.map((b) => b.id));
     state.favOrder = state.favOrder.filter((id) => ids.has(id));
+    lastLoadedAt = Date.now();
     renderAll();
   } catch (e) {
     listEl.innerHTML = `<p class="empty">Impossible de charger les données.<br>${e.message}</p>`;
   }
 }
+
+// Rafraîchit les données quand l'utilisateur revient sur la page après un
+// moment (onglet rouvert, PWA iOS restée ouverte en arrière-plan…). Seuil pour
+// éviter de refetcher à chaque bascule rapide d'onglet.
+const STALE_AFTER = 3 * 60 * 1000; // 3 min
+function refreshIfStale() {
+  if (document.visibilityState === "visible" && Date.now() - lastLoadedAt > STALE_AFTER) {
+    load();
+  }
+}
+document.addEventListener("visibilitychange", refreshIfStale);
+// pageshow couvre la restauration depuis le bfcache (retour arrière navigateur).
+window.addEventListener("pageshow", (e) => {
+  if (e.persisted) refreshIfStale();
+});
 
 // ---- Helpers ----
 const byId = (id) => state.beaches.find((b) => b.id === id);
