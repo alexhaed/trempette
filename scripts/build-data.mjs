@@ -1,8 +1,7 @@
 // Logique portable de construction de data.json.
 //
-// Sans API spécifique à Node : prend `fetch` et la liste des lacs en paramètres,
-// pour tourner à l'identique dans une GitHub Action (Node) ET dans un Worker
-// Cloudflare. Voir scripts/fetch-data.mjs (Node) et worker/index.js (Cloudflare).
+// Sans API spécifique à Node : prend `fetch` et la liste des lacs en paramètres.
+// Utilisé par worker/index.js (Cron Trigger Cloudflare).
 //
 // Rappel : Alplakes (eau) n'envoie pas de CORS → fetch impossible côté
 // navigateur, d'où ce pré-calcul côté serveur. open-meteo (air/vent) est

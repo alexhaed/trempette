@@ -27,7 +27,7 @@ Worker Cloudflare « trempette »
 - **open-meteo** accepte le CORS, mais on le récupère aussi côté Worker pour
   n'avoir qu'un seul fichier à lire côté client.
 - **Déploiement** : intégration Git Cloudflare (Workers Builds) — `git push` sur
-  `main` → build + déploiement automatiques. Voir `CLOUDFLARE.md`.
+  `main` → build + déploiement automatiques.
 
 ## Détails techniques
 
@@ -47,9 +47,8 @@ Worker Cloudflare « trempette »
 ## Développement
 
 ```bash
-npx wrangler dev              # Worker + site en local (http://localhost:8787)
+npx wrangler dev                    # Worker + site en local (http://localhost:8787)
 npx wrangler dev --test-scheduled   # puis visiter /__scheduled pour tester le cron
-node scripts/fetch-data.mjs   # (optionnel) régénère un data.json local
 ```
 
 ## Fichiers
@@ -60,9 +59,7 @@ node scripts/fetch-data.mjs   # (optionnel) régénère un data.json local
 | `worker/index.js` | Worker : assets + cron + /data.json depuis KV |
 | `wrangler.toml` | Config Worker (assets, KV, cron) |
 | `scripts/lakes.json` | Catalogue lacs & plages (coordonnées) |
-| `scripts/build-data.mjs` | Récupération + interpolation (partagé Node/Worker) |
-| `scripts/fetch-data.mjs` | Régénération locale d'un `data.json` (utilitaire) |
-| `CLOUDFLARE.md` | Guide de déploiement Cloudflare |
+| `scripts/build-data.mjs` | Récupération Alplakes/open-meteo + interpolation |
 
 ---
 
