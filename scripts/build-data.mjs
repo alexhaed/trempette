@@ -55,7 +55,11 @@ async function fetchJSON(fetchFn, url, tries) {
   let lastErr;
   for (let i = 0; i < tries; i++) {
     try {
-      const r = await fetchFn(url, { headers: { "User-Agent": "trempette" } });
+      const r = await fetchFn(url, {
+        headers: {
+          "User-Agent": "trempette (https://github.com/alexhaed/trempette; alexhaederli@gmail.com)",
+        },
+      });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       return await r.json();
     } catch (e) {
