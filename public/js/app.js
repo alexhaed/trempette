@@ -148,16 +148,13 @@ function renderHero() {
     track.innerHTML = `<div class="hero-empty">${svgUse("i-star", 26)}
       <p>Ajouter une plage en favori pour la voir ici</p></div>`;
     dots.innerHTML = "";
-    $("#map-link").style.display = "none";
     return;
   }
 
-  $("#map-link").style.display = "";
   if (state.heroIdx >= favs.length) state.heroIdx = 0;
 
   track.innerHTML = favs.map((b) => heroCard(b)).join("");
   dots.innerHTML = favs.map((_, i) => `<i class="${i === state.heroIdx ? "on" : ""}"></i>`).join("");
-  updateMapLink(favs[state.heroIdx]);
 
   // Clic sur une carte → détail.
   track.querySelectorAll(".hero-card").forEach((el, i) => {
@@ -193,11 +190,7 @@ function heroCard(b) {
     </div>`;
 }
 
-function updateMapLink(b) {
-  if (b) $("#map-link").href = mapUrl(b);
-}
-
-// Synchronise les points de pagination et le lien carte au défilement.
+// Synchronise les points de pagination au défilement du carrousel.
 $("#hero-track").addEventListener(
   "scroll",
   () => {
@@ -205,9 +198,7 @@ $("#hero-track").addEventListener(
     const idx = Math.round(track.scrollLeft / track.clientWidth);
     if (idx !== state.heroIdx) {
       state.heroIdx = idx;
-      const favs = state.favOrder.map(byId).filter(Boolean);
       $("#hero-dots").querySelectorAll("i").forEach((d, i) => d.classList.toggle("on", i === idx));
-      updateMapLink(favs[idx]);
     }
   },
   { passive: true }

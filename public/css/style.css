@@ -247,17 +247,6 @@ body {
 .hero-empty svg { fill: var(--fav); stroke: var(--fav); }
 .hero-empty p { margin: 8px 0 0; color: rgba(247, 242, 231, 0.85); font-size: 14px; }
 
-.map-link-wrap { text-align: center; padding: 14px var(--gutter) 0; }
-.map-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: rgba(247, 242, 231, 0.62);
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: none;
-}
-
 /* ---- Recherche + géolocalisation ---- */
 .search-row {
   display: flex;
