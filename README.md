@@ -1,5 +1,7 @@
 # 🌊 Trempette
 
+**→ <https://trempette.alexhaederli.workers.dev/>**
+
 App web (PWA) **mobile-first** de consultation des températures des plages des
 lacs romands : **Léman, Neuchâtel, Bienne, Morat, Joux**.
 
