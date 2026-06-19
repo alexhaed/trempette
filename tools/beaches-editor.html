@@ -232,8 +232,8 @@
           <td class="col-coord"><input data-i="${i}" data-k="lat" value="${esc(r.lat)}" inputmode="decimal" /></td>
           <td class="col-coord"><input data-i="${i}" data-k="lng" value="${esc(r.lng)}" inputmode="decimal" /></td>
           <td class="col-act">
-            <a class="map" title="Voir sur OpenStreetMap" target="_blank" rel="noopener"
-               href="https://www.openstreetmap.org/?mlat=${r.lat}&mlon=${r.lng}#map=15/${r.lat}/${r.lng}">📍</a>
+            <a class="map" title="Voir sur Swisstopo" target="_blank" rel="noopener"
+               href="${mapUrl(r.lat, r.lng)}">📍</a>
             <button class="btn-del" data-del="${i}" title="Supprimer">✕</button>
           </td>`;
         tb.appendChild(tr);
@@ -249,7 +249,7 @@
       rows[i][k] = el.value;
       if (k === "lat" || k === "lng") {
         const map = el.closest("tr").querySelector("a.map");
-        map.href = `https://www.openstreetmap.org/?mlat=${rows[i].lat}&mlon=${rows[i].lng}#map=15/${rows[i].lat}/${rows[i].lng}`;
+        map.href = mapUrl(rows[i].lat, rows[i].lng);
       }
     });
     $("#rows").addEventListener("click", (e) => {
@@ -307,6 +307,22 @@
       const n = parseFloat(v);
       return Number.isFinite(n) ? n : null;
     };
+
+    // WGS84 → coordonnées suisses LV95 (formule approchée swisstopo) pour le lien
+    // carte map.geo.admin.ch (centre attendu en LV95, easting/northing).
+    function wgs84ToLv95(lat, lng) {
+      const phi = (lat * 3600 - 169028.66) / 10000;
+      const lam = (lng * 3600 - 26782.5) / 10000;
+      const E = 2600072.37 + 211455.93 * lam - 10938.51 * lam * phi - 0.36 * lam * phi * phi - 44.54 * lam ** 3;
+      const N = 1200147.07 + 308807.95 * phi + 3745.25 * lam * lam + 76.63 * phi * phi - 194.56 * lam * lam * phi + 119.79 * phi ** 3;
+      return { E: Math.round(E), N: Math.round(N) };
+    }
+    function mapUrl(lat, lng) {
+      const la = parseFloat(lat), ln = parseFloat(lng);
+      if (!Number.isFinite(la) || !Number.isFinite(ln)) return "#";
+      const { E, N } = wgs84ToLv95(la, ln);
+      return `https://map.geo.admin.ch/#/map?center=${E},${N}&z=14&crosshair=marker`;
+    }
 
     function serialize(lakes) {
       const beach = (b) => `{ "name": ${JSON.stringify(b.name)}, "lat": ${b.lat}, "lng": ${b.lng} }`;
