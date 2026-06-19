@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     :root {
       --turq-light: #34B4C2; --turq-deep: #0E6273; --turq-deepest: #08323D;
@@ -60,6 +62,16 @@
     #app { display: none; }
     .gate { max-width: 360px; margin: 12vh auto 0; text-align: center; }
     .gate input { text-align: center; margin: 14px 0; }
+    .modal { position: fixed; inset: 0; z-index: 50; background: rgba(4, 20, 26, 0.6); display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .modal[hidden] { display: none; }
+    .modal-card { width: 100%; max-width: 780px; background: var(--turq-deepest); border: 1px solid var(--glass-border); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 15px; border-bottom: 1px solid var(--glass-border); }
+    #map { height: 58vh; min-height: 340px; width: 100%; background: #0b2027; }
+    .leaflet-container { font-family: inherit; }
+    .modal-foot { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--glass-border); flex-wrap: wrap; }
+    .coords { font-variant-numeric: tabular-nums; color: var(--glacier); font-size: 13px; }
+    .ext { color: var(--glacier); font-size: 13px; text-decoration: none; }
+    .ext:hover { color: var(--creme); }
   </style>
 </head>
 <body>
@@ -104,6 +116,24 @@
       <button id="download">Télécharger le JSON</button>
     </div>
     <p class="msg" id="msg"></p>
+  </div>
+
+  <!-- Carte de positionnement (marqueur déplaçable) -->
+  <div class="modal" id="mapModal" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <span id="map-title"></span>
+        <button id="map-close" class="btn-del" title="Fermer">✕</button>
+      </div>
+      <div id="map"></div>
+      <div class="modal-foot">
+        <span class="coords" id="map-coords">—</span>
+        <span style="flex:1"></span>
+        <a id="map-ext" class="ext" target="_blank" rel="noopener">Swisstopo ↗</a>
+        <button id="map-cancel">Annuler</button>
+        <button id="map-ok" class="btn-primary">Utiliser ces coordonnées</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -202,7 +232,7 @@
           <td class="col-coord"><input data-i="${i}" data-k="lat" value="${esc(r.lat)}" inputmode="decimal" /></td>
           <td class="col-coord"><input data-i="${i}" data-k="lng" value="${esc(r.lng)}" inputmode="decimal" /></td>
           <td class="col-act">
-            <a class="map" title="Voir sur Swisstopo" target="_blank" rel="noopener" href="${mapUrl(r.lat, r.lng)}">📍</a>
+            <button class="map" data-map="${i}" title="Positionner sur la carte" style="border:none;background:none;font-size:16px;cursor:pointer;padding:0 6px">📍</button>
             <button class="btn-del" data-del="${i}" title="Supprimer">✕</button>
           </td>`;
         tb.appendChild(tr);
@@ -214,14 +244,12 @@
       const el = e.target, i = el.dataset.i, k = el.dataset.k;
       if (i == null) return;
       rows[i][k] = el.value;
-      if (k === "lat" || k === "lng")
-        el.closest("tr").querySelector("a.map").href = mapUrl(rows[i].lat, rows[i].lng);
     });
     $("#rows").addEventListener("click", (e) => {
-      const d = e.target.dataset.del;
-      if (d == null) return;
-      rows.splice(+d, 1);
-      render();
+      const del = e.target.dataset.del;
+      if (del != null) { rows.splice(+del, 1); render(); return; }
+      const mp = e.target.dataset.map;
+      if (mp != null) openMap(+mp);
     });
     $("#add").addEventListener("click", () => {
       rows.push({ name: "", lakeName: Object.keys(LAKE_META)[0] || "", group: "", lat: "", lng: "" });
@@ -320,6 +348,59 @@
       a.download = "lakes.json";
       a.click();
       URL.revokeObjectURL(a.href);
+    });
+
+    // --- Carte de positionnement (Leaflet + tuiles SWISSIMAGE swisstopo) ---
+    let _map = null, _marker = null, _mapRow = -1, _pick = null;
+
+    function openMap(i) {
+      _mapRow = i;
+      const r = rows[i];
+      const la = parseFloat(r.lat), ln = parseFloat(r.lng);
+      const has = Number.isFinite(la) && Number.isFinite(ln);
+      $("#map-title").textContent = (r.name || "Nouvelle plage") + " — glisse le marqueur ou clique sur la carte";
+      $("#mapModal").hidden = false;
+      if (!_map) {
+        _map = L.map("map");
+        L.tileLayer(
+          "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/3857/{z}/{x}/{y}.jpeg",
+          { maxZoom: 19, attribution: "© swisstopo" }
+        ).addTo(_map);
+        _map.on("click", (e) => setPick(e.latlng.lat, e.latlng.lng));
+      }
+      _map.setView(has ? [la, ln] : [46.8, 8.2], has ? 16 : 8);
+      setTimeout(() => _map.invalidateSize(), 60);
+      if (has) setPick(la, ln);
+      else clearPick();
+    }
+    function setPick(lat, lng) {
+      _pick = { lat, lng };
+      if (!_marker) {
+        _marker = L.marker([lat, lng], { draggable: true }).addTo(_map);
+        _marker.on("dragend", () => { const p = _marker.getLatLng(); setPick(p.lat, p.lng); });
+      } else {
+        _marker.setLatLng([lat, lng]);
+      }
+      $("#map-coords").textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      $("#map-ext").href = mapUrl(lat, lng);
+    }
+    function clearPick() {
+      _pick = null;
+      if (_marker) { _map.removeLayer(_marker); _marker = null; }
+      $("#map-coords").textContent = "Clique sur la carte pour placer le point";
+      $("#map-ext").removeAttribute("href");
+    }
+    function closeMap() { $("#mapModal").hidden = true; }
+    $("#map-close").addEventListener("click", closeMap);
+    $("#map-cancel").addEventListener("click", closeMap);
+    $("#mapModal").addEventListener("click", (e) => { if (e.target.id === "mapModal") closeMap(); });
+    $("#map-ok").addEventListener("click", () => {
+      if (_pick && _mapRow >= 0) {
+        rows[_mapRow].lat = +_pick.lat.toFixed(4);
+        rows[_mapRow].lng = +_pick.lng.toFixed(4);
+        render();
+      }
+      closeMap();
     });
 
     // Démarrage : si un token est déjà en mémoire, on tente directement.
