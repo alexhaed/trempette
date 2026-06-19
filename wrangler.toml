@@ -4,11 +4,12 @@ compatibility_date = "2026-06-01"
 workers_dev = true
 
 # Site statique servi depuis public/ (source unique).
-# run_worker_first → le Worker gère /data.json (servi depuis KV) avant les assets.
+# run_worker_first → le Worker gère /data.json (KV) et /admin (back-office) avant les assets.
 [assets]
 directory = "public"
 binding = "ASSETS"
-run_worker_first = ["/data.json"]
+run_worker_first = ["/data.json", "/admin", "/admin/*"]
+# (worker/admin.html est importé comme texte via la règle Text par défaut de Wrangler.)
 
 # Logs du Worker (fetch + cron) visibles dans le dashboard Cloudflare.
 [observability]
