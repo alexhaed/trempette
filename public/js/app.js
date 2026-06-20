@@ -285,7 +285,7 @@ function renderList() {
       state.query.trim()
         ? "Aucune plage ne correspond."
         : state.sort === "fav"
-          ? "Aucun favori — touchez l'étoile d'une plage."
+          ? "Aucun favori — toucher l'étoile d'une plage."
           : "Aucune plage trouvée."
     }</p>`;
     return;
