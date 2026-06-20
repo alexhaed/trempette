@@ -247,7 +247,11 @@
     });
     $("#rows").addEventListener("click", (e) => {
       const del = e.target.dataset.del;
-      if (del != null) { rows.splice(+del, 1); render(); return; }
+      if (del != null) {
+        const nom = rows[+del]?.name?.trim() || "cette plage";
+        if (confirm(`Supprimer « ${nom} » ?`)) { rows.splice(+del, 1); render(); }
+        return;
+      }
       const mp = e.target.dataset.map;
       if (mp != null) openMap(+mp);
     });
