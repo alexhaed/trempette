@@ -7,43 +7,43 @@
       {
         "group": "Genève / La Côte",
         "beaches": [
-          { "name": "Bains des Pâquis", "lat": 46.211, "lng": 6.1545 },
-          { "name": "Genève-Plage", "lat": 46.2126, "lng": 6.17 },
-          { "name": "Versoix", "lat": 46.287, "lng": 6.175 },
-          { "name": "Nyon", "lat": 46.378, "lng": 6.2411 },
-          { "name": "Rolle", "lat": 46.456, "lng": 6.34 },
-          { "name": "Morges", "lat": 46.503, "lng": 6.498 },
-          { "name": "Saint-Sulpice", "lat": 46.5062, "lng": 6.5575 },
-          { "name": "Préverenges", "lat": 46.5079, "lng": 6.5331 }
+          { "id": "geneva-bains-des-paquis", "name": "Bains des Pâquis", "lat": 46.211, "lng": 6.1545 },
+          { "id": "geneva-geneve-plage", "name": "Genève-Plage", "lat": 46.2126, "lng": 6.17 },
+          { "id": "geneva-versoix", "name": "Versoix", "lat": 46.287, "lng": 6.175 },
+          { "id": "geneva-nyon", "name": "Nyon", "lat": 46.378, "lng": 6.2411 },
+          { "id": "geneva-rolle", "name": "Rolle", "lat": 46.456, "lng": 6.34 },
+          { "id": "geneva-morges", "name": "Morges", "lat": 46.503, "lng": 6.498 },
+          { "id": "geneva-saint-sulpice", "name": "Saint-Sulpice", "lat": 46.5062, "lng": 6.5575 },
+          { "id": "geneva-preverenges", "name": "Préverenges", "lat": 46.5079, "lng": 6.5331 }
         ]
       },
       {
         "group": "Lausanne / Lavaux",
         "beaches": [
-          { "name": "Vidy", "lat": 46.508, "lng": 6.601 },
-          { "name": "Ouchy", "lat": 46.504, "lng": 6.627 },
-          { "name": "Pully", "lat": 46.504, "lng": 6.663 },
-          { "name": "Lutry", "lat": 46.501, "lng": 6.688 },
-          { "name": "Cully", "lat": 46.485, "lng": 6.73 }
+          { "id": "geneva-vidy", "name": "Vidy", "lat": 46.508, "lng": 6.601 },
+          { "id": "geneva-ouchy", "name": "Ouchy", "lat": 46.504, "lng": 6.627 },
+          { "id": "geneva-pully", "name": "Pully", "lat": 46.504, "lng": 6.663 },
+          { "id": "geneva-lutry", "name": "Lutry", "lat": 46.501, "lng": 6.688 },
+          { "id": "geneva-cully", "name": "Cully", "lat": 46.485, "lng": 6.73 }
         ]
       },
       {
         "group": "Riviera / Chablais",
         "beaches": [
-          { "name": "Vevey", "lat": 46.456, "lng": 6.846 },
-          { "name": "La Tour-de-Peilz", "lat": 46.4494, "lng": 6.8564 },
-          { "name": "Montreux", "lat": 46.4321, "lng": 6.9071 },
-          { "name": "Villeneuve", "lat": 46.3979, "lng": 6.9213 },
-          { "name": "Le Bouveret", "lat": 46.3872, "lng": 6.8559 }
+          { "id": "geneva-vevey", "name": "Vevey", "lat": 46.456, "lng": 6.846 },
+          { "id": "geneva-la-tour-de-peilz", "name": "La Tour-de-Peilz", "lat": 46.4494, "lng": 6.8564 },
+          { "id": "geneva-montreux", "name": "Montreux", "lat": 46.4321, "lng": 6.9071 },
+          { "id": "geneva-villeneuve", "name": "Villeneuve", "lat": 46.3979, "lng": 6.9213 },
+          { "id": "geneva-le-bouveret", "name": "Le Bouveret", "lat": 46.3872, "lng": 6.8559 }
         ]
       },
       {
         "group": "France",
         "beaches": [
-          { "name": "Yvoire", "lat": 46.3716, "lng": 6.3297 },
-          { "name": "Excenevex", "lat": 46.367, "lng": 6.3601 },
-          { "name": "Thonon-les-Bains", "lat": 46.3774, "lng": 6.4769 },
-          { "name": "Évian-les-Bains", "lat": 46.4038, "lng": 6.588 }
+          { "id": "geneva-yvoire", "name": "Yvoire", "lat": 46.3716, "lng": 6.3297 },
+          { "id": "geneva-excenevex", "name": "Excenevex", "lat": 46.367, "lng": 6.3601 },
+          { "id": "geneva-thonon-les-bains", "name": "Thonon-les-Bains", "lat": 46.3774, "lng": 6.4769 },
+          { "id": "geneva-evian-les-bains", "name": "Évian-les-Bains", "lat": 46.4038, "lng": 6.588 }
         ]
       }
     ]
@@ -53,15 +53,15 @@
     "model": "mitgcm",
     "lake": "neuchatel",
     "beaches": [
-      { "name": "Neuchâtel", "lat": 46.995, "lng": 6.9507 },
-      { "name": "Pointe du Grain", "lat": 46.9254, "lng": 6.8325 },
-      { "name": "Grandson", "lat": 46.8097, "lng": 6.6532 },
-      { "name": "Yverdon-les-Bains", "lat": 46.7868, "lng": 6.655 },
-      { "name": "Yvonand", "lat": 46.808, "lng": 6.738 },
-      { "name": "Cheyres", "lat": 46.8099, "lng": 6.7659 },
-      { "name": "Estavayer-le-Lac", "lat": 46.8542, "lng": 6.8411 },
-      { "name": "Portalban", "lat": 46.928, "lng": 6.945 },
-      { "name": "Cudrefin", "lat": 46.9577, "lng": 7.0106 }
+      { "id": "neuchatel-neuchatel", "name": "Neuchâtel", "lat": 46.995, "lng": 6.9507 },
+      { "id": "neuchatel-pointe-du-grain", "name": "Pointe du Grain", "lat": 46.9254, "lng": 6.8325 },
+      { "id": "neuchatel-grandson", "name": "Grandson", "lat": 46.8097, "lng": 6.6532 },
+      { "id": "neuchatel-yverdon-les-bains", "name": "Yverdon-les-Bains", "lat": 46.7868, "lng": 6.655 },
+      { "id": "neuchatel-yvonand", "name": "Yvonand", "lat": 46.808, "lng": 6.738 },
+      { "id": "neuchatel-cheyres", "name": "Cheyres", "lat": 46.8099, "lng": 6.7659 },
+      { "id": "neuchatel-estavayer-le-lac", "name": "Estavayer-le-Lac", "lat": 46.8542, "lng": 6.8411 },
+      { "id": "neuchatel-portalban", "name": "Portalban", "lat": 46.928, "lng": 6.945 },
+      { "id": "neuchatel-cudrefin", "name": "Cudrefin", "lat": 46.9577, "lng": 7.0106 }
     ]
   },
   {
@@ -69,9 +69,9 @@
     "model": "delft3d-flow",
     "lake": "biel",
     "beaches": [
-      { "name": "Bienne", "lat": 47.1301, "lng": 7.2236 },
-      { "name": "Douanne", "lat": 47.0924, "lng": 7.1587 },
-      { "name": "La Neuveville", "lat": 47.0648, "lng": 7.1096 }
+      { "id": "biel-bienne", "name": "Bienne", "lat": 47.1301, "lng": 7.2236 },
+      { "id": "biel-douanne", "name": "Douanne", "lat": 47.0924, "lng": 7.1587 },
+      { "id": "biel-la-neuveville", "name": "La Neuveville", "lat": 47.0648, "lng": 7.1096 }
     ]
   },
   {
@@ -79,9 +79,9 @@
     "model": "delft3d-flow",
     "lake": "murten",
     "beaches": [
-      { "name": "Morat", "lat": 46.929, "lng": 7.108 },
-      { "name": "Avenches", "lat": 46.918, "lng": 7.05 },
-      { "name": "Praz (Vully)", "lat": 46.945, "lng": 7.085 }
+      { "id": "murten-morat", "name": "Morat", "lat": 46.929, "lng": 7.108 },
+      { "id": "murten-avenches", "name": "Avenches", "lat": 46.918, "lng": 7.05 },
+      { "id": "murten-praz-vully", "name": "Praz (Vully)", "lat": 46.945, "lng": 7.085 }
     ]
   },
   {
@@ -89,9 +89,9 @@
     "model": "delft3d-flow",
     "lake": "joux",
     "beaches": [
-      { "name": "Le Pont", "lat": 46.666, "lng": 6.321 },
-      { "name": "L'Abbaye", "lat": 46.648, "lng": 6.295 },
-      { "name": "Le Rocheray", "lat": 46.6209, "lng": 6.25 }
+      { "id": "joux-le-pont", "name": "Le Pont", "lat": 46.666, "lng": 6.321 },
+      { "id": "joux-l-abbaye", "name": "L'Abbaye", "lat": 46.648, "lng": 6.295 },
+      { "id": "joux-le-rocheray", "name": "Le Rocheray", "lat": 46.6209, "lng": 6.25 }
     ]
   }
 ]

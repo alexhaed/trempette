@@ -11,7 +11,10 @@
 // fenêtre ne couvre plus l'instant présent ; entre-temps il réinterpole en local.
 
 // Aplatit la structure des lacs en une liste de plages, chacune portant les
-// infos de son lac (et son groupe régional pour le Léman). id stable = lake+slug.
+// infos de son lac (et son groupe régional pour le Léman).
+// id STABLE : on prend `b.id` explicite (catalogue), pour que les favoris des
+// utilisateurs survivent à un renommage ou changement de lac. Repli sur
+// `lake+slug` pour les anciens catalogues sans id (rétro-compat).
 export function flattenLakes(lakes) {
   const out = [];
   for (const lk of lakes) {
@@ -27,7 +30,7 @@ export function flattenLakes(lakes) {
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/(^-|-$)/g, "");
         out.push({
-          id: `${lk.lake}-${slug}`,
+          id: b.id || `${lk.lake}-${slug}`,
           name: b.name,
           lat: b.lat,
           lng: b.lng,

@@ -196,7 +196,7 @@
           : [{ group: null, beaches: lk.beaches }];
         for (const g of groups)
           for (const b of g.beaches)
-            rows.push({ name: b.name, lakeName: lk.name, group: g.group || "", lat: b.lat, lng: b.lng });
+            rows.push({ id: b.id, name: b.name, lakeName: lk.name, group: g.group || "", lat: b.lat, lng: b.lng });
       }
       render();
     }
@@ -218,6 +218,25 @@
       if (!Number.isFinite(la) || !Number.isFinite(ln)) return "#";
       const { E, N } = wgs84ToLv95(la, ln);
       return `https://map.geo.admin.ch/#/map?center=${E},${N}&z=14&crosshair=marker`;
+    }
+
+    const slugify = (s) =>
+      String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+        .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+    // Attribue un id STABLE aux plages qui n'en ont pas (nouvelles), sans jamais
+    // toucher à un id existant → les favoris des utilisateurs sont préservés.
+    function assignIds() {
+      const used = new Set(rows.map((r) => r.id).filter(Boolean));
+      for (const r of rows) {
+        if (r.id) continue;
+        const lake = (LAKE_META[r.lakeName] || {}).lake || "x";
+        const base = `${lake}-${slugify(r.name) || "plage"}`;
+        let id = base, n = 2;
+        while (used.has(id)) id = `${base}-${n++}`;
+        r.id = id;
+        used.add(id);
+      }
     }
 
     function render() {
@@ -263,6 +282,7 @@
     });
 
     function rowsToLakes() {
+      assignIds();
       const order = [], byLake = new Map();
       for (const r of rows) {
         if (!byLake.has(r.lakeName)) { byLake.set(r.lakeName, []); order.push(r.lakeName); }
@@ -277,7 +297,7 @@
           const g = (r.group || "").trim();
           if (g) any = true;
           if (!bg.has(g)) { bg.set(g, []); go.push(g); }
-          bg.get(g).push({ name: r.name.trim(), lat: num(r.lat), lng: num(r.lng) });
+          bg.get(g).push({ id: r.id, name: r.name.trim(), lat: num(r.lat), lng: num(r.lng) });
         }
         const lk = { name: lakeName, model: meta.model, lake: meta.lake };
         if (any) lk.regions = go.map((g) => ({ group: g || null, beaches: bg.get(g) }));
@@ -299,7 +319,7 @@
     }
 
     function serialize(lakes) {
-      const beach = (b) => `{ "name": ${JSON.stringify(b.name)}, "lat": ${b.lat}, "lng": ${b.lng} }`;
+      const beach = (b) => `{ "id": ${JSON.stringify(b.id)}, "name": ${JSON.stringify(b.name)}, "lat": ${b.lat}, "lng": ${b.lng} }`;
       const L = ["["];
       lakes.forEach((lk, li) => {
         const lc = li < lakes.length - 1 ? "," : "";
