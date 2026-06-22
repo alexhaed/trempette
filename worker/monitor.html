@@ -27,6 +27,10 @@
     h1 { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.02em; margin: 0 0 4px; }
     .sub { color: var(--glacier); font-size: 13px; margin: 0 0 22px; }
     a.nav { color: var(--glacier); font-size: 13px; }
+    .adminnav { display: flex; gap: 8px; margin: 0 0 22px; flex-wrap: wrap; }
+    .adminnav a { font-size: 13px; font-weight: 600; color: var(--glacier); text-decoration: none; padding: 6px 13px; border: 1px solid var(--glass-border); border-radius: 999px; }
+    .adminnav a:hover { background: rgba(247, 242, 231, 0.1); color: var(--creme); }
+    .adminnav a.active { background: var(--turq-light); border-color: transparent; color: #06262e; }
     button { font-family: inherit; cursor: pointer; border-radius: 10px; border: 1px solid var(--glass-border);
       background: var(--glass); color: var(--creme); font-size: 14px; font-weight: 600; padding: 9px 14px; }
     button:hover { background: rgba(247,242,231,.16); } button:active { transform: scale(.98); }
@@ -66,10 +70,11 @@
   <div class="wrap" id="app">
     <button id="logout">Déconnexion</button>
     <h1><img class="logo" src="/img/logo.png" alt="" />Monitoring de la correction</h1>
-    <p class="sub">
-      Écart mesure réelle ↔ modèle Alplakes aux bouées, et correction appliquée aux plages du Léman.
-      &nbsp;·&nbsp; <a class="nav" href="/admin">← Éditeur des plages</a>
-    </p>
+    <nav class="adminnav">
+      <a href="/admin/monitor" class="active" aria-current="page">Moniteur</a>
+      <a href="/admin/plages">Éditeur des plages</a>
+    </nav>
+    <p class="sub">Écart mesure réelle ↔ modèle Alplakes aux bouées, et correction appliquée aux plages du Léman.</p>
 
     <div class="ranges" id="ranges">
       <button data-h="24">24 h</button>

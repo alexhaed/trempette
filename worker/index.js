@@ -3,10 +3,11 @@
 //  - régénère data.json toutes les 30 min (Cron Trigger) et le stocke dans KV ;
 //  - sert /data.json depuis KV (route gérée par le Worker via run_worker_first
 //    dans wrangler.toml ; data.json n'est pas un asset statique) ;
-//  - back-office /admin (protégé par secret) pour éditer le catalogue des plages.
+//  - back-office /admin (protégé par secret) : moniteur des corrections par défaut
+//    (/admin = /admin/monitor) et éditeur du catalogue sur /admin/plages.
 //
 // Source de vérité du catalogue : KV (clé "catalogue"), repli sur le lakes.json
-// embarqué si KV vide. L'éditeur /admin écrit dans KV → le run suivant rebâtit.
+// embarqué si KV vide. L'éditeur /admin/plages écrit dans KV → le run suivant rebâtit.
 //
 // Stratégie de récupération (voir scripts/build-data.mjs) :
 //  - Air/vent (open-meteo) : rafraîchis à CHAQUE cycle (30 min).
@@ -206,17 +207,20 @@ function validCatalogue(c) {
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json; charset=utf-8" } });
 
+const htmlPage = (html) =>
+  new Response(html, {
+    headers: { "content-type": "text/html; charset=utf-8", "x-robots-tag": "noindex" },
+  });
+
 async function handleAdmin(request, env, ctx, pathname) {
-  if (pathname === "/admin" || pathname === "/admin/") {
-    return new Response(adminHtml, {
-      headers: { "content-type": "text/html; charset=utf-8", "x-robots-tag": "noindex" },
-    });
+  // Page par défaut de /admin = le moniteur (alias /admin/monitor conservé).
+  if (pathname === "/admin" || pathname === "/admin/" || pathname === "/admin/monitor" || pathname === "/admin/monitor/") {
+    return htmlPage(monitorHtml);
   }
 
-  if (pathname === "/admin/monitor" || pathname === "/admin/monitor/") {
-    return new Response(monitorHtml, {
-      headers: { "content-type": "text/html; charset=utf-8", "x-robots-tag": "noindex" },
-    });
+  // Éditeur des plages, désormais sur son propre chemin.
+  if (pathname === "/admin/plages" || pathname === "/admin/plages/") {
+    return htmlPage(adminHtml);
   }
 
   if (pathname === "/admin/history") {
