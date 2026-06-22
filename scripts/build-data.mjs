@@ -168,6 +168,168 @@ export async function fetchWeatherAll(fetchFn, beaches, tries = 1) {
   }));
 }
 
+// ---------------------------------------------------------------------------
+// Correction de biais du Léman par mesures in-situ live (LéXPLORE + Buchillon).
+//
+// Le modèle Alplakes a un biais systématique qui dérive selon la saison et
+// l'heure (mesuré : ~+2 °C au printemps, ~−1.5 °C en été, ±0.5 °C sur la
+// journée). On le corrige en ajoutant à chaque plage du Léman l'écart
+// « mesure réelle − modèle » constaté aux 2 seules bouées in-situ live du lac,
+// pondéré par 1/distance² (IDW). Avec 2 points au large : correction quasi
+// locale près d'une bouée, sinon ~moyenne du lac. NE corrige PAS le sur-
+// réchauffement des hauts-fonds au bord (aucune bouée ne le voit).
+//
+// Source mesures : Datalakes (Eawag), pas de CORS non plus → côté Worker.
+// ---------------------------------------------------------------------------
+
+const DATALAKES = "https://api.datalakes-eawag.ch";
+
+// Distance en mètres (Haversine) — pour la pondération IDW.
+function haversine(aLat, aLng, bLat, bLng) {
+  const R = 6371000;
+  const r = Math.PI / 180;
+  const dLat = (bLat - aLat) * r;
+  const dLng = (bLng - aLng) * r;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(aLat * r) * Math.cos(bLat * r) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+// Les 2 bouées du Léman. `lake/model` = mêmes que les plages (delft3d/geneva),
+// donc le modèle au point de la bouée passe par le même cache de fenêtres.
+// `parse` extrait la dernière mesure de surface valide du fichier Datalakes.
+export const LEMAN_BUOYS = [
+  {
+    id: "_buoy_lexplore",
+    name: "LéXPLORE",
+    lat: 46.5,
+    lng: 6.67,
+    model: "delft3d-flow",
+    lake: "geneva",
+    dataset: 448, // chaîne de température, grille z[profondeur][temps], surface ~0.25 m
+    parse: (g) => {
+      const { x, y, z } = g || {};
+      if (!Array.isArray(x) || !Array.isArray(y) || !Array.isArray(z)) return null;
+      let di = 0,
+        best = Infinity;
+      for (let i = 0; i < y.length; i++) {
+        const d = Math.abs(y[i] - 0.25);
+        if (d < best) {
+          best = d;
+          di = i;
+        }
+      }
+      return latestValid(x, z[di]);
+    },
+  },
+  {
+    id: "_buoy_buchillon",
+    name: "Buchillon",
+    lat: 46.459,
+    lng: 6.399,
+    model: "delft3d-flow",
+    lake: "geneva",
+    dataset: 597, // station Buchillon, axe `y` = wt1 (température eau à 1 m)
+    parse: (g) => latestValid(g?.x, g?.y),
+  },
+];
+
+// Dernière valeur finie et plausible (°C) d'une série, avec son horodatage.
+// `x` = secondes depuis 1970 (convention Datalakes).
+function latestValid(x, series) {
+  if (!Array.isArray(x) || !Array.isArray(series)) return null;
+  for (let k = x.length - 1; k >= 0; k--) {
+    const v = series[k];
+    if (Number.isFinite(v) && v > -2 && v < 40) return { time: x[k] * 1000, temp: v };
+  }
+  return null;
+}
+
+// Une fenêtre modèle en cache encadre-t-elle encore `t` (besoin d'un point après) ?
+function windowUsable(win, t) {
+  const a = win?.times;
+  return Array.isArray(a) && a.length >= 2 && t >= a[0] && t < a[a.length - 1];
+}
+
+// Télécharge la dernière mesure in-situ d'une bouée (liste des fichiers → fichier
+// JSON le plus récent → parse). 2 sous-requêtes par bouée.
+async function fetchBuoyInsitu(fetchFn, buoy, tries) {
+  const files = await fetchJSON(fetchFn, `${DATALAKES}/files?datasets_id=${buoy.dataset}`, tries);
+  const js = (Array.isArray(files) ? files : []).filter((f) => f.filetype === "json" && f.maxdatetime);
+  if (!js.length) return null;
+  js.sort((a, b) => (a.maxdatetime < b.maxdatetime ? 1 : -1));
+  const g = await fetchJSON(fetchFn, `${DATALAKES}/download/${js[0].id}`, tries);
+  return buoy.parse(g);
+}
+
+// Calcule le biais (mesure − modèle) à chaque bouée du Léman, à l'instant de la
+// mesure (comparaison à profil égal dans le temps). Réutilise le cache de
+// fenêtres `cache` (clés `_buoy_*`) et la détection de run quotidien `endDates`.
+// Écarte une bouée si : pas de modèle, mesure absente, mesure périmée (>6 h) ou
+// biais aberrant (>5 °C, probable défaut capteur).
+export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 1) {
+  const biases = [];
+  for (const buoy of LEMAN_BUOYS) {
+    let c = cache[buoy.id];
+    const runEnd = endDates[`${buoy.model}/${buoy.lake}`];
+    const stale = !c || (runEnd && c.runEnd !== runEnd) || !windowUsable(c, now);
+    if (stale) {
+      try {
+        const win = await fetchWindow(fetchFn, buoy, now, tries);
+        if (win.times.length) {
+          win.runEnd = runEnd ?? null;
+          win.lat = buoy.lat;
+          win.lng = buoy.lng;
+          cache[buoy.id] = win;
+          c = win;
+        }
+      } catch {
+        /* modèle indisponible ce cycle → bouée ignorée */
+      }
+    }
+    let insitu = null;
+    try {
+      insitu = await fetchBuoyInsitu(fetchFn, buoy, tries);
+    } catch {
+      /* mesure indisponible (panne/maintenance) → bouée ignorée */
+    }
+    if (!c || !insitu) continue;
+    if (now - insitu.time > 6 * 3600e3) continue; // mesure trop ancienne
+    const modelAtObs = interpolate(c, insitu.time).water; // modèle à l'heure de la mesure
+    if (modelAtObs == null) continue;
+    const bias = insitu.temp - modelAtObs;
+    if (Math.abs(bias) > 5) continue; // garde-fou : biais aberrant
+    biases.push({ name: buoy.name, lat: buoy.lat, lng: buoy.lng, bias, insitu: insitu.temp, model: modelAtObs });
+  }
+  return biases;
+}
+
+// Applique la correction IDW (in place) aux plages du Léman uniquement.
+// Renseigne `water` corrigé, `waterModel` (valeur brute, transparence) et `bias`.
+// Décale aussi `next.temp` du même offset pour rester cohérent.
+export function applyLemanBias(beaches, out, biases) {
+  if (!biases || !biases.length) return;
+  for (let i = 0; i < beaches.length; i++) {
+    const b = beaches[i];
+    if (b.lake !== "geneva") continue;
+    const o = out[i];
+    if (!o || o.water == null) continue;
+    let num = 0,
+      den = 0;
+    for (const bp of biases) {
+      const w = 1 / Math.max(haversine(b.lat, b.lng, bp.lat, bp.lng), 1) ** 2;
+      num += w * bp.bias;
+      den += w;
+    }
+    const corr = num / den;
+    o.waterModel = o.water;
+    o.water = round1(o.water + corr);
+    o.bias = round2(corr);
+    if (o.next && o.next.temp != null) o.next.temp = round1(o.next.temp + corr);
+  }
+}
+
 // Exécute des tâches async avec une concurrence limitée (courtois envers les
 // API publiques, et compatible avec la limite de sous-requêtes d'un Worker).
 export async function pool(items, concurrency, worker) {

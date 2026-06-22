@@ -23,6 +23,8 @@ import {
   fetchLakeEndDates,
   fetchWeatherAll,
   pool,
+  computeLemanBiases,
+  applyLemanBias,
 } from "../scripts/build-data.mjs";
 
 const DATA_KEY = "data";
@@ -87,6 +89,15 @@ async function regenerate(env) {
     }
   });
 
+  // 3bis. Biais in-situ du Léman (bouées LéXPLORE + Buchillon), via le même cache
+  // de fenêtres. Échec/panne d'une bouée → elle est simplement ignorée.
+  let lemanBiases = [];
+  try {
+    lemanBiases = await computeLemanBiases(fetch, now, cache, endDates, TRIES);
+  } catch {
+    /* correction indisponible ce cycle : on sert le modèle brut */
+  }
+
   // 4. Payload : interpolation locale + météo fraîche.
   const out = beaches.map((b, i) => {
     const wi = interpolate(cache[b.id], now);
@@ -107,6 +118,10 @@ async function regenerate(env) {
       windDir: wx.windDir,
     };
   });
+
+  // 4bis. Correction de biais des plages du Léman (IDW des bouées). No-op si
+  // aucune bouée exploitable ce cycle → la valeur modèle brute est conservée.
+  applyLemanBias(beaches, out, lemanBiases);
 
   // 5. Filet de sécurité : garde la dernière valeur connue si un champ manque.
   try {
@@ -134,6 +149,12 @@ async function regenerate(env) {
   const payload = {
     updatedAt: new Date(now).toISOString(),
     counts: { total: out.length, water: out.filter((b) => b.water != null).length },
+    lemanBiases: lemanBiases.map((b) => ({
+      name: b.name,
+      bias: Math.round(b.bias * 100) / 100,
+      insitu: Math.round(b.insitu * 10) / 10,
+      model: Math.round(b.model * 10) / 10,
+    })),
     beaches: out,
   };
 
