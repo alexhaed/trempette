@@ -16,6 +16,7 @@
 
 import bundledLakes from "../scripts/lakes.json";
 import adminHtml from "./admin.html";
+import monitorHtml from "./monitor.html";
 import {
   flattenLakes,
   fetchWindow,
@@ -25,11 +26,13 @@ import {
   pool,
   computeLemanBiases,
   applyLemanBias,
+  pushHistory,
 } from "../scripts/build-data.mjs";
 
 const DATA_KEY = "data";
 const WINDOWS_KEY = "windows";
 const CATALOGUE_KEY = "catalogue";
+const HISTORY_KEY = "history";
 
 // Plan GRATUIT : ≤ 50 sous-requêtes/invocation. Alplakes throttle le parallèle → séquentiel.
 const TRIES = 1;
@@ -158,6 +161,15 @@ async function regenerate(env) {
     beaches: out,
   };
 
+  // 6. Historique de monitoring (niveau bouées + agrégat), pour /admin/monitor.
+  try {
+    const history = (await env.DATA.get(HISTORY_KEY, "json")) || [];
+    const updated = pushHistory(history, now, lemanBiases, out);
+    await env.DATA.put(HISTORY_KEY, JSON.stringify(updated));
+  } catch {
+    /* historique best-effort : ne bloque jamais la génération des données */
+  }
+
   await env.DATA.put(WINDOWS_KEY, JSON.stringify(cache));
   await env.DATA.put(DATA_KEY, JSON.stringify(payload));
   return payload;
@@ -199,6 +211,18 @@ async function handleAdmin(request, env, ctx, pathname) {
     return new Response(adminHtml, {
       headers: { "content-type": "text/html; charset=utf-8", "x-robots-tag": "noindex" },
     });
+  }
+
+  if (pathname === "/admin/monitor" || pathname === "/admin/monitor/") {
+    return new Response(monitorHtml, {
+      headers: { "content-type": "text/html; charset=utf-8", "x-robots-tag": "noindex" },
+    });
+  }
+
+  if (pathname === "/admin/history") {
+    if (!authorized(request, env)) return json({ error: "unauthorized" }, 401);
+    const history = (await env.DATA.get(HISTORY_KEY, "json")) || [];
+    return json(history);
   }
 
   if (pathname === "/admin/catalogue") {

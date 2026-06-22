@@ -330,6 +330,36 @@ export function applyLemanBias(beaches, out, biases) {
   }
 }
 
+// Rétention de l'historique de monitoring (clé KV "history").
+const HISTORY_RETENTION_MS = 90 * 24 * 3600e3;
+// Anti-doublon : si le dernier point date de < 10 min, on le remplace plutôt
+// que d'empiler (une sauvegarde admin peut déclencher un regen hors cron).
+const HISTORY_MIN_GAP_MS = 10 * 60e3;
+
+// Ajoute un point compact à l'historique et élague au-delà de la rétention.
+// Niveau bouées + agrégat (pas par plage). Renvoie le tableau (à ré-écrire en KV).
+// Un point est TOUJOURS écrit, même sans bouée exploitable (n=0) → on trace les pannes.
+export function pushHistory(history, now, biases, out) {
+  const arr = Array.isArray(history) ? history : [];
+  const by = Object.fromEntries((biases || []).map((b) => [b.name, b]));
+  const buoy = (b) => (b ? { i: round1(b.insitu), m: round1(b.model), b: round2(b.bias) } : null);
+  const corrected = (out || []).filter((o) => o && o.bias != null);
+  const meanCorr = corrected.length
+    ? corrected.reduce((s, o) => s + o.bias, 0) / corrected.length
+    : null;
+  const point = {
+    t: now,
+    lex: buoy(by["LéXPLORE"]),
+    buch: buoy(by["Buchillon"]),
+    n: corrected.length,
+    c: round2(meanCorr),
+  };
+  if (arr.length && now - arr[arr.length - 1].t < HISTORY_MIN_GAP_MS) arr.pop();
+  arr.push(point);
+  const cutoff = now - HISTORY_RETENTION_MS;
+  return arr.filter((p) => p.t >= cutoff);
+}
+
 // Exécute des tâches async avec une concurrence limitée (courtois envers les
 // API publiques, et compatible avec la limite de sous-requêtes d'un Worker).
 export async function pool(items, concurrency, worker) {

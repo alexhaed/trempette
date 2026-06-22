@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "trempette",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["wrangler", "dev", "--local", "--port", "8790"],
+      "port": 8790
+    }
+  ]
+}

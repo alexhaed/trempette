@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Monitoring correction — Trempette</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    :root {
+      --turq-light: #34B4C2; --turq-deep: #0E6273; --turq-deepest: #08323D;
+      --creme: #F7F2E7; --coral: #F46B5A; --glacier: #BDEAF0;
+      --glass: rgba(247, 242, 231, 0.08); --glass-border: rgba(247, 242, 231, 0.18);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; color: var(--creme);
+      background: linear-gradient(176deg, #0E6273 0%, #08323D 60%) fixed, var(--turq-deepest);
+      min-height: 100vh; padding: 28px 18px 80px;
+    }
+    .wrap { max-width: 1000px; margin: 0 auto; position: relative; }
+    .logo { width: 30px; height: 30px; border-radius: 8px; vertical-align: -7px; margin-right: 9px; box-shadow: 0 3px 10px rgba(0,0,0,.25); }
+    #logout { position: absolute; top: 0; right: 0; padding: 6px 11px; font-size: 12px; }
+    h1 { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.02em; margin: 0 0 4px; }
+    .sub { color: var(--glacier); font-size: 13px; margin: 0 0 22px; }
+    a.nav { color: var(--glacier); font-size: 13px; }
+    button { font-family: inherit; cursor: pointer; border-radius: 10px; border: 1px solid var(--glass-border);
+      background: var(--glass); color: var(--creme); font-size: 14px; font-weight: 600; padding: 9px 14px; }
+    button:hover { background: rgba(247,242,231,.16); } button:active { transform: scale(.98); }
+    .btn-primary { background: var(--coral); border-color: transparent; color: #fff; }
+    .btn-primary:hover { background: #e35a49; }
+    input { width: 100%; padding: 8px 9px; font-size: 14px; font-family: inherit; color: var(--creme);
+      background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px; }
+    input:focus { outline: none; border-color: var(--turq-light); }
+    #app { display: none; }
+    .gate { max-width: 360px; margin: 12vh auto 0; text-align: center; }
+    .gate input { text-align: center; margin: 14px 0; }
+    .msg { font-size: 13px; margin: 10px 0; min-height: 1.2em; }
+    .msg.err { color: #ffb3a8; }
+    .ranges { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 18px; }
+    .ranges button.active { background: var(--turq-light); border-color: transparent; color: #06262e; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 22px; }
+    .card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 14px; padding: 12px 14px; }
+    .card .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--glacier); }
+    .card .val { font-size: 24px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .card .hint { font-size: 12px; color: var(--glacier); margin-top: 2px; }
+    .panel { background: rgba(8,50,61,.5); border: 1px solid var(--glass-border); border-radius: 16px; padding: 14px 16px; margin-bottom: 18px; }
+    .panel h2 { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 15px; margin: 0 0 4px; }
+    .panel p { font-size: 12px; color: var(--glacier); margin: 0 0 12px; }
+    .chartbox { position: relative; height: 280px; }
+    .updated { font-size: 12px; color: var(--glacier); }
+  </style>
+</head>
+<body>
+  <div class="wrap gate" id="gate">
+    <h1><img class="logo" src="/img/logo.png" alt="" />Monitoring</h1>
+    <p class="sub">Accès protégé. Entre le mot de passe d'administration.</p>
+    <input type="password" id="token" placeholder="Mot de passe" autocomplete="current-password" />
+    <button class="btn-primary" id="login" style="width:100%">Entrer</button>
+    <p class="msg err" id="gate-msg"></p>
+  </div>
+
+  <div class="wrap" id="app">
+    <button id="logout">Déconnexion</button>
+    <h1><img class="logo" src="/img/logo.png" alt="" />Monitoring de la correction</h1>
+    <p class="sub">
+      Écart mesure réelle ↔ modèle Alplakes aux bouées, et correction appliquée aux plages du Léman.
+      &nbsp;·&nbsp; <a class="nav" href="/admin">← Éditeur des plages</a>
+    </p>
+
+    <div class="ranges" id="ranges">
+      <button data-h="24">24 h</button>
+      <button data-h="168" class="active">7 jours</button>
+      <button data-h="720">30 jours</button>
+      <button data-h="0">Tout</button>
+    </div>
+
+    <div class="cards" id="cards"></div>
+
+    <div class="panel">
+      <h2>Mesure réelle vs modèle</h2>
+      <p>Lignes pleines = mesure in-situ (bouées) · lignes pointillées = modèle Alplakes au même point.</p>
+      <div class="chartbox"><canvas id="chartTemp" role="img" aria-label="Températures mesurées et modélisées aux bouées"></canvas></div>
+    </div>
+
+    <div class="panel">
+      <h2>Biais et correction</h2>
+      <p>Biais = mesure − modèle (positif : modèle trop froid ; négatif : trop chaud). « Correction moyenne » = offset moyen appliqué aux plages.</p>
+      <div class="chartbox"><canvas id="chartBias" role="img" aria-label="Biais aux bouées et correction moyenne appliquée"></canvas></div>
+    </div>
+
+    <p class="updated" id="updated"></p>
+  </div>
+
+  <script>
+    const $ = (s) => document.querySelector(s);
+    const TOKEN_KEY = "trempette_admin_token";
+    let TOKEN = localStorage.getItem(TOKEN_KEY) || "";
+    let HISTORY = [];
+    let rangeH = 168;
+    let chartTemp, chartBias;
+
+    const fmt = (n, d = 2) => (n == null ? "—" : (n >= 0 && d === 2 ? "+" : "") + n.toFixed(d));
+    const tlabel = (t) =>
+      new Date(t).toLocaleString("fr-CH", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+    async function loadHistory() {
+      const r = await fetch("/admin/history", { headers: { "X-Admin-Token": TOKEN } });
+      if (r.status === 401) {
+        localStorage.removeItem(TOKEN_KEY);
+        throw new Error("Mot de passe incorrect.");
+      }
+      if (!r.ok) throw new Error("Erreur " + r.status);
+      return await r.json();
+    }
+
+    function inRange(p) {
+      if (!rangeH) return true;
+      return p.t >= Date.now() - rangeH * 3600e3;
+    }
+
+    function mean(xs) {
+      const v = xs.filter((x) => x != null);
+      return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
+    }
+
+    function render() {
+      const pts = HISTORY.filter(inRange);
+      const last = HISTORY[HISTORY.length - 1] || null;
+      const last24 = HISTORY.filter((p) => p.t >= Date.now() - 24 * 3600e3);
+      const pannes = pts.filter((p) => !p.lex || !p.buch).length;
+
+      // Cartes récap
+      const cards = [
+        ["Biais LéXPLORE", last && last.lex ? fmt(last.lex.b) + " °C" : "—", "dernier point"],
+        ["Biais Buchillon", last && last.buch ? fmt(last.buch.b) + " °C" : "—", "dernier point"],
+        ["Correction moy.", last && last.c != null ? fmt(last.c) + " °C" : "—", last ? last.n + " plages" : ""],
+        ["Biais moyen 24 h", fmt(mean(last24.flatMap((p) => [p.lex && p.lex.b, p.buch && p.buch.b])), 2) + " °C", "2 bouées"],
+        ["Cycles sans bouée", String(pannes), "sur période affichée"],
+        ["Points", String(pts.length), "depuis " + (HISTORY[0] ? tlabel(HISTORY[0].t) : "—")],
+      ];
+      $("#cards").innerHTML = cards
+        .map((c) => `<div class="card"><div class="lbl">${c[0]}</div><div class="val">${c[1]}</div><div class="hint">${c[2]}</div></div>`)
+        .join("");
+
+      const labels = pts.map((p) => tlabel(p.t));
+      const col = { lexI: "#34B4C2", lexM: "#34B4C2", buchI: "#F46B5A", buchM: "#F46B5A", corr: "#BDEAF0" };
+      const baseLine = { pointRadius: 0, tension: 0.25, borderWidth: 2, spanGaps: false };
+
+      const tempData = {
+        labels,
+        datasets: [
+          { ...baseLine, label: "LéXPLORE mesure", data: pts.map((p) => p.lex && p.lex.i), borderColor: col.lexI },
+          { ...baseLine, label: "LéXPLORE modèle", data: pts.map((p) => p.lex && p.lex.m), borderColor: col.lexM, borderDash: [5, 4] },
+          { ...baseLine, label: "Buchillon mesure", data: pts.map((p) => p.buch && p.buch.i), borderColor: col.buchI },
+          { ...baseLine, label: "Buchillon modèle", data: pts.map((p) => p.buch && p.buch.m), borderColor: col.buchM, borderDash: [5, 4] },
+        ],
+      };
+      const biasData = {
+        labels,
+        datasets: [
+          { ...baseLine, label: "Biais LéXPLORE", data: pts.map((p) => p.lex && p.lex.b), borderColor: col.lexI },
+          { ...baseLine, label: "Biais Buchillon", data: pts.map((p) => p.buch && p.buch.b), borderColor: col.buchI },
+          { ...baseLine, label: "Correction moy. plages", data: pts.map((p) => p.c), borderColor: col.corr, borderDash: [2, 3] },
+        ],
+      };
+
+      const opts = (yTitle) => ({
+        responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { mode: "index", intersect: false },
+        scales: {
+          x: { ticks: { color: "#BDEAF0", maxTicksLimit: 8, font: { size: 11 } }, grid: { color: "rgba(247,242,231,.07)" } },
+          y: { title: { display: true, text: yTitle, color: "#BDEAF0" }, ticks: { color: "#BDEAF0" }, grid: { color: "rgba(247,242,231,.09)" } },
+        },
+        plugins: { legend: { labels: { color: "#F7F2E7", boxWidth: 14, font: { size: 12 } } } },
+      });
+
+      if (chartTemp) chartTemp.destroy();
+      if (chartBias) chartBias.destroy();
+      chartTemp = new Chart($("#chartTemp"), { type: "line", data: tempData, options: opts("°C") });
+      chartBias = new Chart($("#chartBias"), { type: "line", data: biasData, options: opts("biais (°C)") });
+
+      $("#updated").textContent = last ? "Dernier relevé : " + tlabel(last.t) : "Aucune donnée encore (le 1er point arrive au prochain cycle).";
+    }
+
+    async function enter() {
+      try {
+        HISTORY = (await loadHistory()).sort((a, b) => a.t - b.t);
+        $("#gate").style.display = "none";
+        $("#app").style.display = "block";
+        render();
+      } catch (e) {
+        $("#gate-msg").textContent = e.message;
+        $("#gate").style.display = "block";
+        $("#app").style.display = "none";
+        $("#token").focus();
+      }
+    }
+
+    $("#login").addEventListener("click", () => {
+      TOKEN = $("#token").value.trim();
+      localStorage.setItem(TOKEN_KEY, TOKEN);
+      enter();
+    });
+    $("#token").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#login").click(); });
+    $("#logout").addEventListener("click", () => { localStorage.removeItem(TOKEN_KEY); location.reload(); });
+    $("#ranges").addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-h]");
+      if (!b) return;
+      rangeH = +b.dataset.h;
+      [...$("#ranges").children].forEach((x) => x.classList.toggle("active", x === b));
+      render();
+    });
+
+    if (TOKEN) enter();
+    else $("#token").focus();
+  </script>
+</body>
+</html>
