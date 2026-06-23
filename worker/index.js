@@ -213,8 +213,12 @@ const htmlPage = (html) =>
   });
 
 async function handleAdmin(request, env, ctx, pathname) {
-  // Page par défaut de /admin = le moniteur (alias /admin/monitor conservé).
-  if (pathname === "/admin" || pathname === "/admin/" || pathname === "/admin/monitor" || pathname === "/admin/monitor/") {
+  // Ancienne route → redirection permanente vers la nouvelle.
+  if (pathname === "/admin/monitor" || pathname === "/admin/monitor/") {
+    return Response.redirect(new URL("/admin/correction", request.url).toString(), 301);
+  }
+  // Page par défaut de /admin = la correction de biais (alias /admin/correction).
+  if (pathname === "/admin" || pathname === "/admin/" || pathname === "/admin/correction" || pathname === "/admin/correction/") {
     return htmlPage(correctionHtml);
   }
 

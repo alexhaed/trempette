@@ -90,7 +90,7 @@ pas de bouée → modèle brut.
 
 Protégé par un secret (`ADMIN_TOKEN`), `noindex`. Deux pages avec nav commune :
 
-- **`/admin`** (= `/admin/monitor`) — **Correction biais** : moniteur de
+- **`/admin`** (= `/admin/correction`) — **Correction biais** : moniteur de
   l'historique (mesure vs modèle, biais et correction appliquée heure par heure).
   Source : clé KV `history`, un point compact par cycle, rétention 90 j.
 - **`/admin/plages`** — éditeur du catalogue des plages (écrit dans KV
