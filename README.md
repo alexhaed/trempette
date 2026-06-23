@@ -56,10 +56,14 @@ Worker Cloudflare « trempette »
 
 ## Correction de biais (Léman)
 
-Le modèle Alplakes a un biais systématique qui dérive (mesuré : ~+2 °C au
-printemps, ~−1,5 °C en été, ±0,5 °C sur la journée). Sur le Léman, on le recale
-en temps réel à partir des **2 seules stations in-situ live du lac**, via l'API
-**Datalakes** (Eawag — comme Alplakes, sans CORS → appel côté Worker) :
+Le modèle Alplakes a un biais qui **n'est pas constant** : il dérive selon la
+saison et l'heure plutôt que de rester un décalage fixe — d'où l'intérêt de le
+mesurer en direct. Nos observations 2026 au Léman (indicatives, sur 1 à 2 stations
+et une seule saison) vont dans ce sens : modèle plutôt **trop froid au printemps**
+(de l'ordre de +1 à +2 °C), tendant vers ~0 voire **légèrement trop chaud en début
+d'été**, avec un **cycle jour/nuit** de l'ordre de 0,5 °C. Sur le Léman, on le
+recale en temps réel à partir des **2 seules stations in-situ live du lac**, via
+l'API **Datalakes** (Eawag — comme Alplakes, sans CORS → appel côté Worker) :
 
 - **LéXPLORE** (au large de Pully) — chaîne de température, surface ~0,25 m ;
 - **Buchillon** (Petit Lac) — série `wt1`, eau à 1 m.
