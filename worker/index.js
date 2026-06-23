@@ -16,8 +16,8 @@
 //    nouveau run (end_date), changement de coordonnées, ou fenêtre périmée.
 
 import bundledLakes from "../scripts/lakes.json";
-import adminHtml from "./admin.html";
-import monitorHtml from "./monitor.html";
+import plagesHtml from "./plages.html";
+import correctionHtml from "./correction.html";
 import {
   flattenLakes,
   fetchWindow,
@@ -215,12 +215,12 @@ const htmlPage = (html) =>
 async function handleAdmin(request, env, ctx, pathname) {
   // Page par défaut de /admin = le moniteur (alias /admin/monitor conservé).
   if (pathname === "/admin" || pathname === "/admin/" || pathname === "/admin/monitor" || pathname === "/admin/monitor/") {
-    return htmlPage(monitorHtml);
+    return htmlPage(correctionHtml);
   }
 
   // Éditeur des plages, désormais sur son propre chemin.
   if (pathname === "/admin/plages" || pathname === "/admin/plages/") {
-    return htmlPage(adminHtml);
+    return htmlPage(plagesHtml);
   }
 
   if (pathname === "/admin/history") {

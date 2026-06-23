@@ -9,7 +9,7 @@ workers_dev = true
 directory = "public"
 binding = "ASSETS"
 run_worker_first = ["/data.json", "/admin", "/admin/*"]
-# (worker/admin.html est importé comme texte via la règle Text par défaut de Wrangler.)
+# (worker/plages.html et correction.html sont importés comme texte via la règle Text par défaut de Wrangler.)
 
 # Logs du Worker (fetch + cron) visibles dans le dashboard Cloudflare.
 [observability]

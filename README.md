@@ -109,8 +109,8 @@ npx wrangler dev --test-scheduled   # puis visiter /__scheduled pour tester le c
 |---|---|
 | `public/` | App web (index.html, css/, js/, icons/, img/, sw.js, manifest) |
 | `worker/index.js` | Worker : assets + cron + /data.json + /admin, orchestration KV |
-| `worker/monitor.html` | Back-office : moniteur de la correction de biais |
-| `worker/admin.html` | Back-office : éditeur des plages |
+| `worker/correction.html` | Back-office : moniteur de la correction de biais (`/admin`) |
+| `worker/plages.html` | Back-office : éditeur des plages (`/admin/plages`) |
 | `wrangler.toml` | Config Worker (assets, KV, cron) |
 | `scripts/lakes.json` | Catalogue lacs & plages (coordonnées) |
 | `scripts/build-data.mjs` | Récupération Alplakes/open-meteo/Datalakes, interpolation, correction de biais IDW, historique |
