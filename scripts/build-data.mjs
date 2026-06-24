@@ -78,10 +78,11 @@ async function fetchJSON(fetchFn, url, tries) {
 
 const BASE = "https://alplakes-api.eawag.ch";
 
-// Profondeur cible : ~20 cm sous la surface (température de baignade ressentie).
-// Le modèle est stratifié : l'API renvoie le point de grille le plus proche.
-// La couche la plus haute varie selon le lac (~10–25 cm), et 0.2 retombe sur
-// cette couche de surface pour les 5 lacs (identique à 0, mais intention claire).
+// Profondeur cible des PLAGES : ~20 cm sous la surface (température de baignade
+// ressentie). Le modèle est stratifié : l'API renvoie le point de grille le plus
+// proche. La couche la plus haute varie selon le lac (~10–25 cm), et 0.2 retombe
+// sur cette couche de surface pour les 5 lacs (identique à 0, mais intention claire).
+// Un point peut surcharger via `beach.depth` (les bouées comparent le biais à 1 m).
 const DEPTH = 0.2;
 
 // Fenêtre large : assez de points (passé + futur) pour interpoler « maintenant »
@@ -94,9 +95,10 @@ const WINDOW_AFTER_H = 30;
 export async function fetchWindow(fetchFn, beach, now, tries = 1) {
   const start = new Date(now - WINDOW_BEFORE_H * 3600e3);
   const end = new Date(now + WINDOW_AFTER_H * 3600e3);
+  const depth = beach.depth ?? DEPTH;
   const url =
     `${BASE}/simulations/point/${beach.model}/${beach.lake}/` +
-    `${ymdhm(start)}/${ymdhm(end)}/${DEPTH}/${beach.lat}/${beach.lng}?variables=temperature`;
+    `${ymdhm(start)}/${ymdhm(end)}/${depth}/${beach.lat}/${beach.lng}?variables=temperature`;
   const r = await fetchJSON(fetchFn, url, tries);
   const temps = r?.variables?.temperature?.data ?? [];
   const times = (r?.time ?? []).map((t) => new Date(t).getTime());
@@ -198,7 +200,11 @@ function haversine(aLat, aLng, bLat, bLng) {
 
 // Les 2 bouées du Léman. `lake/model` = mêmes que les plages (delft3d/geneva),
 // donc le modèle au point de la bouée passe par le même cache de fenêtres.
-// `parse` extrait la dernière mesure de surface valide du fichier Datalakes.
+// On compare le biais à 1 m (`depth: 1`) : c'est la profondeur de Buchillon (wt1)
+// et un capteur bien plus stable que les 0,25 m de LéXPLORE (qui, trop proche de
+// la surface, oscille de ±1,5 °C/h par stratification les jours calmes).
+// `parse` extrait la dernière mesure valide à ~1 m du fichier Datalakes.
+const BUOY_DEPTH = 1;
 export const LEMAN_BUOYS = [
   {
     id: "_buoy_lexplore",
@@ -207,14 +213,15 @@ export const LEMAN_BUOYS = [
     lng: 6.67,
     model: "delft3d-flow",
     lake: "geneva",
-    dataset: 448, // chaîne de température, grille z[profondeur][temps], surface ~0.25 m
+    depth: BUOY_DEPTH,
+    dataset: 448, // chaîne de température, grille z[profondeur][temps] ; on prend 1 m
     parse: (g) => {
       const { x, y, z } = g || {};
       if (!Array.isArray(x) || !Array.isArray(y) || !Array.isArray(z)) return null;
       let di = 0,
         best = Infinity;
       for (let i = 0; i < y.length; i++) {
-        const d = Math.abs(y[i] - 0.25);
+        const d = Math.abs(y[i] - BUOY_DEPTH);
         if (d < best) {
           best = d;
           di = i;
@@ -230,6 +237,7 @@ export const LEMAN_BUOYS = [
     lng: 6.399,
     model: "delft3d-flow",
     lake: "geneva",
+    depth: BUOY_DEPTH,
     dataset: 597, // station Buchillon, axe `y` = wt1 (température eau à 1 m)
     parse: (g) => latestValid(g?.x, g?.y),
   },
@@ -293,16 +301,18 @@ export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 
       results.push({ ...base, reason });
     };
 
-    // 1. Fenêtre modèle (cache réutilisé, re-téléchargée si périmée).
+    // 1. Fenêtre modèle (cache réutilisé, re-téléchargée si périmée ou si la
+    //    profondeur de comparaison a changé — ex. ancienne fenêtre à 0,2 m).
     let c = cache[buoy.id];
     const runEnd = endDates[`${buoy.model}/${buoy.lake}`];
-    if (!c || (runEnd && c.runEnd !== runEnd) || !windowUsable(c, now)) {
+    if (!c || (runEnd && c.runEnd !== runEnd) || c.depth !== buoy.depth || !windowUsable(c, now)) {
       try {
         const win = await fetchWindow(fetchFn, buoy, now, tries);
         if (win.times.length) {
           win.runEnd = runEnd ?? null;
           win.lat = buoy.lat;
           win.lng = buoy.lng;
+          win.depth = buoy.depth;
           cache[buoy.id] = win;
           c = win;
         }

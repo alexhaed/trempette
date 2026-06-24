@@ -65,13 +65,18 @@ d'été**, avec un **cycle jour/nuit** de l'ordre de 0,5 °C. Sur le Léman, on 
 recale en temps réel à partir des **2 seules stations in-situ live du lac**, via
 l'API **Datalakes** (Eawag — comme Alplakes, sans CORS → appel côté Worker) :
 
-- **LéXPLORE** (au large de Pully) — chaîne de température, surface ~0,25 m ;
-- **Buchillon** (Petit Lac) — série `wt1`, eau à 1 m.
+- **LéXPLORE** (au large de Pully) — chaîne de température, mesure à **1 m** ;
+- **Buchillon** (Petit Lac) — série `wt1`, eau à **1 m**.
+
+Les deux sont comparées à **1 m** (le capteur LéXPLORE à 0,25 m, trop proche de la
+surface, oscille de ±1,5 °C/h par stratification les jours calmes → instable et peu
+représentatif). Les plages, elles, restent affichées à 0,2 m (baignade) : on suppose
+le biais du modèle ~uniforme dans le premier mètre.
 
 Principe, à chaque cycle de cron :
 
-1. à chaque bouée : `biais = mesure_in-situ − modèle Alplakes au même point`, le
-   modèle étant interpolé à **l'heure de la mesure** (comparaison à temps égal) ;
+1. à chaque bouée : `biais = mesure_in-situ(1 m) − modèle Alplakes(1 m) au même point`,
+   le modèle étant interpolé à **l'heure de la mesure** (comparaison à temps égal) ;
 2. chaque plage du Léman reçoit une correction par **pondération inverse de la
    distance** (IDW) des 2 biais :
 
