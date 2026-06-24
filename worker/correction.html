@@ -146,7 +146,7 @@
       const pannes = pts.filter((p) => !p.lex || !p.buch).length;
 
       // Ventilation des raisons de panne (par cycle), pour rendre le moniteur auto-explicite.
-      const RLABEL = { reseau: "réseau", "pas-mesure": "pas de mesure", "pas-modele": "modèle", perime: "périmé", aberrant: "aberrant" };
+      const RLABEL = { reseau: "réseau", "pas-mesure": "pas de mesure", "pas-modele": "modèle", fige: "figé", perime: "périmé", aberrant: "aberrant" };
       const reasonCount = {};
       for (const p of pts) {
         if (!p.drop) continue;

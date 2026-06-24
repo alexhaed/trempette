@@ -272,10 +272,18 @@ async function fetchBuoyInsitu(fetchFn, buoy, tries) {
 //   reseau      → l'API Datalakes a échoué (réseau/HTTP)         [écartée]
 //   pas-mesure  → API OK mais aucune mesure récente valide        [écartée]
 //   pas-modele  → fenêtre modèle Alplakes indisponible            [écartée]
+//   fige        → flux gelé : horodatage figé >2 h (capteur muet) [écartée]
 //   perime      → dernière mesure trop ancienne (>6 h)            [écartée]
 //   aberrant    → biais > 5 °C (probable défaut capteur)          [écartée]
+//
+// Flux « gelé » : l'API répond OK mais l'horodatage de la mesure n'avance plus.
+// Seuil à 2 h pour ne pas faire de faux positif sur Buchillon (point horaire,
+// ≤ ~1,5 h entre points). État inter-cycles stocké dans `cache._buoyState`.
+const FROZEN_MS = 2 * 3600e3;
+
 export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 1) {
   const results = [];
+  const state = cache._buoyState || (cache._buoyState = {});
   for (const buoy of LEMAN_BUOYS) {
     const base = { name: buoy.name, lat: buoy.lat, lng: buoy.lng, bias: null, insitu: null, model: null };
     // Écarte la bouée : journalise la cause (niveau warning, filtrable « [bias] »
@@ -316,7 +324,15 @@ export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 
     if (fetchErr) { drop("reseau", `Datalakes ${fetchErr?.message || fetchErr}`); continue; }
     if (!insitu) { drop("pas-mesure", "aucune valeur récente valide"); continue; }
     base.insitu = insitu.temp;
+
+    // Suivi du flux : on note quand cet horodatage de mesure est apparu pour la
+    // première fois ; s'il ne bouge plus depuis >FROZEN_MS, le capteur est muet.
+    const st = state[buoy.id];
+    if (!st || st.seen !== insitu.time) state[buoy.id] = { seen: insitu.time, since: now };
+    const frozenFor = now - state[buoy.id].since;
+
     if (!c) { drop("pas-modele", "fenêtre modèle indisponible"); continue; }
+    if (frozenFor >= FROZEN_MS) { drop("fige", `horodatage figé depuis ${(frozenFor / 3600e3).toFixed(1)} h`); continue; }
     if (now - insitu.time > 6 * 3600e3) { drop("perime", `dernière mesure il y a ${((now - insitu.time) / 3600e3).toFixed(1)} h`); continue; }
     const modelAtObs = interpolate(c, insitu.time).water; // modèle à l'heure de la mesure
     if (modelAtObs == null) { drop("pas-modele", "interpolation hors fenêtre"); continue; }
