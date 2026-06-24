@@ -153,7 +153,7 @@
         for (const r of new Set(Object.values(p.drop))) reasonCount[r] = (reasonCount[r] || 0) + 1;
       }
       const reasonHint =
-        Object.entries(reasonCount).sort((a, b) => b[1] - a[1]).map(([r, n]) => `${RLABEL[r] || r} ·${n}`).join(" · ") ||
+        Object.entries(reasonCount).sort((a, b) => b[1] - a[1]).map(([r, n]) => `${RLABEL[r] || r}: ${n}`).join(" · ") ||
         "sur période affichée";
       const buoyHint = (key) => (last && last.drop && last.drop[key] ? "écartée : " + (RLABEL[last.drop[key]] || last.drop[key]) : "dernier point");
 
