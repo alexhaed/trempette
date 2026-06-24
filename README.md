@@ -92,8 +92,8 @@ Principe, à chaque cycle de cron :
 
 **Garde-fous** : une bouée est écartée si l'API échoue ou ne renvoie aucune mesure
 récente, si le modèle est indisponible, si le **flux est gelé** (horodatage figé
->2 h, capteur muet), si la mesure est **périmée** (>6 h) ou si le **biais est
-aberrant** (>5 °C). Chaque raison est journalisée (`[bias] …`) et visible dans le
+\>2 h, capteur muet), si la mesure est **périmée** (\>6 h) ou si le **biais est
+aberrant** (\>5 °C). Chaque raison est journalisée (`[bias] …`) et visible dans le
 moniteur. Si aucune bouée n'est exploitable, on sert le modèle brut ; la valeur
 modèle d'origine est conservée (`waterModel`).
 
