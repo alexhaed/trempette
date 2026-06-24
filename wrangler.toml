@@ -11,9 +11,13 @@ binding = "ASSETS"
 run_worker_first = ["/data.json", "/admin", "/admin/*"]
 # (worker/plages.html et correction.html sont importés comme texte via la règle Text par défaut de Wrangler.)
 
-# Logs du Worker (fetch + cron) visibles dans le dashboard Cloudflare.
+# Logs du Worker (fetch + cron) persistés et visibles dans le dashboard Cloudflare.
+# invocation_logs = logs auto-générés par requête/cron (requête, réponse, métadonnées).
 [observability]
 enabled = true
+
+[observability.logs]
+invocation_logs = true
 
 # Stockage de data.json (régénéré par le cron). Créez le namespace puis collez
 # son id :  npx wrangler kv namespace create DATA
