@@ -90,9 +90,12 @@ Principe, à chaque cycle de cron :
 3. `eau_corrigée = modèle + correction` (le **prochain point** de prévision est
    décalé du même offset ; la tendance, elle, est inchangée).
 
-**Garde-fous** : une bouée est ignorée si sa mesure est périmée (>6 h), absente
-(panne) ou donne un biais aberrant (>5 °C) ; si aucune bouée n'est exploitable, on
-sert le modèle brut. La valeur modèle d'origine est conservée (`waterModel`).
+**Garde-fous** : une bouée est écartée si l'API échoue ou ne renvoie aucune mesure
+récente, si le modèle est indisponible, si le **flux est gelé** (horodatage figé
+>2 h, capteur muet), si la mesure est **périmée** (>6 h) ou si le **biais est
+aberrant** (>5 °C). Chaque raison est journalisée (`[bias] …`) et visible dans le
+moniteur. Si aucune bouée n'est exploitable, on sert le modèle brut ; la valeur
+modèle d'origine est conservée (`waterModel`).
 
 **Limites** : 2 points au large → correction quasi-locale près d'une bouée, sinon
 ~moyenne du lac ; ne corrige **pas** le sur-réchauffement des hauts-fonds au bord
