@@ -153,12 +153,14 @@ async function regenerate(env) {
   const payload = {
     updatedAt: new Date(now).toISOString(),
     counts: { total: out.length, water: out.filter((b) => b.water != null).length },
-    lemanBiases: lemanBiases.map((b) => ({
-      name: b.name,
-      bias: Math.round(b.bias * 100) / 100,
-      insitu: Math.round(b.insitu * 10) / 10,
-      model: Math.round(b.model * 10) / 10,
-    })),
+    lemanBiases: lemanBiases
+      .filter((b) => b.bias != null)
+      .map((b) => ({
+        name: b.name,
+        bias: Math.round(b.bias * 100) / 100,
+        insitu: Math.round(b.insitu * 10) / 10,
+        model: Math.round(b.model * 10) / 10,
+      })),
     beaches: out,
   };
 

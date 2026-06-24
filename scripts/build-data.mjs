@@ -266,15 +266,23 @@ async function fetchBuoyInsitu(fetchFn, buoy, tries) {
 // Calcule le biais (mesure − modèle) à chaque bouée du Léman, à l'instant de la
 // mesure (comparaison à profil égal dans le temps). Réutilise le cache de
 // fenêtres `cache` (clés `_buoy_*`) et la détection de run quotidien `endDates`.
-// Écarte une bouée si : pas de modèle, mesure absente, mesure périmée (>6 h) ou
-// biais aberrant (>5 °C, probable défaut capteur).
+//
+// Renvoie un résultat par bouée avec une `reason` explicite (pour le moniteur) :
+//   ok          → biais calculé (bias renseigné)
+//   reseau      → l'API Datalakes a échoué (réseau/HTTP)         [écartée]
+//   pas-mesure  → API OK mais aucune mesure récente valide        [écartée]
+//   pas-modele  → fenêtre modèle Alplakes indisponible            [écartée]
+//   perime      → dernière mesure trop ancienne (>6 h)            [écartée]
+//   aberrant    → biais > 5 °C (probable défaut capteur)          [écartée]
 export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 1) {
-  const biases = [];
+  const results = [];
   for (const buoy of LEMAN_BUOYS) {
+    const base = { name: buoy.name, lat: buoy.lat, lng: buoy.lng, bias: null, insitu: null, model: null };
+
+    // 1. Fenêtre modèle (cache réutilisé, re-téléchargée si périmée).
     let c = cache[buoy.id];
     const runEnd = endDates[`${buoy.model}/${buoy.lake}`];
-    const stale = !c || (runEnd && c.runEnd !== runEnd) || !windowUsable(c, now);
-    if (stale) {
+    if (!c || (runEnd && c.runEnd !== runEnd) || !windowUsable(c, now)) {
       try {
         const win = await fetchWindow(fetchFn, buoy, now, tries);
         if (win.times.length) {
@@ -285,31 +293,42 @@ export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 
           c = win;
         }
       } catch {
-        /* modèle indisponible ce cycle → bouée ignorée */
+        /* modèle indisponible ce cycle */
       }
     }
+
+    // 2. Mesure in-situ (Datalakes).
     let insitu = null;
+    let fetchFailed = false;
     try {
       insitu = await fetchBuoyInsitu(fetchFn, buoy, tries);
     } catch {
-      /* mesure indisponible (panne/maintenance) → bouée ignorée */
+      fetchFailed = true;
     }
-    if (!c || !insitu) continue;
-    if (now - insitu.time > 6 * 3600e3) continue; // mesure trop ancienne
+
+    // 3. Diagnostic dans l'ordre le plus informatif.
+    if (fetchFailed) { results.push({ ...base, reason: "reseau" }); continue; }
+    if (!insitu) { results.push({ ...base, reason: "pas-mesure" }); continue; }
+    base.insitu = insitu.temp;
+    if (!c) { results.push({ ...base, reason: "pas-modele" }); continue; }
+    if (now - insitu.time > 6 * 3600e3) { results.push({ ...base, reason: "perime" }); continue; }
     const modelAtObs = interpolate(c, insitu.time).water; // modèle à l'heure de la mesure
-    if (modelAtObs == null) continue;
+    if (modelAtObs == null) { results.push({ ...base, reason: "pas-modele" }); continue; }
+    base.model = modelAtObs;
     const bias = insitu.temp - modelAtObs;
-    if (Math.abs(bias) > 5) continue; // garde-fou : biais aberrant
-    biases.push({ name: buoy.name, lat: buoy.lat, lng: buoy.lng, bias, insitu: insitu.temp, model: modelAtObs });
+    if (Math.abs(bias) > 5) { results.push({ ...base, reason: "aberrant" }); continue; }
+    results.push({ ...base, bias, reason: "ok" });
   }
-  return biases;
+  return results;
 }
 
 // Applique la correction IDW (in place) aux plages du Léman uniquement.
 // Renseigne `water` corrigé, `waterModel` (valeur brute, transparence) et `bias`.
 // Décale aussi `next.temp` du même offset pour rester cohérent.
-export function applyLemanBias(beaches, out, biases) {
-  if (!biases || !biases.length) return;
+// `results` = sortie de computeLemanBiases ; on ne garde que les bouées exploitables.
+export function applyLemanBias(beaches, out, results) {
+  const biases = (results || []).filter((b) => b && b.bias != null);
+  if (!biases.length) return;
   for (let i = 0; i < beaches.length; i++) {
     const b = beaches[i];
     if (b.lake !== "geneva") continue;
@@ -339,14 +358,19 @@ const HISTORY_MIN_GAP_MS = 10 * 60e3;
 // Ajoute un point compact à l'historique et élague au-delà de la rétention.
 // Niveau bouées + agrégat (pas par plage). Renvoie le tableau (à ré-écrire en KV).
 // Un point est TOUJOURS écrit, même sans bouée exploitable (n=0) → on trace les pannes.
-export function pushHistory(history, now, biases, out) {
+// `results` = sortie de computeLemanBiases (avec `reason`). Pour une bouée écartée,
+// on stocke sa raison dans `drop` (ex. { buch: "perime" }) → moniteur auto-explicite.
+export function pushHistory(history, now, results, out) {
   const arr = Array.isArray(history) ? history : [];
-  const by = Object.fromEntries((biases || []).map((b) => [b.name, b]));
-  const buoy = (b) => (b ? { i: round1(b.insitu), m: round1(b.model), b: round2(b.bias) } : null);
+  const by = Object.fromEntries((results || []).map((b) => [b.name, b]));
+  const buoy = (b) => (b && b.bias != null ? { i: round1(b.insitu), m: round1(b.model), b: round2(b.bias) } : null);
   const corrected = (out || []).filter((o) => o && o.bias != null);
   const meanCorr = corrected.length
     ? corrected.reduce((s, o) => s + o.bias, 0) / corrected.length
     : null;
+  const drop = {};
+  if (by["LéXPLORE"] && by["LéXPLORE"].bias == null) drop.lex = by["LéXPLORE"].reason;
+  if (by["Buchillon"] && by["Buchillon"].bias == null) drop.buch = by["Buchillon"].reason;
   const point = {
     t: now,
     lex: buoy(by["LéXPLORE"]),
@@ -354,6 +378,7 @@ export function pushHistory(history, now, biases, out) {
     n: corrected.length,
     c: round2(meanCorr),
   };
+  if (Object.keys(drop).length) point.drop = drop;
   if (arr.length && now - arr[arr.length - 1].t < HISTORY_MIN_GAP_MS) arr.pop();
   arr.push(point);
   const cutoff = now - HISTORY_RETENTION_MS;

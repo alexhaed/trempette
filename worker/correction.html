@@ -145,13 +145,25 @@
       const last24 = HISTORY.filter((p) => p.t >= Date.now() - 24 * 3600e3);
       const pannes = pts.filter((p) => !p.lex || !p.buch).length;
 
+      // Ventilation des raisons de panne (par cycle), pour rendre le moniteur auto-explicite.
+      const RLABEL = { reseau: "réseau", "pas-mesure": "pas de mesure", "pas-modele": "modèle", perime: "périmé", aberrant: "aberrant" };
+      const reasonCount = {};
+      for (const p of pts) {
+        if (!p.drop) continue;
+        for (const r of new Set(Object.values(p.drop))) reasonCount[r] = (reasonCount[r] || 0) + 1;
+      }
+      const reasonHint =
+        Object.entries(reasonCount).sort((a, b) => b[1] - a[1]).map(([r, n]) => `${RLABEL[r] || r} ·${n}`).join(" · ") ||
+        "sur période affichée";
+      const buoyHint = (key) => (last && last.drop && last.drop[key] ? "écartée : " + (RLABEL[last.drop[key]] || last.drop[key]) : "dernier point");
+
       // Cartes récap
       const cards = [
-        ["Biais LéXPLORE", last && last.lex ? fmt(last.lex.b) + " °C" : "—", "dernier point"],
-        ["Biais Buchillon", last && last.buch ? fmt(last.buch.b) + " °C" : "—", "dernier point"],
+        ["Biais LéXPLORE", last && last.lex ? fmt(last.lex.b) + " °C" : "—", buoyHint("lex")],
+        ["Biais Buchillon", last && last.buch ? fmt(last.buch.b) + " °C" : "—", buoyHint("buch")],
         ["Correction moy.", last && last.c != null ? fmt(last.c) + " °C" : "—", last ? last.n + " plages" : ""],
         ["Biais moyen 24 h", fmt(mean(last24.flatMap((p) => [p.lex && p.lex.b, p.buch && p.buch.b])), 2) + " °C", "2 bouées"],
-        ["Cycles sans bouée", String(pannes), "sur période affichée"],
+        ["Cycles sans bouée", String(pannes), reasonHint],
         ["Points", String(pts.length), "depuis " + (HISTORY[0] ? tlabel(HISTORY[0].t) : "—")],
       ];
       $("#cards").innerHTML = cards
