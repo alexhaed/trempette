@@ -44,7 +44,8 @@ Worker Cloudflare « trempette »
   toutes les ~3 h : on récupère une fenêtre (−6 h à +30 h) et on **interpole
   linéairement** à maintenant ; la pente donne la **tendance** (°C/h). Les
   simulations n'étant mises à jour qu'**1×/jour**, la fenêtre brute est mise en
-  cache (KV `windows`) et n'est re-téléchargée qu'au nouveau run quotidien.
+  cache (KV `windows`) et re-téléchargée au nouveau run (ou si elle ne couvre plus
+  l'instant présent).
 - **Modèles par lac** : Léman `delft3d-flow/geneva`, Neuchâtel `mitgcm/neuchatel`,
   Bienne `delft3d-flow/biel`, Morat `delft3d-flow/murten`, Joux `delft3d-flow/joux`.
   Liste complète : <https://alplakes-api.eawag.ch/simulations/metadata>.
