@@ -278,6 +278,12 @@ export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 
   const results = [];
   for (const buoy of LEMAN_BUOYS) {
     const base = { name: buoy.name, lat: buoy.lat, lng: buoy.lng, bias: null, insitu: null, model: null };
+    // Écarte la bouée : journalise la cause (niveau warning, filtrable « [bias] »
+    // dans les logs Cloudflare) puis enregistre le résultat avec sa raison.
+    const drop = (reason, detail) => {
+      console.warn(`[bias] ${buoy.name} écartée: ${reason}${detail ? " — " + detail : ""}`);
+      results.push({ ...base, reason });
+    };
 
     // 1. Fenêtre modèle (cache réutilisé, re-téléchargée si périmée).
     let c = cache[buoy.id];
@@ -292,31 +298,31 @@ export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 
           cache[buoy.id] = win;
           c = win;
         }
-      } catch {
-        /* modèle indisponible ce cycle */
+      } catch (e) {
+        console.warn(`[bias] ${buoy.name} modèle Alplakes KO — ${e?.message || e}`);
       }
     }
 
     // 2. Mesure in-situ (Datalakes).
     let insitu = null;
-    let fetchFailed = false;
+    let fetchErr = null;
     try {
       insitu = await fetchBuoyInsitu(fetchFn, buoy, tries);
-    } catch {
-      fetchFailed = true;
+    } catch (e) {
+      fetchErr = e;
     }
 
     // 3. Diagnostic dans l'ordre le plus informatif.
-    if (fetchFailed) { results.push({ ...base, reason: "reseau" }); continue; }
-    if (!insitu) { results.push({ ...base, reason: "pas-mesure" }); continue; }
+    if (fetchErr) { drop("reseau", `Datalakes ${fetchErr?.message || fetchErr}`); continue; }
+    if (!insitu) { drop("pas-mesure", "aucune valeur récente valide"); continue; }
     base.insitu = insitu.temp;
-    if (!c) { results.push({ ...base, reason: "pas-modele" }); continue; }
-    if (now - insitu.time > 6 * 3600e3) { results.push({ ...base, reason: "perime" }); continue; }
+    if (!c) { drop("pas-modele", "fenêtre modèle indisponible"); continue; }
+    if (now - insitu.time > 6 * 3600e3) { drop("perime", `dernière mesure il y a ${((now - insitu.time) / 3600e3).toFixed(1)} h`); continue; }
     const modelAtObs = interpolate(c, insitu.time).water; // modèle à l'heure de la mesure
-    if (modelAtObs == null) { results.push({ ...base, reason: "pas-modele" }); continue; }
+    if (modelAtObs == null) { drop("pas-modele", "interpolation hors fenêtre"); continue; }
     base.model = modelAtObs;
     const bias = insitu.temp - modelAtObs;
-    if (Math.abs(bias) > 5) { results.push({ ...base, reason: "aberrant" }); continue; }
+    if (Math.abs(bias) > 5) { drop("aberrant", `biais ${bias.toFixed(1)} °C`); continue; }
     results.push({ ...base, bias, reason: "ok" });
   }
   return results;
