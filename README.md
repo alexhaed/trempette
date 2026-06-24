@@ -1,8 +1,8 @@
-# 🌊 Trempette
+<h1><img src="public/img/logo.png" alt="" height="32" align="top" /> Trempette</h1>
 
 **→ <https://trempette.alexhaederli.workers.dev/>**
 
-App web (PWA) **mobile-first** de consultation des températures des plages des
+App web **mobile-first** de consultation des températures des plages des
 lacs romands : **Léman, Neuchâtel, Bienne, Morat, Joux**.
 
 Eau (Alplakes / Eawag) + air & vent (open-meteo), pour chaque plage, avec
