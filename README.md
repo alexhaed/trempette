@@ -72,8 +72,16 @@ Principe, à chaque cycle de cron :
 
 1. à chaque bouée : `biais = mesure_in-situ − modèle Alplakes au même point`, le
    modèle étant interpolé à **l'heure de la mesure** (comparaison à temps égal) ;
-2. chaque plage du Léman reçoit une correction = **moyenne des 2 biais pondérée
-   par 1/distance²** (IDW) → la bouée la plus proche pèse le plus ;
+2. chaque plage du Léman reçoit une correction par **pondération inverse de la
+   distance** (IDW) des 2 biais :
+
+   ```
+   correction(plage) = Σᵢ (biaisᵢ / dᵢ²) ∕ Σᵢ (1 / dᵢ²)
+   ```
+
+   où `dᵢ` = distance plage ↔ bouée *i*. Le poids en `1/dᵢ²` fait que la bouée la
+   plus proche domine : à mi-chemin ~50/50, deux fois plus proche d'une bouée
+   ~80/20, et une plage éloignée des deux tend vers leur moyenne ;
 3. `eau_corrigée = modèle + correction` (le **prochain point** de prévision est
    décalé du même offset ; la tendance, elle, est inchangée).
 
