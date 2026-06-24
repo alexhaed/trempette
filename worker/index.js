@@ -4,7 +4,7 @@
 //  - sert /data.json depuis KV (route gérée par le Worker via run_worker_first
 //    dans wrangler.toml ; data.json n'est pas un asset statique) ;
 //  - back-office /admin (protégé par secret) : moniteur des corrections par défaut
-//    (/admin = /admin/monitor) et éditeur du catalogue sur /admin/plages.
+//    (/admin = /admin/correction) et éditeur du catalogue sur /admin/plages.
 //
 // Source de vérité du catalogue : KV (clé "catalogue"), repli sur le lakes.json
 // embarqué si KV vide. L'éditeur /admin/plages écrit dans KV → le run suivant rebâtit.
@@ -164,7 +164,7 @@ async function regenerate(env) {
     beaches: out,
   };
 
-  // 6. Historique de monitoring (niveau bouées + agrégat), pour /admin/monitor.
+  // 6. Historique de monitoring (niveau bouées + agrégat), pour /admin/correction.
   try {
     const history = (await env.DATA.get(HISTORY_KEY, "json")) || [];
     const updated = pushHistory(history, now, lemanBiases, out);
