@@ -539,6 +539,10 @@ body {
   border: 1px solid var(--glass-border);
   border-radius: 24px 24px 0 0;
   padding: 26px 22px calc(26px + var(--safe-bottom));
+  max-height: 92vh;
+  max-height: 92dvh; /* contenu plus haut que l'écran (ex. Infos & contact) → scroll interne */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   animation: slideup 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 @keyframes slideup { from { transform: translateY(100%); } }

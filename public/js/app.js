@@ -482,9 +482,18 @@ function openDetail(b) {
   };
 
   $("#detail").hidden = false;
+  syncScrollLock();
 }
 function closeDetail() {
   $("#detail").hidden = true;
+  syncScrollLock();
+}
+
+// Bloque le défilement de la page tant qu'un overlay est ouvert (sinon, sur
+// mobile, le scroll « passe » à la page derrière et on se sent coincé).
+function syncScrollLock() {
+  const open = !$("#detail").hidden || !$("#info").hidden;
+  document.documentElement.style.overflow = open ? "hidden" : "";
 }
 
 // ---- Événements ----
@@ -638,10 +647,15 @@ $("#detail").addEventListener("click", (e) => {
 });
 
 // ---- Infos & contact (overlay) ----
-const closeInfo = () => ($("#info").hidden = true);
+const closeInfo = () => {
+  $("#info").hidden = true;
+  syncScrollLock();
+};
 let turnstileLoaded = false;
 function openInfo() {
   $("#info").hidden = false;
+  syncScrollLock();
+  $("#info .detail-card").scrollTop = 0; // ouvre toujours en haut (bouton fermer visible)
   // Charge le script Turnstile à la 1re ouverture seulement (perf + rendu pendant
   // que l'overlay est visible). Le script auto-rend le `.cf-turnstile` du formulaire.
   if (!turnstileLoaded) {
