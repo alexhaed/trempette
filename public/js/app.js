@@ -636,8 +636,68 @@ $("#d-close").addEventListener("click", closeDetail);
 $("#detail").addEventListener("click", (e) => {
   if (e.target.id === "detail") closeDetail();
 });
+
+// ---- Infos & contact (overlay) ----
+const closeInfo = () => ($("#info").hidden = true);
+let turnstileLoaded = false;
+function openInfo() {
+  $("#info").hidden = false;
+  // Charge le script Turnstile à la 1re ouverture seulement (perf + rendu pendant
+  // que l'overlay est visible). Le script auto-rend le `.cf-turnstile` du formulaire.
+  if (!turnstileLoaded) {
+    turnstileLoaded = true;
+    const s = document.createElement("script");
+    s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+    s.async = true;
+    s.defer = true;
+    document.head.appendChild(s);
+  }
+}
+$("#info-open").addEventListener("click", openInfo);
+$("#info-close").addEventListener("click", closeInfo);
+$("#info").addEventListener("click", (e) => {
+  if (e.target.id === "info") closeInfo();
+});
+$("#contact-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = $("#contact-email").value.trim();
+  const message = $("#contact-msg").value.trim();
+  const website = $("#contact-hp").value; // honeypot (doit rester vide)
+  const turnstile = (document.querySelector('[name="cf-turnstile-response"]') || {}).value || "";
+  const status = $("#contact-status");
+  if (!message) {
+    status.className = "contact-status err";
+    status.textContent = "Écris un message.";
+    return;
+  }
+  const btn = $("#contact-send");
+  btn.disabled = true;
+  status.className = "contact-status";
+  status.textContent = "Envoi…";
+  try {
+    const r = await fetch("/contact", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email, message, website, turnstile }),
+    });
+    if (!r.ok) throw new Error();
+    status.className = "contact-status ok";
+    status.textContent = "Merci, message envoyé !";
+    $("#contact-form").reset();
+    window.turnstile && window.turnstile.reset();
+  } catch {
+    status.className = "contact-status err";
+    status.textContent = "Échec de l'envoi, réessaie plus tard.";
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeDetail();
+  if (e.key === "Escape") {
+    closeDetail();
+    closeInfo();
+  }
 });
 
 // ---- Service worker (offline) + hard-refresh automatique ----

@@ -105,7 +105,7 @@
     <footer class="foot">
       <p id="updated" class="updated"></p>
       <p class="credits">Eau : Alplakes &amp; Datalakes (Eawag) · Air &amp; vent : open-meteo.com</p>
-      <p class="version">v1.34</p>
+      <p class="version">v1.35 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
     </footer>
     </div>
   </div>
@@ -142,6 +142,29 @@
       <a id="d-map" class="d-map" target="_blank" rel="noopener">Voir sur la carte
         <svg width="13" height="13" aria-hidden="true"><use href="#i-arrow"></use></svg>
       </a>
+    </div>
+  </div>
+
+  <!-- Infos & contact (overlay) -->
+  <div id="info" class="detail" hidden>
+    <div class="detail-card info-card" role="dialog" aria-modal="true" aria-labelledby="info-title">
+      <button id="info-close" class="icon-btn d-close" aria-label="Fermer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+      </button>
+      <h2 id="info-title">Infos &amp; contact</h2>
+      <div class="info-text">
+        <p>Trempette affiche la température de l'eau des plages de cinq lacs romands (Léman, Neuchâtel, Bienne, Morat, Joux), <strong>estimée par le modèle Alplakes</strong> (Eawag) et rafraîchie en continu.</p>
+        <p>Sur le <strong>Léman</strong>, ces estimations sont <strong>recalées en temps réel</strong> à partir de deux stations de mesure dans l'eau (LéXPLORE, au large de Pully, et Buchillon) : l'écart entre la mesure réelle et le modèle est reporté sur chaque plage selon sa distance aux deux points.</p>
+        <p>Ce sont des <strong>estimations</strong> : au bord, la température ressentie peut varier (hauts-fonds, soleil, vent). Une question, une suggestion, une remarque&nbsp;? Écris-moi&nbsp;:</p>
+      </div>
+      <form id="contact-form" class="contact-form" novalidate>
+        <input type="email" id="contact-email" name="email" placeholder="Ton email (pour la réponse)" autocomplete="email" required />
+        <textarea id="contact-msg" name="message" rows="4" placeholder="Ton message…" required></textarea>
+        <input type="text" name="website" id="contact-hp" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAADqscZnIsrNJdzuN" data-theme="dark"></div>
+        <button type="submit" id="contact-send" class="contact-send">Envoyer</button>
+        <p id="contact-status" class="contact-status" role="status" aria-live="polite"></p>
+      </form>
     </div>
   </div>
 

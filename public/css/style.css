@@ -481,6 +481,40 @@ body {
 .foot .credits { margin: 3px 0 0; font-size: 11px; color: rgba(247, 242, 231, 0.5); }
 .foot .version { margin: 3px 0 0; font-size: 11px; letter-spacing: 0.3px; color: rgba(247, 242, 231, 0.4); }
 
+/* ---- Infos & contact ---- */
+.info-link {
+  background: none; border: none; padding: 0; cursor: pointer;
+  font: inherit; font-size: 11px; letter-spacing: 0.3px;
+  color: var(--glacier); text-decoration: underline;
+}
+.info-card { text-align: left; }
+.info-card #info-title {
+  text-align: left; margin: 2px 0 12px;
+  font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 22px;
+}
+.info-text p { margin: 0 0 10px; font-size: 14px; line-height: 1.6; color: var(--creme); }
+.info-text strong { color: #fff; font-weight: 700; }
+.contact-form { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.contact-form input,
+.contact-form textarea {
+  width: 100%; padding: 10px 12px; font: inherit; font-size: 15px; color: var(--creme);
+  background: rgba(247, 242, 231, 0.08); border: 1px solid var(--glass-border);
+  border-radius: 12px; resize: vertical;
+}
+.contact-form input::placeholder,
+.contact-form textarea::placeholder { color: rgba(247, 242, 231, 0.5); }
+.contact-form input:focus,
+.contact-form textarea:focus { outline: none; border-color: var(--turq-light); }
+.contact-send {
+  align-self: flex-end; padding: 10px 18px; font: inherit; font-weight: 700; font-size: 15px;
+  color: #06262e; background: var(--turq-light); border: none; border-radius: 12px; cursor: pointer;
+}
+.contact-send:disabled { opacity: 0.6; cursor: default; }
+.contact-status { margin: 2px 0 0; font-size: 13px; min-height: 1.2em; }
+.contact-status.ok { color: var(--glacier); }
+.contact-status.err { color: #ffb3a8; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+
 /* ---- Détail (overlay) ---- */
 .detail {
   position: fixed;

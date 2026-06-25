@@ -265,6 +265,66 @@ async function handleAdmin(request, env, ctx, pathname) {
   return new Response("Not found", { status: 404 });
 }
 
+// --- Formulaire de contact (overlay « Infos & contact ») ---
+
+const CONTACT_TO = "alexhaederli@gmail.com";
+const CONTACT_FROM = "Trempette <contact@trempette.app>";
+
+// Vérifie le jeton Turnstile (anti-bot). Sans secret configuré → on laisse passer
+// (utile en dev local). En prod, TURNSTILE_SECRET est défini → vérification réelle.
+async function verifyTurnstile(token, ip, secret) {
+  if (!secret) return true;
+  const body = new FormData();
+  body.append("secret", secret);
+  body.append("response", token || "");
+  if (ip) body.append("remoteip", ip);
+  try {
+    const r = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body });
+    const d = await r.json();
+    return !!d.success;
+  } catch {
+    return false;
+  }
+}
+
+async function handleContact(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: "requête invalide" }, 400);
+  }
+  const email = String(body.email || "").trim();
+  const message = String(body.message || "").trim();
+
+  if (body.website) return json({ ok: true }); // honeypot : bot → on fait comme si
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: "email invalide" }, 400);
+  if (message.length < 2 || message.length > 5000) return json({ error: "message invalide" }, 400);
+
+  const ip = request.headers.get("cf-connecting-ip");
+  if (!(await verifyTurnstile(body.turnstile, ip, env.TURNSTILE_SECRET))) {
+    return json({ error: "anti-robot échoué" }, 403);
+  }
+
+  if (!env.RESEND_API_KEY) return json({ error: "email non configuré" }, 500);
+  const r = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      from: CONTACT_FROM,
+      to: [CONTACT_TO],
+      reply_to: email,
+      subject: "Trempette — nouveau message",
+      text: `De : ${email}\n\n${message}`,
+    }),
+  });
+  if (!r.ok) {
+    console.warn(`[contact] Resend KO ${r.status} ${await r.text().catch(() => "")}`);
+    return json({ error: "envoi impossible" }, 502);
+  }
+  return json({ ok: true });
+}
+
 export default {
   // Déclenché par le Cron Trigger (voir wrangler.toml).
   async scheduled(event, env, ctx) {
@@ -276,6 +336,10 @@ export default {
 
     if (url.pathname === "/admin" || url.pathname.startsWith("/admin/")) {
       return handleAdmin(request, env, ctx, url.pathname);
+    }
+
+    if (url.pathname === "/contact" && request.method === "POST") {
+      return handleContact(request, env);
     }
 
     if (url.pathname === "/data.json") {
