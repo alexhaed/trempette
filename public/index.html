@@ -4,8 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#34B4C2" />
-  <!-- PWA iOS : le dégradé passe sous la barre d'état (sinon bande blanche),
-       texte de la barre en blanc. Le contenu reste protégé par --safe-top. -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -41,7 +39,7 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <!-- Jeu d'icônes linéaires (recréées d'après le design). -->
+  <!-- Jeu d'icônes linéaires -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
       <symbol id="i-wind" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"></path><path d="M9.6 4.6A2 2 0 1 1 11 8H2"></path><path d="M12.6 19.4A2 2 0 1 0 14 16H2"></path></g></symbol>
@@ -71,7 +69,7 @@
     <header class="head">
       <div class="brand">
         <img class="brand-logo" src="img/logo.png" alt="" width="34" height="34" />
-        <span class="brand-name">Trempette</span>
+        <span class="brand-name">Une p'tite trempette?</span>
       </div>
       <button id="refresh" class="icon-btn" title="Rafraîchir" aria-label="Rafraîchir">
         <svg class="refresh-icon" width="18" height="18" aria-hidden="true"><use href="#i-refresh"></use></svg>
@@ -125,7 +123,7 @@
     <footer class="foot">
       <p id="updated" class="updated"></p>
       <p class="credits">Eau : Alplakes &amp; Datalakes (Eawag) · Air &amp; vent : open-meteo.com</p>
-      <p class="version">v1.44 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
+      <p class="version">v1.45 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
     </footer>
     </div>
   </div>
