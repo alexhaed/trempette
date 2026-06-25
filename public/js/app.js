@@ -665,11 +665,14 @@ $("#contact-form").addEventListener("submit", async (e) => {
   const website = $("#contact-hp").value; // honeypot (doit rester vide)
   const turnstile = (document.querySelector('[name="cf-turnstile-response"]') || {}).value || "";
   const status = $("#contact-status");
-  if (!message) {
+  const fail = (msg) => {
     status.className = "contact-status err";
-    status.textContent = "Écris un message.";
-    return;
-  }
+    status.textContent = msg;
+  };
+  // Validation côté client (message immédiat, pas d'aller-retour serveur).
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail("Indique une adresse email valide.");
+  if (!message) return fail("Écris un message.");
+
   const btn = $("#contact-send");
   btn.disabled = true;
   status.className = "contact-status";
@@ -680,14 +683,23 @@ $("#contact-form").addEventListener("submit", async (e) => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ email, message, website, turnstile }),
     });
-    if (!r.ok) throw new Error();
+    if (!r.ok) {
+      const err = await r.json().then((d) => d.error).catch(() => "");
+      // Erreurs « métier » → message clair ; le reste = vrai souci technique.
+      return fail(
+        {
+          "email invalide": "Indique une adresse email valide.",
+          "message invalide": "Ton message est vide ou trop long.",
+          "anti-robot échoué": "Confirme que tu n'es pas un robot, puis réessaie.",
+        }[err] || "Échec de l'envoi, réessaie plus tard."
+      );
+    }
     status.className = "contact-status ok";
     status.textContent = "Merci, message envoyé !";
     $("#contact-form").reset();
     window.turnstile && window.turnstile.reset();
   } catch {
-    status.className = "contact-status err";
-    status.textContent = "Échec de l'envoi, réessaie plus tard.";
+    fail("Échec de l'envoi, réessaie plus tard.");
   } finally {
     btn.disabled = false;
   }
