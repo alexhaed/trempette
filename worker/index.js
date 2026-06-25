@@ -267,7 +267,8 @@ async function handleAdmin(request, env, ctx, pathname) {
 
 // --- Formulaire de contact (overlay « Infos & contact ») ---
 
-const CONTACT_TO = "alexhaederli@gmail.com";
+// Destinataire dans un secret (env.CONTACT_TO) pour ne pas exposer l'adresse
+// perso dans le repo public. Posé via : wrangler secret put CONTACT_TO
 const CONTACT_FROM = "Trempette <contact@trempette.app>";
 
 // Vérifie le jeton Turnstile (anti-bot). Sans secret configuré → on laisse passer
@@ -306,13 +307,13 @@ async function handleContact(request, env) {
     return json({ error: "anti-robot échoué" }, 403);
   }
 
-  if (!env.RESEND_API_KEY) return json({ error: "email non configuré" }, 500);
+  if (!env.RESEND_API_KEY || !env.CONTACT_TO) return json({ error: "email non configuré" }, 500);
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "content-type": "application/json" },
     body: JSON.stringify({
       from: CONTACT_FROM,
-      to: [CONTACT_TO],
+      to: [env.CONTACT_TO],
       reply_to: email,
       subject: "Trempette — nouveau message",
       text: `De : ${email}\n\n${message}`,

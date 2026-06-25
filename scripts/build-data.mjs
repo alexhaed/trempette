@@ -63,7 +63,7 @@ async function fetchJSON(fetchFn, url, tries) {
     try {
       const r = await fetchFn(url, {
         headers: {
-          "User-Agent": "trempette (https://github.com/alexhaed/trempette; alexhaederli@gmail.com)",
+          "User-Agent": "trempette (https://github.com/alexhaed/trempette; contact@trempette.app)",
         },
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
