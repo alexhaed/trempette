@@ -3,6 +3,9 @@ main = "worker/index.js"
 compatibility_date = "2026-06-01"
 workers_dev = true
 
+# Sert aussi l'app sur le domaine custom (zone trempette.app du compte).
+routes = [{ pattern = "trempette.app", custom_domain = true }]
+
 # Site statique servi depuis public/ (source unique).
 # run_worker_first → le Worker gère /data.json (KV) et /admin (back-office) avant les assets.
 [assets]
