@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Le savais-tu ? — Trempette</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --turq-light: #34B4C2; --turq-deep: #0E6273; --turq-deepest: #08323D;
+      --creme: #F7F2E7; --coral: #F46B5A; --glacier: #BDEAF0;
+      --glass: rgba(247, 242, 231, 0.08); --glass-border: rgba(247, 242, 231, 0.18);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; color: var(--creme);
+      background: linear-gradient(176deg, #0E6273 0%, #08323D 60%) fixed, var(--turq-deepest);
+      min-height: 100vh; padding: 28px 18px 80px;
+    }
+    .wrap { max-width: 900px; margin: 0 auto; position: relative; }
+    .logo { width: 30px; height: 30px; border-radius: 8px; vertical-align: -7px; margin-right: 9px; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25); }
+    #logout { padding: 6px 11px; font-size: 12px; }
+    h1 { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.02em; margin: 0 0 4px; }
+    .sub { color: var(--glacier); font-size: 13px; margin: 0 0 22px; }
+    code { background: rgba(0,0,0,.2); padding: 1px 5px; border-radius: 5px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; font-size: 13px; color: var(--glacier); }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      position: sticky; top: 0; z-index: 1; text-align: left; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--glacier);
+      padding: 8px; background: var(--turq-deepest); border-bottom: 1px solid var(--glass-border); white-space: nowrap;
+    }
+    tbody td { padding: 6px 6px; border-bottom: 1px solid rgba(247, 242, 231, 0.07); vertical-align: top; }
+    tbody tr:hover td { background: rgba(247, 242, 231, 0.03); }
+    input, select, textarea {
+      width: 100%; padding: 8px 9px; font-size: 14px; font-family: inherit; color: var(--creme);
+      background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px;
+    }
+    textarea { resize: vertical; min-height: 58px; line-height: 1.4; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--turq-light); }
+    select option { color: #12333b; }
+    .col-text { width: 50%; } .col-cta { width: 18%; } .col-href { width: 24%; }
+    .col-act { white-space: nowrap; text-align: right; width: 1%; }
+    .order-btn { border: none; background: none; color: var(--glacier); font-size: 15px; padding: 2px 5px; cursor: pointer; line-height: 1; }
+    .order-btn:hover { color: var(--creme); }
+    .order-btn:disabled { opacity: .3; cursor: default; }
+    button { font-family: inherit; cursor: pointer; border-radius: 10px; border: 1px solid var(--glass-border);
+      background: var(--glass); color: var(--creme); font-size: 14px; font-weight: 600; padding: 9px 14px; }
+    button:hover { background: rgba(247, 242, 231, 0.16); } button:active { transform: scale(0.98); }
+    .btn-del { border: none; background: none; color: var(--coral); font-size: 18px; padding: 4px 8px; line-height: 1; }
+    .btn-del:hover { background: rgba(244, 107, 90, 0.15); }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 18px 0; }
+    .btn-primary { background: var(--coral); border-color: transparent; color: #fff; }
+    .btn-primary:hover { background: #e35a49; }
+    .count { color: var(--glacier); font-size: 13px; }
+    .msg { font-size: 13px; margin: 10px 0; min-height: 1.2em; }
+    .msg.err { color: #ffb3a8; } .msg.ok { color: var(--glacier); }
+    .invalid { border-color: var(--coral) !important; }
+    .apphead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+    .topnav { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .topnav a { font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--creme); text-decoration: none; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 10px; padding: 6px 11px; }
+    .topnav a:hover { background: rgba(247, 242, 231, 0.16); }
+    .topnav a.current { border-color: var(--turq-light); }
+    #app { display: none; }
+    .gate { max-width: 360px; margin: 12vh auto 0; text-align: center; }
+    .gate input { text-align: center; margin: 14px 0; }
+    .hint { font-size: 12px; color: var(--glacier); }
+    .note { background: rgba(52, 180, 194, 0.1); border-left: 3px solid var(--turq-light); padding: 10px 12px; border-radius: 8px; font-size: 13px; color: var(--glacier); margin: 0 0 18px; }
+    .note code { font-size: 12px; }
+  </style>
+</head>
+<body>
+  <!-- Écran de connexion (secret) -->
+  <div class="wrap gate" id="gate">
+    <h1><img class="logo" src="/img/logo.png" alt="" />Le savais-tu&nbsp;?</h1>
+    <p class="sub">Accès protégé. Entre le mot de passe d'administration.</p>
+    <input type="password" id="token" placeholder="Mot de passe" autocomplete="current-password" />
+    <button class="btn-primary" id="login" style="width:100%">Entrer</button>
+    <p class="msg err" id="gate-msg"></p>
+  </div>
+
+  <!-- Éditeur -->
+  <div class="wrap" id="app">
+    <div class="apphead">
+      <h1><img class="logo" src="/img/logo.png" alt="" />Le savais-tu&nbsp;?</h1>
+      <div class="topnav">
+        <a href="/admin/correction">Correction biais</a>
+        <a href="/admin/plages">Éditeur des plages</a>
+        <a href="/admin/tips" class="current" aria-current="page">Le savais-tu&nbsp;?</a>
+        <button id="logout">Déconnexion</button>
+      </div>
+    </div>
+    <p class="sub">Une phrase au hasard s'affiche sur la page d'accueil. Modifie puis <strong>Enregistre</strong> — la mise à jour est immédiate.</p>
+
+    <div class="note">
+      <strong>Lien</strong> (facultatif) : <code>#info</code> ouvre l'overlay « Infos &amp; contact », <code>/widget/</code> mène au widget,
+      ou colle une URL complète (<code>https://…</code>). Le <strong>libellé</strong> est le texte cliquable affiché après la phrase. Laisse les deux vides pour une phrase sans lien.
+    </div>
+
+    <div class="toolbar">
+      <span class="count" id="count"></span>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th class="col-text">Phrase</th>
+          <th class="col-cta">Libellé du lien</th>
+          <th class="col-href">Lien</th>
+          <th class="col-act"></th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <div class="actions"><button id="add">+ Ajouter une astuce</button></div>
+
+    <div class="actions">
+      <button id="save" class="btn-primary">Enregistrer &amp; publier</button>
+    </div>
+    <p class="msg" id="msg"></p>
+  </div>
+
+  <datalist id="href-presets">
+    <option value="#info">Infos &amp; contact (overlay)</option>
+    <option value="/widget/">Widget iOS</option>
+  </datalist>
+
+  <script>
+    const $ = (s) => document.querySelector(s);
+    const TOKEN_KEY = "trempette_admin_token";
+    let TOKEN = localStorage.getItem(TOKEN_KEY) || "";
+    let rows = [];
+
+    async function api(method, body) {
+      const r = await fetch("/admin/tips-data", {
+        method,
+        headers: Object.assign({ "X-Admin-Token": TOKEN }, body ? { "content-type": "application/json" } : {}),
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (r.status === 401) throw new Error("unauthorized");
+      if (!r.ok) throw new Error("HTTP " + r.status + " — " + (await r.text()).slice(0, 120));
+      return r.json().catch(() => ({}));
+    }
+
+    async function start() {
+      try {
+        const tips = await api("GET");
+        load(tips);
+        $("#gate").style.display = "none";
+        $("#app").style.display = "block";
+      } catch (e) {
+        if (e.message === "unauthorized") {
+          TOKEN = "";
+          localStorage.removeItem(TOKEN_KEY);
+          $("#gate-msg").textContent = "Mot de passe incorrect.";
+          $("#gate").style.display = "block";
+          $("#app").style.display = "none";
+        } else {
+          $("#gate-msg").textContent = "Erreur : " + e.message;
+          $("#gate").style.display = "block";
+        }
+      }
+    }
+
+    $("#login").addEventListener("click", () => {
+      TOKEN = $("#token").value.trim();
+      localStorage.setItem(TOKEN_KEY, TOKEN);
+      $("#gate-msg").textContent = "";
+      start();
+    });
+    $("#token").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#login").click(); });
+    $("#logout").addEventListener("click", () => {
+      localStorage.removeItem(TOKEN_KEY);
+      location.reload();
+    });
+
+    function load(tips) {
+      rows = (Array.isArray(tips) ? tips : []).map((t) => ({
+        text: t.text || "",
+        cta: t.cta || "",
+        href: t.href || "",
+      }));
+      if (!rows.length) rows.push({ text: "", cta: "", href: "" });
+      render();
+    }
+
+    const esc = (s) =>
+      String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+    function render() {
+      const tb = $("#rows");
+      tb.innerHTML = "";
+      rows.forEach((r, i) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="col-text"><textarea data-i="${i}" data-k="text" placeholder="Le savais-tu ? …">${esc(r.text)}</textarea></td>
+          <td class="col-cta"><input data-i="${i}" data-k="cta" value="${esc(r.cta)}" placeholder="En savoir plus" /></td>
+          <td class="col-href"><input data-i="${i}" data-k="href" value="${esc(r.href)}" list="href-presets" placeholder="#info, /widget/, https://…" /></td>
+          <td class="col-act">
+            <button class="order-btn" data-up="${i}" title="Monter"${i === 0 ? " disabled" : ""}>↑</button>
+            <button class="order-btn" data-down="${i}" title="Descendre"${i === rows.length - 1 ? " disabled" : ""}>↓</button>
+            <button class="btn-del" data-del="${i}" title="Supprimer">✕</button>
+          </td>`;
+        tb.appendChild(tr);
+      });
+      $("#count").textContent = `${rows.length} astuce${rows.length > 1 ? "s" : ""}`;
+    }
+
+    $("#rows").addEventListener("input", (e) => {
+      const el = e.target, i = el.dataset.i, k = el.dataset.k;
+      if (i == null) return;
+      rows[i][k] = el.value;
+    });
+    $("#rows").addEventListener("click", (e) => {
+      const t = e.target;
+      const del = t.dataset.del;
+      if (del != null) {
+        const txt = rows[+del]?.text?.trim() || "cette astuce";
+        if (confirm(`Supprimer « ${txt.slice(0, 50)} » ?`)) { rows.splice(+del, 1); render(); }
+        return;
+      }
+      if (t.dataset.up != null) {
+        const i = +t.dataset.up;
+        if (i > 0) { [rows[i - 1], rows[i]] = [rows[i], rows[i - 1]]; render(); }
+        return;
+      }
+      if (t.dataset.down != null) {
+        const i = +t.dataset.down;
+        if (i < rows.length - 1) { [rows[i + 1], rows[i]] = [rows[i], rows[i + 1]]; render(); }
+      }
+    });
+    $("#add").addEventListener("click", () => {
+      rows.push({ text: "", cta: "", href: "" });
+      render();
+      const tas = $("#rows").querySelectorAll('textarea[data-k="text"]');
+      tas[tas.length - 1]?.focus();
+    });
+
+    function clean() {
+      // Ignore les lignes entièrement vides ; conserve l'ordre.
+      return rows
+        .map((r) => ({ text: r.text.trim(), cta: r.cta.trim(), href: r.href.trim() }))
+        .filter((r) => r.text || r.cta || r.href);
+    }
+
+    function validate(list) {
+      const problems = [];
+      document.querySelectorAll(".invalid").forEach((el) => el.classList.remove("invalid"));
+      rows.forEach((r, i) => {
+        const tr = $("#rows").children[i];
+        const hasAny = r.text.trim() || r.cta.trim() || r.href.trim();
+        if (hasAny && !r.text.trim()) {
+          problems.push(`Astuce ${i + 1} : texte vide`);
+          tr.querySelector('[data-k="text"]').classList.add("invalid");
+        }
+        if (r.cta.trim() && !r.href.trim()) {
+          problems.push(`Astuce ${i + 1} : libellé sans lien`);
+          tr.querySelector('[data-k="href"]').classList.add("invalid");
+        }
+      });
+      return problems;
+    }
+
+    $("#save").addEventListener("click", async () => {
+      const msg = $("#msg");
+      const problems = validate();
+      if (problems.length) {
+        msg.className = "msg err";
+        msg.textContent = `${problems.length} problème(s) : ` + problems.slice(0, 4).join(" · ") + (problems.length > 4 ? "…" : "");
+        return;
+      }
+      const list = clean();
+      if (!list.length) { msg.className = "msg err"; msg.textContent = "Ajoute au moins une astuce."; return; }
+      msg.className = "msg"; msg.textContent = "Enregistrement…";
+      try {
+        const res = await api("POST", list);
+        msg.className = "msg ok";
+        msg.textContent = `✓ Enregistré (${res.count ?? list.length} astuce(s)) — visible immédiatement sur la page d'accueil.`;
+      } catch (e) {
+        msg.className = "msg err";
+        msg.textContent = e.message === "unauthorized" ? "Session expirée — reconnecte-toi." : "Échec : " + e.message;
+        if (e.message === "unauthorized") setTimeout(() => location.reload(), 1500);
+      }
+    });
+
+    // Démarrage : si un token est déjà en mémoire, on tente directement.
+    if (TOKEN) start();
+    else $("#token").focus();
+  </script>
+</body>
+</html>

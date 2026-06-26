@@ -18,6 +18,7 @@
 import bundledLakes from "../scripts/lakes.json";
 import plagesHtml from "./plages.html";
 import correctionHtml from "./correction.html";
+import tipsHtml from "./tips.html";
 import {
   flattenLakes,
   fetchWindow,
@@ -34,6 +35,39 @@ const DATA_KEY = "data";
 const WINDOWS_KEY = "windows";
 const CATALOGUE_KEY = "catalogue";
 const HISTORY_KEY = "history";
+const TIPS_KEY = "tips";
+
+// Astuces « Le savais-tu ? » affichées (au hasard) sur la page d'accueil.
+// Source de vérité : KV (clé "tips"), éditable sur /admin/tips. Ce tableau sert
+// de repli tant que rien n'a été enregistré. href "#info" ouvre l'overlay
+// Infos & contact ; sinon c'est un lien normal (page interne ou URL).
+const DEFAULT_TIPS = [
+  {
+    text: "Les températures affichées proviennent d'un modèle et sont ajustées avec des stations de mesure dans l'eau.",
+    cta: "En savoir plus",
+    href: "#info",
+  },
+  { text: "Une idée ou un commentaire ? Écris-nous !", cta: "Contact", href: "#info" },
+  { text: "Trempette propose aussi un widget pour iPhone.", cta: "Découvrir le widget", href: "/widget/" },
+];
+
+async function getTips(env) {
+  const t = await env.DATA.get(TIPS_KEY, "json");
+  return Array.isArray(t) && t.length ? t : DEFAULT_TIPS;
+}
+
+// Validation légère avant écriture (évite de casser le rendu de la page).
+function validTips(t) {
+  if (!Array.isArray(t)) return "tips : tableau attendu";
+  if (t.length > 50) return "trop d'astuces (max 50)";
+  for (const x of t) {
+    if (!x || typeof x.text !== "string" || !x.text.trim()) return "astuce sans texte";
+    if (x.text.length > 400) return "astuce trop longue (max 400)";
+    if (x.cta != null && (typeof x.cta !== "string" || x.cta.length > 80)) return "libellé de lien invalide";
+    if (x.href != null && (typeof x.href !== "string" || x.href.length > 300)) return "lien invalide";
+  }
+  return null;
+}
 
 // Plan GRATUIT : ≤ 50 sous-requêtes/invocation. Alplakes throttle le parallèle → séquentiel.
 const TRIES = 1;
@@ -152,6 +186,7 @@ async function regenerate(env) {
 
   const payload = {
     updatedAt: new Date(now).toISOString(),
+    tips: await getTips(env),
     counts: { total: out.length, water: out.filter((b) => b.water != null).length },
     lemanBiases: lemanBiases
       .filter((b) => b.bias != null)
@@ -227,6 +262,49 @@ async function handleAdmin(request, env, ctx, pathname) {
   // Éditeur des plages, désormais sur son propre chemin.
   if (pathname === "/admin/plages" || pathname === "/admin/plages/") {
     return htmlPage(plagesHtml);
+  }
+
+  // Éditeur des astuces « Le savais-tu ? ».
+  if (pathname === "/admin/tips" || pathname === "/admin/tips/") {
+    return htmlPage(tipsHtml);
+  }
+
+  if (pathname === "/admin/tips-data") {
+    if (!authorized(request, env)) return json({ error: "unauthorized" }, 401);
+
+    if (request.method === "GET") {
+      return json(await getTips(env));
+    }
+    if (request.method === "POST") {
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return new Response("JSON invalide", { status: 400 });
+      }
+      const err = validTips(body);
+      if (err) return new Response(err, { status: 400 });
+      const tips = body.map((x) => ({
+        text: x.text.trim(),
+        cta: x.cta ? x.cta.trim() : "",
+        href: x.href ? x.href.trim() : "",
+      }));
+      await env.DATA.put(TIPS_KEY, JSON.stringify(tips));
+      // Reflète tout de suite dans data.json (lu par la page), sans relancer le
+      // pipeline complet (eau/air) : un simple patch du JSON déjà en cache.
+      try {
+        const raw = await env.DATA.get(DATA_KEY);
+        if (raw) {
+          const d = JSON.parse(raw);
+          d.tips = tips;
+          await env.DATA.put(DATA_KEY, JSON.stringify(d));
+        }
+      } catch {
+        /* pas de data.json encore : il sera créé avec ces tips au prochain cycle */
+      }
+      return json({ ok: true, count: tips.length });
+    }
+    return new Response("Méthode non autorisée", { status: 405 });
   }
 
   if (pathname === "/admin/history") {

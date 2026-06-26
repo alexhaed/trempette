@@ -54,6 +54,7 @@
       <symbol id="i-thermo" viewBox="0 0 24 24"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4 4 0 1 0 4 0Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
       <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
       <symbol id="i-locate" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 2v3.5M12 18.5V22M2 12h3.5M18.5 12H22"></path></g></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></g></symbol>
     </defs>
   </svg>
 
@@ -119,11 +120,20 @@
       <p class="loading">Chargement…</p>
     </main>
 
+    <!-- « Le savais-tu ? » : astuce aléatoire, discrète -->
+    <aside id="tip" class="tip" hidden aria-label="Le savais-tu ?">
+      <span class="tip-title">
+        <svg class="tip-ico" width="14" height="14" aria-hidden="true"><use href="#i-info"></use></svg>
+        Le savais-tu&nbsp;?
+      </span>
+      <p id="tip-body" class="tip-body"></p>
+    </aside>
+
     <!-- Pied de page -->
     <footer class="foot">
       <p id="updated" class="updated"></p>
       <p class="credits">Eau : Alplakes &amp; Datalakes (Eawag) · Air &amp; vent : open-meteo.com</p>
-      <p class="version">v1.48 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
+      <p class="version">v1.49 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
     </footer>
     </div>
   </div>

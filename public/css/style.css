@@ -476,6 +476,36 @@ body {
 .beach-star.on svg { fill: var(--fav); stroke: var(--fav); }
 
 /* ---- Pied de page ---- */
+/* ---- « Le savais-tu ? » : encart discret au-dessus du pied de page ---- */
+.tip {
+  margin: 16px var(--gutter) 0;
+  padding: 12px 14px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+}
+.tip-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--glacier);
+  margin-bottom: 4px;
+}
+.tip-ico { flex-shrink: 0; color: var(--glacier); }
+.tip-body { margin: 0; font-size: 13.5px; line-height: 1.5; color: rgba(247, 242, 231, 0.82); }
+.tip-body a {
+  color: var(--turq-light);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.tip-body a:hover { text-decoration: underline; }
+
 .foot { text-align: center; padding: 16px var(--gutter) 8px; line-height: 1.6; }
 .foot .updated { margin: 0; font-size: 12px; font-weight: 600; color: var(--glacier); }
 .foot .credits { margin: 3px 0 0; font-size: 11px; color: rgba(247, 242, 231, 0.5); }

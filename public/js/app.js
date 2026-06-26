@@ -8,6 +8,7 @@ const COLLAPSE_KEY = "trempette_lacs_replies"; // lacs repliés en mode « Par l
 const state = {
   beaches: [],
   updatedAt: null,
+  tips: [], // astuces « Le savais-tu ? » (servies dans data.json)
   sort: "lake", // défaut : Par lac
   query: "",
   favOrder: loadFavOrder(), // tableau ordonné d'ids favoris
@@ -75,11 +76,15 @@ async function load() {
     const data = await r.json();
     state.beaches = data.beaches || [];
     state.updatedAt = data.updatedAt;
+    state.tips = Array.isArray(data.tips) ? data.tips : [];
     // Purge les favoris dont la plage n'existe plus.
     const ids = new Set(state.beaches.map((b) => b.id));
     state.favOrder = state.favOrder.filter((id) => ids.has(id));
     lastLoadedAt = Date.now();
     renderAll();
+    // Astuce tirée une seule fois par chargement (pas à chaque renderAll, pour
+    // ne pas la faire sauter quand on change de tri / favori).
+    renderTip();
   } catch (e) {
     listEl.innerHTML = `<p class="empty">Impossible de charger les données.<br>${e.message}</p>`;
   }
@@ -364,6 +369,38 @@ function renderUpdated() {
   const date = d.toLocaleDateString("fr-CH", { day: "2-digit", month: "2-digit" });
   const heure = d.toLocaleTimeString("fr-CH", { hour: "2-digit", minute: "2-digit" });
   el.textContent = `Mis à jour le ${date} à ${heure}`;
+}
+
+// ---- « Le savais-tu ? » ----
+// Affiche une astuce au hasard. href "#info" ouvre l'overlay Infos & contact ;
+// une URL externe s'ouvre dans un nouvel onglet ; un chemin interne navigue.
+function renderTip() {
+  const box = $("#tip");
+  const body = $("#tip-body");
+  if (!box || !body) return;
+  if (!state.tips.length) {
+    box.hidden = true;
+    return;
+  }
+  const t = state.tips[Math.floor(Math.random() * state.tips.length)];
+  body.textContent = t.text || "";
+  if (t.cta && t.href) {
+    body.append(" ");
+    const a = document.createElement("a");
+    a.textContent = t.cta;
+    a.href = t.href;
+    if (t.href === "#info") {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        openInfo();
+      });
+    } else if (/^https?:/i.test(t.href)) {
+      a.target = "_blank";
+      a.rel = "noopener";
+    }
+    body.appendChild(a);
+  }
+  box.hidden = false;
 }
 
 // ---- Favoris ----
