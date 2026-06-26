@@ -143,9 +143,13 @@
       const last = HISTORY[HISTORY.length - 1] || null;
       const last24 = HISTORY.filter((p) => p.t >= Date.now() - 24 * 3600e3);
       const pannes = pts.filter((p) => !p.lex || !p.buch).length;
+      const lagLex = pts.filter((p) => p.lex && p.lex.lag).length;
+      const lagBuch = pts.filter((p) => p.buch && p.buch.lag).length;
+      const lagCycles = pts.filter((p) => (p.lex && p.lex.lag) || (p.buch && p.buch.lag)).length;
+      const lagHint = lagLex || lagBuch ? `LéXPLORE: ${lagLex} · Buchillon: ${lagBuch}` : "flux à jour";
 
       // Ventilation des raisons de panne (par cycle), pour rendre le moniteur auto-explicite.
-      const RLABEL = { reseau: "réseau", "pas-mesure": "pas de mesure", "pas-modele": "modèle", fige: "figé", perime: "périmé", aberrant: "aberrant" };
+      const RLABEL = { reseau: "réseau", "pas-mesure": "pas de mesure", "pas-modele": "modèle", perime: "périmé", aberrant: "aberrant" };
       const reasonCount = {};
       for (const p of pts) {
         if (!p.drop) continue;
@@ -154,7 +158,11 @@
       const reasonHint =
         Object.entries(reasonCount).sort((a, b) => b[1] - a[1]).map(([r, n]) => `${RLABEL[r] || r}: ${n}`).join(" · ") ||
         "sur période affichée";
-      const buoyHint = (key) => (last && last.drop && last.drop[key] ? "écartée : " + (RLABEL[last.drop[key]] || last.drop[key]) : "dernier point");
+      const buoyHint = (key) => {
+        if (last && last.drop && last.drop[key]) return "écartée : " + (RLABEL[last.drop[key]] || last.drop[key]);
+        if (last && last[key] && last[key].lag) return "flux en retard";
+        return "dernier point";
+      };
 
       // Cartes récap
       const cards = [
@@ -163,6 +171,7 @@
         ["Correction moy.", last && last.c != null ? fmt(last.c) + " °C" : "—", last ? last.n + " plages" : ""],
         ["Biais moyen 24 h", fmt(mean(last24.flatMap((p) => [p.lex && p.lex.b, p.buch && p.buch.b])), 2) + " °C", "2 bouées"],
         ["Cycles sans bouée", String(pannes), reasonHint],
+        ["Cycles en retard", String(lagCycles), lagHint],
         ["Points", String(pts.length), "depuis " + (HISTORY[0] ? tlabel(HISTORY[0].t) : "—")],
       ];
       $("#cards").innerHTML = cards
@@ -176,9 +185,9 @@
       const tempData = {
         labels,
         datasets: [
-          { ...baseLine, label: "LéXPLORE mesure", data: pts.map((p) => p.lex && p.lex.i), borderColor: col.lexI },
+          { ...baseLine, label: "LéXPLORE mesure", data: pts.map((p) => p.lex && p.lex.i), borderColor: col.lexI, pointRadius: pts.map((p) => (p.lex && p.lex.lag ? 3 : 0)), pointBackgroundColor: col.lexI },
           { ...baseLine, label: "LéXPLORE modèle", data: pts.map((p) => p.lex && p.lex.m), borderColor: col.lexM, borderDash: [5, 4] },
-          { ...baseLine, label: "Buchillon mesure", data: pts.map((p) => p.buch && p.buch.i), borderColor: col.buchI },
+          { ...baseLine, label: "Buchillon mesure", data: pts.map((p) => p.buch && p.buch.i), borderColor: col.buchI, pointRadius: pts.map((p) => (p.buch && p.buch.lag ? 3 : 0)), pointBackgroundColor: col.buchI },
           { ...baseLine, label: "Buchillon modèle", data: pts.map((p) => p.buch && p.buch.m), borderColor: col.buchM, borderDash: [5, 4] },
         ],
       };

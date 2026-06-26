@@ -92,10 +92,13 @@ Principe, à chaque cycle de cron :
    décalé du même offset ; la tendance, elle, est inchangée).
 
 **Garde-fous** : une bouée est écartée si l'API échoue ou ne renvoie aucune mesure
-récente, si le modèle est indisponible, si le **flux est gelé** (horodatage figé
-\>2 h, capteur muet), si la mesure est **périmée** (\>6 h) ou si le **biais est
-aberrant** (\>5 °C). Chaque raison est journalisée (`[bias] …`) et visible dans le
-moniteur. Si aucune bouée n'est exploitable, on sert le modèle brut ; la valeur
+récente, si le modèle est indisponible, si la mesure est **périmée** (\>6 h) ou si
+le **biais est aberrant** (\>5 °C). Si son flux **traîne** (horodatage figé ≥2 h —
+fréquent : pauses de publication d'environ 5 h, LéXPLORE le soir, Buchillon la nuit),
+la bouée est seulement signalée **« en retard »** dans le moniteur **mais reste
+utilisée** : le biais dérive lentement, donc une mesure de quelques heures reste
+fiable, et c'est mieux que retomber sur le modèle brut. Chaque cas est journalisé
+(`[bias] …`). Si aucune bouée n'est exploitable, on sert le modèle brut ; la valeur
 modèle d'origine est conservée (`waterModel`).
 
 **Limites** : 2 points au large → correction quasi-locale près d'une bouée, sinon

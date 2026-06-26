@@ -276,18 +276,21 @@ async function fetchBuoyInsitu(fetchFn, buoy, tries) {
 // fenêtres `cache` (clés `_buoy_*`) et la détection de run quotidien `endDates`.
 //
 // Renvoie un résultat par bouée avec une `reason` explicite (pour le moniteur) :
-//   ok          → biais calculé (bias renseigné)
+//   ok          → biais calculé (bias renseigné). `lag:true` si le flux traîne
+//                 (horodatage figé ≥2 h) mais < 6 h → bouée CONSERVÉE, juste signalée.
 //   reseau      → l'API Datalakes a échoué (réseau/HTTP)         [écartée]
 //   pas-mesure  → API OK mais aucune mesure récente valide        [écartée]
 //   pas-modele  → fenêtre modèle Alplakes indisponible            [écartée]
-//   fige        → flux gelé : horodatage figé >2 h (capteur muet) [écartée]
 //   perime      → dernière mesure trop ancienne (>6 h)            [écartée]
 //   aberrant    → biais > 5 °C (probable défaut capteur)          [écartée]
 //
-// Flux « gelé » : l'API répond OK mais l'horodatage de la mesure n'avance plus.
-// Seuil à 2 h pour ne pas faire de faux positif sur Buchillon (point horaire,
-// ≤ ~1,5 h entre points). État inter-cycles stocké dans `cache._buoyState`.
-const FROZEN_MS = 2 * 3600e3;
+// « Retard » de flux : l'API répond OK mais l'horodatage n'avance plus. Mesuré sur
+// les vrais flux (cf. historique), les pauses de publication durent ~5 h (LéXPLORE
+// le soir, Buchillon la nuit) → on ne coupe PAS la correction pour si peu (le biais
+// dérive lentement). On signale dès 2 h (LAG_MS), on n'écarte qu'à 6 h (PERIME_MS,
+// « périmé »). État inter-cycles stocké dans `cache._buoyState`.
+const LAG_MS = 2 * 3600e3;
+const PERIME_MS = 6 * 3600e3;
 
 export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 1) {
   const results = [];
@@ -335,21 +338,22 @@ export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 
     if (!insitu) { drop("pas-mesure", "aucune valeur récente valide"); continue; }
     base.insitu = insitu.temp;
 
-    // Suivi du flux : on note quand cet horodatage de mesure est apparu pour la
-    // première fois ; s'il ne bouge plus depuis >FROZEN_MS, le capteur est muet.
+    // Suivi du flux : depuis quand l'horodatage de mesure n'avance plus. Au-delà de
+    // LAG_MS, le flux « traîne » → on le signale (lag) sans écarter la bouée.
     const st = state[buoy.id];
     if (!st || st.seen !== insitu.time) state[buoy.id] = { seen: insitu.time, since: now };
     const frozenFor = now - state[buoy.id].since;
+    const lagging = frozenFor >= LAG_MS;
 
     if (!c) { drop("pas-modele", "fenêtre modèle indisponible"); continue; }
-    if (frozenFor >= FROZEN_MS) { drop("fige", `horodatage figé depuis ${(frozenFor / 3600e3).toFixed(1)} h`); continue; }
-    if (now - insitu.time > 6 * 3600e3) { drop("perime", `dernière mesure il y a ${((now - insitu.time) / 3600e3).toFixed(1)} h`); continue; }
+    if (now - insitu.time > PERIME_MS) { drop("perime", `dernière mesure il y a ${((now - insitu.time) / 3600e3).toFixed(1)} h`); continue; }
     const modelAtObs = interpolate(c, insitu.time).water; // modèle à l'heure de la mesure
     if (modelAtObs == null) { drop("pas-modele", "interpolation hors fenêtre"); continue; }
     base.model = modelAtObs;
     const bias = insitu.temp - modelAtObs;
     if (Math.abs(bias) > 5) { drop("aberrant", `biais ${bias.toFixed(1)} °C`); continue; }
-    results.push({ ...base, bias, reason: "ok" });
+    if (lagging) console.warn(`[bias] ${buoy.name} flux en retard ~${(frozenFor / 3600e3).toFixed(1)} h — bouée conservée`);
+    results.push({ ...base, bias, reason: "ok", lag: lagging, lagH: lagging ? round1(frozenFor / 3600e3) : 0 });
   }
   return results;
 }
@@ -395,7 +399,10 @@ const HISTORY_MIN_GAP_MS = 10 * 60e3;
 export function pushHistory(history, now, results, out) {
   const arr = Array.isArray(history) ? history : [];
   const by = Object.fromEntries((results || []).map((b) => [b.name, b]));
-  const buoy = (b) => (b && b.bias != null ? { i: round1(b.insitu), m: round1(b.model), b: round2(b.bias) } : null);
+  const buoy = (b) =>
+    b && b.bias != null
+      ? { i: round1(b.insitu), m: round1(b.model), b: round2(b.bias), ...(b.lag ? { lag: 1 } : {}) }
+      : null;
   const corrected = (out || []).filter((o) => o && o.bias != null);
   const meanCorr = corrected.length
     ? corrected.reduce((s, o) => s + o.bias, 0) / corrected.length
