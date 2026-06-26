@@ -142,7 +142,7 @@
       const pts = HISTORY.filter(inRange);
       const last = HISTORY[HISTORY.length - 1] || null;
       const last24 = HISTORY.filter((p) => p.t >= Date.now() - 24 * 3600e3);
-      const pannes = pts.filter((p) => !p.lex || !p.buch).length;
+      const pannes = pts.filter((p) => p.drop && (p.drop.lex || p.drop.buch)).length;
       const lagLex = pts.filter((p) => p.lex && p.lex.lag).length;
       const lagBuch = pts.filter((p) => p.buch && p.buch.lag).length;
       const lagCycles = pts.filter((p) => (p.lex && p.lex.lag) || (p.buch && p.buch.lag)).length;
@@ -166,13 +166,12 @@
 
       // Cartes récap
       const cards = [
-        ["Biais LéXPLORE", last && last.lex ? fmt(last.lex.b) + " °C" : "—", buoyHint("lex")],
-        ["Biais Buchillon", last && last.buch ? fmt(last.buch.b) + " °C" : "—", buoyHint("buch")],
+        ["Biais LéXPLORE", last && last.lex && last.lex.b != null ? fmt(last.lex.b) + " °C" : "—", buoyHint("lex")],
+        ["Biais Buchillon", last && last.buch && last.buch.b != null ? fmt(last.buch.b) + " °C" : "—", buoyHint("buch")],
         ["Correction moy.", last && last.c != null ? fmt(last.c) + " °C" : "—", last ? last.n + " plages" : ""],
         ["Biais moyen 24 h", fmt(mean(last24.flatMap((p) => [p.lex && p.lex.b, p.buch && p.buch.b])), 2) + " °C", "2 bouées"],
         ["Cycles sans bouée", String(pannes), reasonHint],
         ["Cycles en retard", String(lagCycles), lagHint],
-        ["Points", String(pts.length), "depuis " + (HISTORY[0] ? tlabel(HISTORY[0].t) : "—")],
       ];
       $("#cards").innerHTML = cards
         .map((c) => `<div class="card"><div class="lbl">${c[0]}</div><div class="val">${c[1]}</div><div class="hint">${c[2]}</div></div>`)

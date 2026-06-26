@@ -323,6 +323,10 @@ export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 
         console.warn(`[bias] ${buoy.name} modèle Alplakes KO — ${e?.message || e}`);
       }
     }
+    // Modèle « maintenant » au point de la bouée : défaut, pour que la courbe du
+    // modèle reste continue dans le moniteur même quand l'in-situ manque. Remplacé
+    // plus bas par le modèle à l'heure de la mesure quand on calcule le biais.
+    if (c) base.model = interpolate(c, now).water;
 
     // 2. Mesure in-situ (Datalakes).
     let insitu = null;
@@ -399,10 +403,18 @@ const HISTORY_MIN_GAP_MS = 10 * 60e3;
 export function pushHistory(history, now, results, out) {
   const arr = Array.isArray(history) ? history : [];
   const by = Object.fromEntries((results || []).map((b) => [b.name, b]));
-  const buoy = (b) =>
-    b && b.bias != null
-      ? { i: round1(b.insitu), m: round1(b.model), b: round2(b.bias), ...(b.lag ? { lag: 1 } : {}) }
-      : null;
+  // On stocke m/i/b indépendamment : le modèle (`m`) est tracé même quand la bouée
+  // est écartée (sa ligne reste continue), la mesure (`i`) disparaît si l'in-situ
+  // manque, et le biais (`b`) n'existe que si la bouée a servi à la correction.
+  const buoy = (b) => {
+    if (!b) return null;
+    const o = {};
+    if (b.model != null) o.m = round1(b.model);
+    if (b.insitu != null) o.i = round1(b.insitu);
+    if (b.bias != null) o.b = round2(b.bias);
+    if (b.lag) o.lag = 1;
+    return Object.keys(o).length ? o : null;
+  };
   const corrected = (out || []).filter((o) => o && o.bias != null);
   const meanCorr = corrected.length
     ? corrected.reduce((s, o) => s + o.bias, 0) / corrected.length
