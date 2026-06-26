@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Widget iOS — Trempette</title>
+<link rel="icon" href="../icons/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="../icons/icon-180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --turq-light: #34B4C2;
+    --turq-mid: #1F97A8;
+    --turq-deep: #0E6273;
+    --turq-deepest: #08323D;
+    --creme: #F7F2E7;
+    --glacier: #BDEAF0;
+    --coral: #F46B5A;
+    --glass: rgba(247, 242, 231, 0.08);
+    --glass-border: rgba(247, 242, 231, 0.18);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
+    background: linear-gradient(160deg, var(--turq-deep) 0%, var(--turq-deepest) 60%) fixed, var(--turq-deepest);
+    color: var(--creme);
+    min-height: 100vh;
+    padding: 28px 18px 60px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 600px; margin: 0 auto; }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 28px;
+  }
+  .brand-logo {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    flex-shrink: 0;
+  }
+  .brand-text h1 {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    margin: 0 0 2px;
+    color: var(--creme);
+  }
+  .brand-text p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--glacier);
+  }
+
+  .card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 22px;
+    margin-bottom: 18px;
+  }
+  label { display: block; font-weight: 600; margin: 0 0 6px; font-size: 13px; color: var(--glacier); text-transform: uppercase; letter-spacing: .05em; }
+  .field { margin-bottom: 18px; }
+  select {
+    width: 100%;
+    padding: 11px 13px;
+    font-size: 15px;
+    font-family: inherit;
+    border-radius: 10px;
+    border: 1px solid var(--glass-border);
+    background: rgba(8, 50, 61, 0.6);
+    color: var(--creme);
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23BDEAF0' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 13px center;
+    padding-right: 36px;
+  }
+  select:focus { outline: none; border-color: var(--turq-light); }
+  button {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: inherit;
+    border-radius: 10px;
+    border: none;
+    background: var(--turq-light);
+    color: #06262e;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter .15s;
+  }
+  button:hover { filter: brightness(1.08); }
+  button:active { filter: brightness(0.92); transform: scale(.99); }
+  .hint { font-size: 12px; color: var(--glacier); opacity: 0.8; margin-top: 5px; }
+
+  #result { display: none; }
+  #result h2 {
+    font-family: "Bricolage Grotesque", sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    margin: 0 0 12px;
+    color: var(--creme);
+  }
+  .steps { font-size: 13px; color: var(--glacier); margin: 0 0 14px; padding-left: 18px; }
+  .steps li { margin-bottom: 5px; }
+  .steps a { color: var(--turq-light); }
+  pre#output {
+    width: 100%;
+    height: 280px;
+    margin: 0;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.45;
+    border-radius: 10px;
+    border: 1px solid var(--glass-border);
+    padding: 12px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: rgba(4, 20, 24, 0.7);
+    color: var(--glacier);
+    -webkit-overflow-scrolling: touch;
+  }
+  .copy-row { display: flex; gap: 10px; margin-top: 12px; }
+  .copy-row button { flex: 1; }
+  .copied { background: #2ecc71 !important; color: #fff !important; }
+  footer { text-align: center; color: var(--glacier); opacity: 0.55; font-size: 12px; margin-top: 16px; }
+  .note {
+    background: rgba(52, 180, 194, 0.1);
+    border-left: 3px solid var(--turq-light);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--glacier);
+    margin-top: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="brand-logo" src="../img/logo.png" alt="" width="36" height="36" />
+    <div class="brand-text">
+      <h1>Widget iOS — Trempette</h1>
+      <p>Génère un widget Scriptable pour ta plage d'un lac romand</p>
+    </div>
+  </header>
+
+  <div class="card">
+    <div class="field">
+      <label for="lake">Lac</label>
+      <select id="lake"></select>
+    </div>
+
+    <div class="field">
+      <label for="beach">Plage</label>
+      <select id="beach"></select>
+    </div>
+
+    <div class="field">
+      <label for="freq">Fréquence de mise à jour</label>
+      <select id="freq">
+        <option value="30">Toutes les 30 minutes</option>
+        <option value="60" selected>Toutes les heures</option>
+        <option value="120">Toutes les 2 heures</option>
+        <option value="180">Toutes les 3 heures</option>
+      </select>
+      <div class="hint">iOS gère le rafraîchissement réel ; cette valeur est une indication.</div>
+    </div>
+
+    <button id="generate">Générer le script</button>
+  </div>
+
+  <div class="card" id="result">
+    <h2>📋 Ton script Scriptable</h2>
+    <ol class="steps">
+      <li>Installe l'app <a href="https://apps.apple.com/app/scriptable/id1405459188" target="_blank" rel="noopener"><strong>Scriptable</strong></a> (gratuite, App Store).</li>
+      <li>Copie le script ci-dessous.</li>
+      <li>Dans Scriptable : <strong>+</strong> → colle → renomme le script.</li>
+      <li>Ajoute un widget Scriptable à ton écran d'accueil et choisis ce script.</li>
+    </ol>
+    <pre id="output"></pre>
+    <div class="copy-row">
+      <button id="copy">Copier le script</button>
+    </div>
+    <div class="note">Astuce : tu peux générer plusieurs scripts (un par plage) et créer plusieurs widgets.</div>
+  </div>
+
+  <footer>Données : trempette.app (Alplakes · open-meteo) · v4.0</footer>
+</div>
+
+<!-- Catalogue construit dynamiquement depuis /data.json (source unique :
+     trempette). Ajouter une plage dans trempette la fait apparaître ici. -->
+<script>
+const lakeSel = document.getElementById("lake");
+const sel = document.getElementById("beach");
+let catalogue = [];  // [{ lake, lakeName, items: [{ id, name, group }] }]
+
+function buildCatalogue(beaches) {
+  const order = [];
+  const byLake = new Map();
+  for (const b of beaches) {
+    if (!byLake.has(b.lake)) {
+      byLake.set(b.lake, { lake: b.lake, lakeName: b.lakeName || b.lake, items: [] });
+      order.push(b.lake);
+    }
+    byLake.get(b.lake).items.push({ id: b.id, name: b.name, group: b.group || null });
+  }
+  return order.map(function (k) { return byLake.get(k); });
+}
+
+function makeBeachOption(b) {
+  const o = document.createElement("option");
+  o.value = b.id;
+  o.dataset.name = b.name;
+  o.textContent = b.name;
+  return o;
+}
+
+function populateBeaches() {
+  const lk = catalogue[Number(lakeSel.value)];
+  sel.innerHTML = "";
+  if (!lk) return;
+  if (lk.items.some(function (b) { return b.group; })) {
+    // Sous-catégories par région (Léman)
+    const order = [];
+    const byGroup = new Map();
+    for (const b of lk.items) {
+      const g = b.group || "Autres";
+      if (!byGroup.has(g)) { byGroup.set(g, []); order.push(g); }
+      byGroup.get(g).push(b);
+    }
+    for (const g of order) {
+      const og = document.createElement("optgroup");
+      og.label = g;
+      for (const b of byGroup.get(g)) og.appendChild(makeBeachOption(b));
+      sel.appendChild(og);
+    }
+  } else {
+    for (const b of lk.items) sel.appendChild(makeBeachOption(b));
+  }
+}
+
+lakeSel.addEventListener("change", populateBeaches);
+
+(async function init() {
+  try {
+    const data = await fetch("/data.json", { cache: "no-store" }).then(function (r) { return r.json(); });
+    catalogue = buildCatalogue(data.beaches || []);
+  } catch (e) {
+    catalogue = [];
+  }
+  lakeSel.innerHTML = "";
+  if (!catalogue.length) {
+    const o = document.createElement("option");
+    o.textContent = "Données indisponibles";
+    lakeSel.appendChild(o);
+    return;
+  }
+  catalogue.forEach(function (lk, i) {
+    const o = document.createElement("option");
+    o.value = String(i);
+    o.textContent = lk.lakeName;
+    lakeSel.appendChild(o);
+  });
+  populateBeaches();
+  // Sélection par défaut : Pélican (Saint-Sulpice)
+  for (const o of sel.options) {
+    if (o.value === "geneva-pelican") { o.selected = true; break; }
+  }
+})();
+</script>
+
+<!-- Modèle du script Scriptable -->
+<textarea id="tpl" hidden>
+// === Widget Température Lac — %%NAME%% ===
+// Généré sur https://trempette.app/widget/ — collez dans Scriptable.
+// Données (eau corrigée du biais, air, vent) servies par trempette.app.
+
+const CONFIG = {
+  name: "%%NAME%%",
+  id: "%%ID%%",
+  refreshMinutes: %%FREQ%%
+};
+
+const KEY = "trempette_" + CONFIG.id;
+
+async function getData() {
+  const r = await new Request("https://trempette.app/data.json").loadJSON();
+  if (!r || !Array.isArray(r.beaches)) throw new Error("données indisponibles");
+  const b = r.beaches.find(function (x) { return x.id === CONFIG.id; });
+  if (!b) throw new Error("plage introuvable : " + CONFIG.id);
+  // On reprend les clés attendues par le rendu (lake = eau corrigée du biais).
+  return {
+    lake: b.water,
+    slope: b.trend,
+    air: b.air,
+    wind: b.wind,
+    dir: b.windDir,
+    ts: r.updatedAt ? new Date(r.updatedAt).getTime() : Date.now()
+  };
+}
+
+function windArrow(deg) {
+  // deg = provenance ; la flèche pointe vers où va le vent
+  const a = ["↓", "↙", "←", "↖", "↑", "↗", "→", "↘"];
+  return a[Math.round(deg / 45) % 8];
+}
+function fmtTemp(v) { return (v === null || v === undefined) ? "–" : v.toFixed(1) + "°"; }
+function fmtWind(v) { return (v === null || v === undefined) ? "–" : Math.round(v) + " km/h"; }
+function trendArrow(slope) {
+  if (slope === null || slope === undefined) return "";
+  if (slope > 0.05) return "▲";   // l'eau se réchauffe
+  if (slope < -0.05) return "▼";  // l'eau se refroidit
+  return "▶";                      // stable
+}
+
+// Récupération depuis trempette, avec cache de secours.
+let reading;
+try {
+  reading = await getData();
+  Keychain.set(KEY, JSON.stringify(reading));
+} catch (e) {
+  reading = Keychain.contains(KEY)
+    ? JSON.parse(Keychain.get(KEY))
+    : { lake: null, slope: null, air: null, wind: null, dir: null, ts: Date.now() };
+}
+
+// Construction du widget (mise en page reprise du mock-up)
+const WHITE = new Color("#ffffff");
+const LABEL = new Color("#8ab4f8");
+const MUTED = new Color("#666666");
+const LABEL_FONT = Font.mediumSystemFont(10);
+
+const w = new ListWidget();
+w.backgroundColor = new Color("#0a1628");
+w.setPadding(12, 14, 12, 14);
+
+// Titre
+const title = w.addText("🏖 " + CONFIG.name);
+title.textColor = WHITE;
+title.font = Font.boldSystemFont(13);
+
+w.addSpacer(8);
+
+// Température du lac (grande)
+const lacRow = w.addStack();
+lacRow.centerAlignContent();
+
+const lacIcon = lacRow.addText("🌊");
+lacIcon.font = Font.systemFont(22);
+
+lacRow.addSpacer(6);
+
+const lacStack = lacRow.addStack();
+lacStack.layoutVertically();
+
+const lacLabel = lacStack.addText("Lac");
+lacLabel.textColor = LABEL;
+lacLabel.font = LABEL_FONT;
+
+// Valeur + tendance sur une même ligne : le triangle, plus petit, à droite
+// du chiffre et centré verticalement.
+const lacValRow = lacStack.addStack();
+lacValRow.centerAlignContent();
+const lacTemp = lacValRow.addText(fmtTemp(reading.lake));
+lacTemp.textColor = WHITE;
+lacTemp.font = Font.boldSystemFont(24);
+const trend = trendArrow(reading.slope);
+if (trend) {
+  lacValRow.addSpacer(6);
+  const tri = lacValRow.addText(trend);
+  tri.textColor = WHITE;
+  tri.font = Font.systemFont(14);
+}
+
+w.addSpacer(8);
+
+// Air + Vent sur une ligne
+const meteoRow = w.addStack();
+meteoRow.centerAlignContent();
+
+// Air
+const airStack = meteoRow.addStack();
+airStack.layoutVertically();
+const airLabel = airStack.addText("🌡 Air");
+airLabel.textColor = LABEL;
+airLabel.font = LABEL_FONT;
+const airVal = airStack.addText(fmtTemp(reading.air));
+airVal.textColor = WHITE;
+airVal.font = Font.boldSystemFont(16);
+
+meteoRow.addSpacer();
+
+// Vent
+const ventStack = meteoRow.addStack();
+ventStack.layoutVertically();
+const ventLabel = ventStack.addText("💨 Vent");
+ventLabel.textColor = LABEL;
+ventLabel.font = LABEL_FONT;
+let ventStr = fmtWind(reading.wind);
+if (reading.dir !== null && reading.dir !== undefined) {
+  ventStr += " " + windArrow(reading.dir);
+}
+const ventVal = ventStack.addText(ventStr);
+ventVal.textColor = WHITE;
+ventVal.font = Font.boldSystemFont(16);
+
+w.addSpacer(8);
+
+// Heure de mise à jour : heure absolue du dernier appel API réussi
+// (reading.ts), calculée depuis la variable. Une heure reste juste quand on
+// la lit, donc pas de gel trompeur entre deux rafraîchissements.
+const majFmt = new DateFormatter();
+majFmt.locale = "fr_CH";
+majFmt.useNoDateStyle();
+majFmt.useShortTimeStyle();
+const maj = w.addText("Mis à jour à " + majFmt.string(new Date(reading.ts)));
+maj.textColor = MUTED;
+maj.font = Font.systemFont(9);
+
+w.refreshAfterDate = new Date(Date.now() + CONFIG.refreshMinutes * 60 * 1000);
+
+if (config.runsInWidget) {
+  Script.setWidget(w);
+} else {
+  w.presentSmall();
+}
+Script.complete();
+</textarea>
+
+<script>
+const tpl = document.getElementById("tpl").value;
+const out = document.getElementById("output");
+const result = document.getElementById("result");
+let lastScript = "";
+
+document.getElementById("generate").addEventListener("click", () => {
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.value) return;
+  const id = opt.value;
+  const name = opt.dataset.name;
+  const freq = document.getElementById("freq").value;
+
+  const script = tpl
+    .replaceAll("%%NAME%%", name)
+    .replaceAll("%%ID%%", id)
+    .replaceAll("%%FREQ%%", freq)
+    .trim();
+
+  out.textContent = script;
+  lastScript = script;
+  result.style.display = "block";
+  result.scrollIntoView({ behavior: "smooth" });
+});
+
+document.getElementById("copy").addEventListener("click", async (e) => {
+  try {
+    await navigator.clipboard.writeText(lastScript);
+  } catch (_) {
+    // Repli : textarea temporaire hors-écran (16px pour éviter le zoom iOS)
+    const tmp = document.createElement("textarea");
+    tmp.value = lastScript;
+    tmp.style.cssText = "position:fixed;top:-1000px;font-size:16px";
+    document.body.appendChild(tmp);
+    tmp.select();
+    document.execCommand("copy");
+    document.body.removeChild(tmp);
+  }
+  const btn = e.target;
+  const old = btn.textContent;
+  btn.textContent = "✅ Copié !";
+  btn.classList.add("copied");
+  setTimeout(() => { btn.textContent = old; btn.classList.remove("copied"); }, 1800);
+});
+</script>
+</body>
+</html>
