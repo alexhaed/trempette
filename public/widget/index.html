@@ -37,8 +37,16 @@
   header {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 11px;
     margin-bottom: 28px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    flex: 1 1 auto;
+    min-width: 0;
   }
   .brand-logo {
     width: 36px; height: 36px;
@@ -58,6 +66,25 @@
     margin: 0;
     font-size: 13px;
     color: var(--glacier);
+  }
+  .backlink {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--creme);
+    text-decoration: none;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 6px 11px;
+    white-space: nowrap;
+  }
+  .backlink:hover { background: rgba(247, 242, 231, 0.16); }
+  /* Sur petit écran, le lien passe sur sa propre ligne, aligné à droite,
+     pour ne pas comprimer le titre et le sous-titre. */
+  @media (max-width: 560px) {
+    .brand { flex-basis: 100%; }
   }
 
   .card {
@@ -149,11 +176,14 @@
 <body>
 <div class="wrap">
   <header>
-    <img class="brand-logo" src="../img/logo.png" alt="" width="36" height="36" />
-    <div class="brand-text">
-      <h1>Widget iOS — Trempette</h1>
-      <p>Génère un widget Scriptable pour ta plage d'un lac romand</p>
+    <div class="brand">
+      <img class="brand-logo" src="../img/logo.png" alt="" width="36" height="36" />
+      <div class="brand-text">
+        <h1>Widget iOS — Trempette</h1>
+        <p>Génère un widget Scriptable pour ta plage d'un lac romand</p>
+      </div>
     </div>
+    <a class="backlink" href="/">← Retour sur Trempette</a>
   </header>
 
   <div class="card">
