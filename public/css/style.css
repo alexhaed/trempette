@@ -494,6 +494,8 @@ body {
 }
 .info-text p { margin: 0 0 10px; font-size: 14px; line-height: 1.6; color: var(--creme); }
 .info-text strong { color: #fff; font-weight: 700; }
+.info-text a { color: inherit; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--turq-light); }
+.info-text a:hover { text-decoration-color: var(--creme); }
 .info-sep { border: none; border-top: 1px solid var(--glass-border); margin: 16px 0 12px; }
 .contact-intro { margin: 0 0 10px; font-size: 14px; line-height: 1.6; color: var(--creme); }
 .contact-form { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
