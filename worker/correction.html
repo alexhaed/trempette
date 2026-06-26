@@ -79,8 +79,8 @@
     <p class="sub">Écart mesure réelle ↔ modèle Alplakes aux bouées, et&nbsp;correction appliquée aux plages du Léman.</p>
 
     <div class="ranges" id="ranges">
-      <button data-h="24">24 h</button>
-      <button data-h="168" class="active">7 jours</button>
+      <button data-h="24" class="active">24 h</button>
+      <button data-h="168">7 jours</button>
       <button data-h="720">30 jours</button>
       <button data-h="0">Tout</button>
     </div>
@@ -107,7 +107,7 @@
     const TOKEN_KEY = "trempette_admin_token";
     let TOKEN = localStorage.getItem(TOKEN_KEY) || "";
     let HISTORY = [];
-    let rangeH = 168;
+    let rangeH = 24;
     let chartTemp, chartBias;
 
     const fmt = (n, d = 2) => (n == null ? "—" : (n >= 0 && d === 2 ? "+" : "") + n.toFixed(d));
@@ -117,6 +117,7 @@
       const d = new Date(t), p = (n) => String(n).padStart(2, "0");
       return `${p(d.getDate())}.${p(d.getMonth() + 1)} à ${p(d.getHours())}:${p(d.getMinutes())}`;
     };
+    const rangeLabel = () => ({ 24: "24 h", 168: "7 j", 720: "30 j", 0: "tout" }[rangeH] || rangeH + " h");
 
     async function loadHistory() {
       const r = await fetch("/admin/history", { headers: { "X-Admin-Token": TOKEN } });
@@ -141,7 +142,6 @@
     function render() {
       const pts = HISTORY.filter(inRange);
       const last = HISTORY[HISTORY.length - 1] || null;
-      const last24 = HISTORY.filter((p) => p.t >= Date.now() - 24 * 3600e3);
       const pannes = pts.filter((p) => p.drop && (p.drop.lex || p.drop.buch)).length;
       const lagLex = pts.filter((p) => p.lex && p.lex.lag).length;
       const lagBuch = pts.filter((p) => p.buch && p.buch.lag).length;
@@ -168,8 +168,8 @@
       const cards = [
         ["Biais LéXPLORE", last && last.lex && last.lex.b != null ? fmt(last.lex.b) + " °C" : "—", buoyHint("lex")],
         ["Biais Buchillon", last && last.buch && last.buch.b != null ? fmt(last.buch.b) + " °C" : "—", buoyHint("buch")],
-        ["Correction moy.", last && last.c != null ? fmt(last.c) + " °C" : "—", last ? last.n + " plages" : ""],
-        ["Biais moyen 24 h", fmt(mean(last24.flatMap((p) => [p.lex && p.lex.b, p.buch && p.buch.b])), 2) + " °C", "2 bouées"],
+        ["Correction moy. " + rangeLabel(), fmt(mean(pts.map((p) => p.c))) + " °C", last ? last.n + " plages" : ""],
+        ["Biais moyen " + rangeLabel(), fmt(mean(pts.flatMap((p) => [p.lex && p.lex.b, p.buch && p.buch.b])), 2) + " °C", "2 bouées"],
         ["Cycles sans bouée", String(pannes), reasonHint],
         ["Cycles en retard", String(lagCycles), lagHint],
       ];
