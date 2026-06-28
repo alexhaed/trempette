@@ -61,9 +61,9 @@
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th, td { text-align: right; padding: 7px 8px; border-bottom: 1px solid rgba(247,242,231,.08); font-variant-numeric: tabular-nums; }
     th { color: var(--glacier); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
-    th:first-child, td:first-child { text-align: left; }
+    th:nth-child(-n+3), td:nth-child(-n+3) { text-align: left; }
     td.beach { font-weight: 600; }
-    td.lake { color: var(--glacier); text-align: left; }
+    td.dim { color: var(--glacier); }
     .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
     .barlist { display: flex; flex-direction: column; gap: 7px; }
     .bar { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; padding: 5px 9px; border-radius: 8px; overflow: hidden; background: rgba(247,242,231,.05); }
@@ -203,10 +203,11 @@
       const b = d.beaches;
       const info = beachInfo || {};
       const nameOf = (id) => (info[id] && info[id].name) || id;
-      const subOf = (id, fallback) => (info[id] && (info[id].group || info[id].lakeName)) || fallback;
+      const groupOf = (id) => (info[id] && info[id].group) || "—";
+      const lakeOf = (id, fallback) => (info[id] && info[id].lakeName) || fallback;
       $("#beaches").innerHTML = b.length
-        ? `<table><thead><tr><th>Plage</th><th>Lac / région</th><th>Ouv.</th><th>Impr.</th><th>Fav</th><th>Part.</th></tr></thead><tbody>`
-          + b.map((x) => `<tr><td class="beach" title="${x.beach}">${nameOf(x.beach)}</td><td class="lake">${subOf(x.beach, x.lake)}</td><td>${x.opens}</td><td>${x.impressions ?? 0}</td><td>${x.favs}</td><td>${x.shares}</td></tr>`).join("")
+        ? `<table><thead><tr><th>Nom</th><th>Group</th><th>Lac</th><th>Ouv.</th><th>Impr.</th><th>Fav</th><th>Part.</th></tr></thead><tbody>`
+          + b.map((x) => `<tr><td class="beach" title="${x.beach}">${nameOf(x.beach)}</td><td class="dim">${groupOf(x.beach)}</td><td class="dim">${lakeOf(x.beach, x.lake)}</td><td>${x.opens}</td><td>${x.impressions ?? 0}</td><td>${x.favs}</td><td>${x.shares}</td></tr>`).join("")
           + `</tbody></table>`
         : `<div class="empty">Aucune consultation sur la période.</div>`;
 
