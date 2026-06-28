@@ -37,6 +37,8 @@ const WINDOWS_KEY = "windows";
 const CATALOGUE_KEY = "catalogue";
 const HISTORY_KEY = "history";
 const TIPS_KEY = "tips";
+const STATS_DAILY_KEY = "stats-daily"; // archive { "YYYY-MM-DD": { totals, beaches } } au-delà des 90 j d'AE
+const STATS_CURSOR_KEY = "stats-cursor"; // dernière date (UTC) déjà snapshotée
 
 // Astuces « Le savais-tu ? » affichées (au hasard) sur la page d'accueil.
 // Source de vérité : KV (clé "tips"), éditable sur /admin/tips. Ce tableau sert
@@ -442,6 +444,16 @@ async function handleAdmin(request, env, ctx, pathname) {
     return handleStatsData(request, env);
   }
 
+  // Déclenchement manuel de l'archivage quotidien (test / rattrapage).
+  if (pathname === "/admin/stats-snapshot" && request.method === "POST") {
+    if (!authorized(request, env)) return json({ error: "unauthorized" }, 401);
+    try {
+      return json(await snapshotDailyStats(env, { force: true }));
+    } catch (e) {
+      return json({ error: String(e.message || e) }, 502);
+    }
+  }
+
   if (pathname === "/admin/tips-data") {
     if (!authorized(request, env)) return json({ error: "unauthorized" }, 401);
 
@@ -665,6 +677,7 @@ async function handleStatsData(request, env) {
     return json({ error: "Analytics Engine non configuré (CF_ACCOUNT_ID / AE_API_TOKEN)" }, 503);
   }
   const range = new URL(request.url).searchParams.get("range") || "24h";
+  if (range === "1an") return statsFromArchive(env); // au-delà des 90 j AE → archive KV
   const DAYS = { "24h": 1, "7d": 7, "30d": 30 };
   const days = DAYS[range] || 1;
   const T = "trempette_views";
@@ -746,10 +759,95 @@ async function handleStatsData(request, env) {
   }
 }
 
+const dayStr = (d) => d.toISOString().slice(0, 10); // "YYYY-MM-DD" en UTC
+
+// Snapshot quotidien : agrège les jours complets depuis AE (rétention 90 j) et
+// les archive dans KV pour conserver un historique au-delà. Idempotent : ne
+// réécrit qu'une fois par jour (sauf force). Best-effort, ne bloque jamais le cron.
+async function snapshotDailyStats(env, { force = false } = {}) {
+  if (!env.CF_ACCOUNT_ID || !env.AE_API_TOKEN) return { skipped: "AE non configuré" };
+  const today = dayStr(new Date());
+  const cursor = await env.DATA.get(STATS_CURSOR_KEY);
+  if (cursor === today && !force) return { skipped: "déjà fait aujourd'hui" };
+
+  const rows = await aeQuery(
+    env,
+    `SELECT toStartOfInterval(timestamp, INTERVAL '1' DAY) day, blob2 beach, blob3 lake,
+       SUM(IF(blob1='open',_sample_interval,0)) opens,
+       SUM(IF(blob1='fav',_sample_interval,0)) favs,
+       SUM(IF(blob1='share',_sample_interval,0)) shares
+     FROM trempette_views WHERE timestamp > NOW() - INTERVAL '90' DAY
+     GROUP BY day, beach, lake LIMIT 10000`
+  );
+
+  const archive = (await env.DATA.get(STATS_DAILY_KEY, "json")) || {};
+  const N = (x) => Number(x) || 0;
+  // On ne fige que les jours COMPLETS (on saute la journée en cours).
+  const fresh = {};
+  for (const r of rows) {
+    const date = String(r.day).slice(0, 10);
+    if (date >= today) continue;
+    const rec = (fresh[date] ||= { totals: { opens: 0, favs: 0, shares: 0 }, beaches: {} });
+    const o = N(r.opens), f = N(r.favs), s = N(r.shares);
+    rec.totals.opens += o; rec.totals.favs += f; rec.totals.shares += s;
+    rec.beaches[r.beach] = { lake: r.lake, opens: o, favs: f, shares: s };
+  }
+  // AE fait foi pour les 90 derniers jours ; KV conserve les jours plus anciens.
+  for (const [date, rec] of Object.entries(fresh)) archive[date] = rec;
+
+  // Plafonne à ~2 ans pour borner la taille de la valeur KV.
+  const dates = Object.keys(archive).sort();
+  for (const date of dates.slice(0, Math.max(0, dates.length - 760))) delete archive[date];
+
+  await env.DATA.put(STATS_DAILY_KEY, JSON.stringify(archive));
+  await env.DATA.put(STATS_CURSOR_KEY, today);
+  return { ok: true, days: Object.keys(archive).length };
+}
+
+// Vue « 1 an » servie depuis l'archive KV (dimensions de session non conservées).
+async function statsFromArchive(env) {
+  const archive = (await env.DATA.get(STATS_DAILY_KEY, "json")) || {};
+  const since = dayStr(new Date(Date.now() - 365 * 86400e3));
+  const dates = Object.keys(archive).filter((d) => d >= since).sort();
+
+  const beachMap = new Map();
+  const daily = [];
+  let opens = 0, favs = 0, shares = 0;
+  for (const date of dates) {
+    const rec = archive[date];
+    opens += rec.totals.opens; favs += rec.totals.favs; shares += rec.totals.shares;
+    daily.push({ day: date + " 00:00:00", opens: rec.totals.opens });
+    for (const [id, b] of Object.entries(rec.beaches)) {
+      const cur = beachMap.get(id) || { beach: id, lake: b.lake, opens: 0, favs: 0, shares: 0 };
+      cur.opens += b.opens; cur.favs += b.favs; cur.shares += b.shares;
+      beachMap.set(id, cur);
+    }
+  }
+  const beaches = [...beachMap.values()].sort((a, b) => b.opens - a.opens).slice(0, 100);
+  const lakeMap = new Map();
+  for (const b of beaches) lakeMap.set(b.lake, (lakeMap.get(b.lake) || 0) + b.opens);
+  const lakes = [...lakeMap.entries()].map(([lake, o]) => ({ lake, opens: o })).sort((a, b) => b.opens - a.opens);
+
+  return json({
+    range: "1an",
+    archive: true,
+    generatedAt: new Date().toISOString(),
+    coverage: dates.length ? { from: dates[0], to: dates[dates.length - 1], days: dates.length } : null,
+    kpis: { opens, favs, shares, beaches: beaches.length, countries: 0 },
+    beaches,
+    lakes,
+    daily,
+    hourly: [],
+    browsers: [], os: [], devices: [], countries: [], referrers: [], modes: [],
+  });
+}
+
 export default {
   // Déclenché par le Cron Trigger (voir wrangler.toml).
   async scheduled(event, env, ctx) {
     ctx.waitUntil(regenerate(env));
+    // Archive quotidienne des stats (idempotente : ne travaille qu'1×/jour).
+    ctx.waitUntil(snapshotDailyStats(env).catch((e) => console.warn("[stats] snapshot KO", e)));
   },
 
   async fetch(request, env, ctx) {

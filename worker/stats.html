@@ -99,6 +99,7 @@
       <button data-r="24h" class="active">24 h</button>
       <button data-r="7d">7 jours</button>
       <button data-r="30d">30 jours</button>
+      <button data-r="1an">1 an</button>
     </div>
 
     <p class="msg" id="status"></p>
@@ -170,7 +171,14 @@
     });
 
     function render(d) {
-      $("#status").textContent = "";
+      if (d.archive) {
+        const c = d.coverage;
+        $("#status").textContent = c
+          ? `Vue archive (${c.days} j, du ${c.from} au ${c.to}) — heure/navigateur/pays non conservés sur le long terme.`
+          : "Archive vide pour l'instant (les jours complets s'y ajoutent à partir de demain).";
+      } else {
+        $("#status").textContent = "";
+      }
       // KPIs
       const k = d.kpis;
       $("#cards").innerHTML = [
