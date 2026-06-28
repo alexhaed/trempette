@@ -719,14 +719,19 @@ async function handleStatsData(request, env) {
       dim("blob9"),
     ]);
 
-    const beachRows = beaches.map((r) => ({
-      beach: r.beach,
-      lake: r.lake,
-      opens: N(r.opens),
-      impressions: N(r.impressions),
-      favs: N(r.favs),
-      shares: N(r.shares),
-    }));
+    // N'affiche que les plages encore présentes au catalogue (écarte les ids
+    // de test/orphelins : AE ne permet pas de supprimer les events eux-mêmes).
+    const validIds = new Set(((await getData(env)).beaches || []).map((b) => b.id));
+    const beachRows = beaches
+      .filter((r) => validIds.has(r.beach))
+      .map((r) => ({
+        beach: r.beach,
+        lake: r.lake,
+        opens: N(r.opens),
+        impressions: N(r.impressions),
+        favs: N(r.favs),
+        shares: N(r.shares),
+      }));
 
     // Agrégats dérivés (sans requête supplémentaire).
     const lakeMap = new Map();
@@ -814,15 +819,16 @@ async function statsFromArchive(env) {
   const since = dayStr(new Date(Date.now() - 365 * 86400e3));
   const dates = Object.keys(archive).filter((d) => d >= since).sort();
 
+  const validIds = new Set(((await getData(env)).beaches || []).map((b) => b.id));
   const beachMap = new Map();
   const daily = [];
   let opens = 0, impressions = 0, favs = 0, shares = 0;
   for (const date of dates) {
     const rec = archive[date];
-    opens += rec.totals.opens; impressions += rec.totals.impressions || 0;
-    favs += rec.totals.favs; shares += rec.totals.shares;
     daily.push({ day: date + " 00:00:00", opens: rec.totals.opens });
     for (const [id, b] of Object.entries(rec.beaches)) {
+      if (!validIds.has(id)) continue; // écarte les ids orphelins/tests
+      opens += b.opens; impressions += b.impressions || 0; favs += b.favs; shares += b.shares;
       const cur = beachMap.get(id) || { beach: id, lake: b.lake, opens: 0, impressions: 0, favs: 0, shares: 0 };
       cur.opens += b.opens; cur.impressions += b.impressions || 0; cur.favs += b.favs; cur.shares += b.shares;
       beachMap.set(id, cur);

@@ -206,7 +206,7 @@
       const groupOf = (id) => (info[id] && info[id].group) || "—";
       const lakeOf = (id, fallback) => (info[id] && info[id].lakeName) || fallback;
       $("#beaches").innerHTML = b.length
-        ? `<table><thead><tr><th>Nom</th><th>Group</th><th>Lac</th><th>Ouv.</th><th>Impr.</th><th>Fav</th><th>Part.</th></tr></thead><tbody>`
+        ? `<table><thead><tr><th>Nom</th><th>Groupe</th><th>Lac</th><th>Ouv.</th><th>Impr.</th><th>Fav</th><th>Part.</th></tr></thead><tbody>`
           + b.map((x) => `<tr><td class="beach" title="${x.beach}">${nameOf(x.beach)}</td><td class="dim">${groupOf(x.beach)}</td><td class="dim">${lakeOf(x.beach, x.lake)}</td><td>${x.opens}</td><td>${x.impressions ?? 0}</td><td>${x.favs}</td><td>${x.shares}</td></tr>`).join("")
           + `</tbody></table>`
         : `<div class="empty">Aucune consultation sur la période.</div>`;
