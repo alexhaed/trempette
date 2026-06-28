@@ -137,6 +137,18 @@
     let range = "24h";
     let chartDaily, chartHourly;
 
+    // Mapping id → nom lisible (depuis /data.json), pour afficher « Pélican »
+    // plutôt que « geneva-pelican ». Aucune incidence sur les ids eux-mêmes.
+    let beachInfo = null;
+    async function ensureBeachInfo() {
+      if (beachInfo) return;
+      beachInfo = {};
+      try {
+        const data = await fetch("/data.json", { cache: "no-store" }).then((r) => r.json());
+        for (const b of data.beaches || []) beachInfo[b.id] = { name: b.name, lakeName: b.lakeName, group: b.group };
+      } catch { /* repli sur l'id brut */ }
+    }
+
     // Décalage UTC → Europe/Zurich (heures), recalculé selon l'heure d'été en cours.
     function zurichOffset() {
       const now = new Date();
@@ -189,9 +201,12 @@
 
       // Top plages
       const b = d.beaches;
+      const info = beachInfo || {};
+      const nameOf = (id) => (info[id] && info[id].name) || id;
+      const subOf = (id, fallback) => (info[id] && (info[id].group || info[id].lakeName)) || fallback;
       $("#beaches").innerHTML = b.length
-        ? `<table><thead><tr><th>Plage</th><th>Lac</th><th>Ouv.</th><th>Impr.</th><th>Fav</th><th>Part.</th></tr></thead><tbody>`
-          + b.map((x) => `<tr><td class="beach">${x.beach}</td><td class="lake">${x.lake}</td><td>${x.opens}</td><td>${x.impressions ?? 0}</td><td>${x.favs}</td><td>${x.shares}</td></tr>`).join("")
+        ? `<table><thead><tr><th>Plage</th><th>Lac / région</th><th>Ouv.</th><th>Impr.</th><th>Fav</th><th>Part.</th></tr></thead><tbody>`
+          + b.map((x) => `<tr><td class="beach" title="${x.beach}">${nameOf(x.beach)}</td><td class="lake">${subOf(x.beach, x.lake)}</td><td>${x.opens}</td><td>${x.impressions ?? 0}</td><td>${x.favs}</td><td>${x.shares}</td></tr>`).join("")
           + `</tbody></table>`
         : `<div class="empty">Aucune consultation sur la période.</div>`;
 
@@ -229,13 +244,15 @@
 
     async function load() {
       $("#status").textContent = "Chargement…";
-      try { render(await fetchStats()); }
-      catch (e) { $("#status").textContent = e.message; }
+      try {
+        const [d] = await Promise.all([fetchStats(), ensureBeachInfo()]);
+        render(d);
+      } catch (e) { $("#status").textContent = e.message; }
     }
 
     async function enter() {
       try {
-        const d = await fetchStats();
+        const [d] = await Promise.all([fetchStats(), ensureBeachInfo()]);
         $("#gate").style.display = "none";
         $("#app").style.display = "block";
         render(d);
