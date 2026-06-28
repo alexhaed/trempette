@@ -193,8 +193,8 @@
       const MARK = { lag: "#F4B740", drop: "#F4B740" };
       const markState = (p, key) => (p.drop && p.drop[key]) ? "drop" : (p[key] && p[key].lag) ? "lag" : null;
       const mesureMarks = (key) => ({
-        pointRadius: pts.map((p) => ({ lag: 4, drop: 5 }[markState(p, key)] || 0)),
-        pointHoverRadius: pts.map((p) => ({ lag: 5, drop: 6 }[markState(p, key)] || 0)),
+        pointRadius: pts.map((p) => ({ lag: 4, drop: 6 }[markState(p, key)] || 0)),
+        pointHoverRadius: pts.map((p) => ({ lag: 5, drop: 7 }[markState(p, key)] || 0)),
         pointStyle: pts.map((p) => (markState(p, key) === "drop" ? "crossRot" : "circle")),
         pointBackgroundColor: pts.map(() => "transparent"),       // ◯ creux pour le retard
         pointBorderColor: pts.map((p) => MARK[markState(p, key)] || "transparent"),
