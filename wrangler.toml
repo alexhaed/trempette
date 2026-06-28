@@ -11,7 +11,7 @@ routes = [{ pattern = "trempette.app", custom_domain = true }]
 [assets]
 directory = "public"
 binding = "ASSETS"
-run_worker_first = ["/data.json", "/admin", "/admin/*", "/lac", "/lac/*", "/sitemap.xml"]
+run_worker_first = ["/data.json", "/admin", "/admin/*", "/lac", "/lac/*", "/sitemap.xml", "/e"]
 # (worker/plages.html et correction.html sont importés comme texte via la règle Text par défaut de Wrangler.)
 
 # Logs du Worker (fetch + cron) persistés et visibles dans le dashboard Cloudflare.
@@ -27,6 +27,12 @@ invocation_logs = true
 [[kv_namespaces]]
 binding = "DATA"
 id = "33ea916d941a4a9da24d077190b7ceea"
+
+# Statistiques de consultation par plage (events open/fav/share via POST /e).
+# Le dataset est créé automatiquement au 1er writeDataPoint ; pas d'id à coller.
+[[analytics_engine_datasets]]
+binding = "VIEWS"
+dataset = "trempette_views"
 
 # Régénération toutes les 30 min.
 [triggers]

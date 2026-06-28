@@ -566,6 +566,78 @@ async function handleContact(request, env) {
   return json({ ok: true });
 }
 
+// --- Statistiques de consultation (Analytics Engine) ---
+
+// Réponse vide partagée (sendBeacon ignore le corps de toute façon).
+const NO_CONTENT = new Response(null, { status: 204 });
+
+// Liste blanche des types d'events (phase 1). Les impressions viendront en phase 2.
+const EVENT_TYPES = new Set(["open", "fav", "share"]);
+
+// Borne la cardinalité : on ne fait jamais confiance aveuglément à un id client.
+const sanitizeId = (v) => (typeof v === "string" && /^[a-z0-9-]{1,40}$/.test(v) ? v : "");
+
+// Classement grossier de l'User-Agent en familles agrégées (aucune donnée perso).
+function parseUA(ua) {
+  ua = ua || "";
+  let browser = "Autre";
+  if (/Edg\//.test(ua)) browser = "Edge";
+  else if (/OPR\/|Opera/.test(ua)) browser = "Opera";
+  else if (/SamsungBrowser/.test(ua)) browser = "Samsung";
+  else if (/Firefox\/|FxiOS/.test(ua)) browser = "Firefox";
+  else if (/Chrome\/|CriOS/.test(ua)) browser = "Chrome";
+  else if (/Safari\//.test(ua)) browser = "Safari";
+
+  let os = "Autre";
+  if (/iPhone|iPad|iPod/.test(ua)) os = "iOS";
+  else if (/Android/.test(ua)) os = "Android";
+  else if (/Windows/.test(ua)) os = "Windows";
+  else if (/Mac OS X/.test(ua)) os = "macOS";
+  else if (/Linux/.test(ua)) os = "Linux";
+
+  const device = /iPad|Tablet/.test(ua) || (/Android/.test(ua) && !/Mobile/.test(ua))
+    ? "tablette"
+    : /Mobi|iPhone|iPod|Android/.test(ua)
+    ? "mobile"
+    : "ordinateur";
+
+  return { browser, os, device };
+}
+
+// POST /e — un event de consultation. Best-effort, ne bloque jamais, 204 systématique.
+async function handleEvent(request, env) {
+  if (!env.VIEWS) return NO_CONTENT; // binding absent (ex. dev local) : on ne fait rien
+  let body;
+  try {
+    body = JSON.parse(await request.text()); // sendBeacon envoie text/plain
+  } catch {
+    return NO_CONTENT;
+  }
+  const beach = sanitizeId(body.b);
+  const lake = sanitizeId(body.l);
+  const type = EVENT_TYPES.has(body.t) ? body.t : "";
+  if (!beach || !type) return NO_CONTENT;
+
+  const { browser, os, device } = parseUA(request.headers.get("user-agent"));
+  const country = (request.cf && request.cf.country) || "XX";
+  const mode = body.m === "standalone" ? "standalone" : "navigateur";
+  // referrer : host seul, jamais l'URL complète (pas de query/chemin).
+  let ref = "direct";
+  if (typeof body.r === "string" && body.r) {
+    try { ref = new URL(body.r).hostname.replace(/^www\./, "") || "direct"; } catch { ref = "direct"; }
+  }
+
+  try {
+    env.VIEWS.writeDataPoint({
+      indexes: [beach],
+      blobs: [type, beach, lake || "?", browser, os, device, country, ref, mode],
+    });
+  } catch {
+    /* écriture best-effort : ne jamais faire échouer la requête */
+  }
+  return NO_CONTENT;
+}
+
 export default {
   // Déclenché par le Cron Trigger (voir wrangler.toml).
   async scheduled(event, env, ctx) {
@@ -581,6 +653,10 @@ export default {
 
     if (url.pathname === "/contact" && request.method === "POST") {
       return handleContact(request, env);
+    }
+
+    if (url.pathname === "/e" && request.method === "POST") {
+      return handleEvent(request, env);
     }
 
     if (url.pathname === "/data.json") {

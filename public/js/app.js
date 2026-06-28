@@ -13,6 +13,29 @@ const LAKE_SLUG = { geneva: "leman", neuchatel: "neuchatel", biel: "bienne", mur
 const slugify = (s) =>
   String(s).normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 const beachPath = (b) => `/lac/${LAKE_SLUG[b.lake] || slugify(b.lakeName)}/${slugify(b.name)}`;
+
+// Statistiques de consultation : ping best-effort vers le Worker (POST /e).
+// Appareil/navigateur/pays sont déduits côté serveur ; ici on n'envoie que
+// plage + lac + type + referrer + mode d'affichage. Jamais bloquant.
+function track(type, b) {
+  if (!b || !navigator.sendBeacon) return;
+  try {
+    const standalone =
+      (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+    navigator.sendBeacon(
+      "/e",
+      JSON.stringify({
+        b: b.id,
+        l: LAKE_SLUG[b.lake] || slugify(b.lakeName),
+        t: type,
+        r: document.referrer || "",
+        m: standalone ? "standalone" : "browser",
+      })
+    );
+  } catch {
+    /* analytics best-effort */
+  }
+}
 function beachFromPath(pathname) {
   const m = pathname.match(/^\/lac\/([^/]+)\/([^/]+)\/?$/);
   if (!m) return null;
@@ -429,7 +452,10 @@ function renderTip() {
 function toggleFav(id) {
   const i = state.favOrder.indexOf(id);
   if (i >= 0) state.favOrder.splice(i, 1);
-  else state.favOrder.push(id);
+  else {
+    state.favOrder.push(id);
+    track("fav", byId(id)); // on ne compte que l'ajout en favori
+  }
   saveFavOrder();
   renderAll();
 }
@@ -548,6 +574,7 @@ function openDetail(b, push = true) {
 
   $("#detail").hidden = false;
   syncScrollLock();
+  track("open", b);
 }
 function closeDetail(updateUrl = true) {
   $("#detail").hidden = true;
@@ -559,6 +586,7 @@ function closeDetail(updateUrl = true) {
 
 // Partage natif (feuille iOS/Android) avec repli presse-papier.
 async function shareBeach(b) {
+  track("share", b);
   const url = location.origin + beachPath(b);
   const w = fmt(b.water);
   const title = `${b.name} — ${w != null ? w + "°" : "température de l'eau"}`;
