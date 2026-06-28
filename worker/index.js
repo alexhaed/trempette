@@ -594,8 +594,8 @@ async function handleContact(request, env) {
 // Réponse vide partagée (sendBeacon ignore le corps de toute façon).
 const NO_CONTENT = new Response(null, { status: 204 });
 
-// Liste blanche des types d'events (phase 1). Les impressions viendront en phase 2.
-const EVENT_TYPES = new Set(["open", "fav", "share"]);
+// Liste blanche des types d'events. "impression" = carte favori vue dans le hero.
+const EVENT_TYPES = new Set(["open", "impression", "fav", "share"]);
 
 // Borne la cardinalité : on ne fait jamais confiance aveuglément à un id client.
 const sanitizeId = (v) => (typeof v === "string" && /^[a-z0-9-]{1,40}$/.test(v) ? v : "");
@@ -696,6 +696,7 @@ async function handleStatsData(request, env) {
         env,
         `SELECT blob2 beach, blob3 lake,
            SUM(IF(blob1='open',_sample_interval,0)) opens,
+           SUM(IF(blob1='impression',_sample_interval,0)) impressions,
            SUM(IF(blob1='fav',_sample_interval,0)) favs,
            SUM(IF(blob1='share',_sample_interval,0)) shares
          FROM ${T} WHERE ${WIN} GROUP BY beach, lake ORDER BY opens DESC LIMIT 100`
@@ -722,6 +723,7 @@ async function handleStatsData(request, env) {
       beach: r.beach,
       lake: r.lake,
       opens: N(r.opens),
+      impressions: N(r.impressions),
       favs: N(r.favs),
       shares: N(r.shares),
     }));
@@ -733,9 +735,10 @@ async function handleStatsData(request, env) {
 
     const kpis = {
       opens: beachRows.reduce((s, b) => s + b.opens, 0),
+      impressions: beachRows.reduce((s, b) => s + b.impressions, 0),
       favs: beachRows.reduce((s, b) => s + b.favs, 0),
       shares: beachRows.reduce((s, b) => s + b.shares, 0),
-      beaches: beachRows.filter((b) => b.opens + b.favs + b.shares > 0).length,
+      beaches: beachRows.filter((b) => b.opens + b.impressions + b.favs + b.shares > 0).length,
       countries: countries.length,
     };
 
@@ -774,6 +777,7 @@ async function snapshotDailyStats(env, { force = false } = {}) {
     env,
     `SELECT toStartOfInterval(timestamp, INTERVAL '1' DAY) day, blob2 beach, blob3 lake,
        SUM(IF(blob1='open',_sample_interval,0)) opens,
+       SUM(IF(blob1='impression',_sample_interval,0)) impressions,
        SUM(IF(blob1='fav',_sample_interval,0)) favs,
        SUM(IF(blob1='share',_sample_interval,0)) shares
      FROM trempette_views WHERE timestamp > NOW() - INTERVAL '90' DAY
@@ -787,10 +791,10 @@ async function snapshotDailyStats(env, { force = false } = {}) {
   for (const r of rows) {
     const date = String(r.day).slice(0, 10);
     if (date >= today) continue;
-    const rec = (fresh[date] ||= { totals: { opens: 0, favs: 0, shares: 0 }, beaches: {} });
-    const o = N(r.opens), f = N(r.favs), s = N(r.shares);
-    rec.totals.opens += o; rec.totals.favs += f; rec.totals.shares += s;
-    rec.beaches[r.beach] = { lake: r.lake, opens: o, favs: f, shares: s };
+    const rec = (fresh[date] ||= { totals: { opens: 0, impressions: 0, favs: 0, shares: 0 }, beaches: {} });
+    const o = N(r.opens), im = N(r.impressions), f = N(r.favs), s = N(r.shares);
+    rec.totals.opens += o; rec.totals.impressions += im; rec.totals.favs += f; rec.totals.shares += s;
+    rec.beaches[r.beach] = { lake: r.lake, opens: o, impressions: im, favs: f, shares: s };
   }
   // AE fait foi pour les 90 derniers jours ; KV conserve les jours plus anciens.
   for (const [date, rec] of Object.entries(fresh)) archive[date] = rec;
@@ -812,14 +816,15 @@ async function statsFromArchive(env) {
 
   const beachMap = new Map();
   const daily = [];
-  let opens = 0, favs = 0, shares = 0;
+  let opens = 0, impressions = 0, favs = 0, shares = 0;
   for (const date of dates) {
     const rec = archive[date];
-    opens += rec.totals.opens; favs += rec.totals.favs; shares += rec.totals.shares;
+    opens += rec.totals.opens; impressions += rec.totals.impressions || 0;
+    favs += rec.totals.favs; shares += rec.totals.shares;
     daily.push({ day: date + " 00:00:00", opens: rec.totals.opens });
     for (const [id, b] of Object.entries(rec.beaches)) {
-      const cur = beachMap.get(id) || { beach: id, lake: b.lake, opens: 0, favs: 0, shares: 0 };
-      cur.opens += b.opens; cur.favs += b.favs; cur.shares += b.shares;
+      const cur = beachMap.get(id) || { beach: id, lake: b.lake, opens: 0, impressions: 0, favs: 0, shares: 0 };
+      cur.opens += b.opens; cur.impressions += b.impressions || 0; cur.favs += b.favs; cur.shares += b.shares;
       beachMap.set(id, cur);
     }
   }
@@ -833,7 +838,7 @@ async function statsFromArchive(env) {
     archive: true,
     generatedAt: new Date().toISOString(),
     coverage: dates.length ? { from: dates[0], to: dates[dates.length - 1], days: dates.length } : null,
-    kpis: { opens, favs, shares, beaches: beaches.length, countries: 0 },
+    kpis: { opens, impressions, favs, shares, beaches: beaches.length, countries: 0 },
     beaches,
     lakes,
     daily,

@@ -57,6 +57,7 @@
     .panel h2 { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 15px; margin: 0 0 12px; }
     .chartbox { position: relative; height: 240px; }
     .updated { font-size: 12px; color: var(--glacier); }
+    #beaches { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th, td { text-align: right; padding: 7px 8px; border-bottom: 1px solid rgba(247,242,231,.08); font-variant-numeric: tabular-nums; }
     th { color: var(--glacier); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
@@ -182,15 +183,15 @@
       // KPIs
       const k = d.kpis;
       $("#cards").innerHTML = [
-        ["Ouvertures", k.opens], ["Favoris", k.favs], ["Partages", k.shares],
+        ["Ouvertures", k.opens], ["Impressions", k.impressions], ["Favoris", k.favs], ["Partages", k.shares],
         ["Plages vues", k.beaches], ["Pays", k.countries],
-      ].map((c) => `<div class="card"><div class="lbl">${c[0]}</div><div class="val">${c[1]}</div></div>`).join("");
+      ].map((c) => `<div class="card"><div class="lbl">${c[0]}</div><div class="val">${c[1] ?? 0}</div></div>`).join("");
 
       // Top plages
       const b = d.beaches;
       $("#beaches").innerHTML = b.length
-        ? `<table><thead><tr><th>Plage</th><th>Lac</th><th>Ouv.</th><th>Fav</th><th>Part.</th></tr></thead><tbody>`
-          + b.map((x) => `<tr><td class="beach">${x.beach}</td><td class="lake">${x.lake}</td><td>${x.opens}</td><td>${x.favs}</td><td>${x.shares}</td></tr>`).join("")
+        ? `<table><thead><tr><th>Plage</th><th>Lac</th><th>Ouv.</th><th>Impr.</th><th>Fav</th><th>Part.</th></tr></thead><tbody>`
+          + b.map((x) => `<tr><td class="beach">${x.beach}</td><td class="lake">${x.lake}</td><td>${x.opens}</td><td>${x.impressions ?? 0}</td><td>${x.favs}</td><td>${x.shares}</td></tr>`).join("")
           + `</tbody></table>`
         : `<div class="empty">Aucune consultation sur la période.</div>`;
 

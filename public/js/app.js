@@ -228,6 +228,27 @@ function renderHero() {
   track.querySelectorAll(".hero-card").forEach((el, i) => {
     el.addEventListener("click", () => openDetail(favs[i]));
   });
+
+  scheduleHeroImpression(); // compte la carte centrée comme « vue » (après pose)
+}
+
+// ---- Impressions du hero ----
+// Une carte favori est comptée « vue » quand elle reste centrée un court
+// instant (pose), une seule fois par session, et seulement si le hero est
+// réellement visible (pas d'overlay détail/infos ouvert, onglet actif).
+const heroSeen = new Set();
+let heroImpTimer = null;
+function scheduleHeroImpression() {
+  clearTimeout(heroImpTimer);
+  heroImpTimer = setTimeout(() => {
+    if (document.hidden) return;
+    if (!$("#detail").hidden || !$("#info").hidden) return; // hero masqué par un overlay
+    const favs = state.favOrder.map(byId).filter(Boolean);
+    const b = favs[state.heroIdx];
+    if (!b || heroSeen.has(b.id)) return;
+    heroSeen.add(b.id);
+    track("impression", b);
+  }, 1200);
 }
 
 function heroCard(b) {
@@ -267,6 +288,7 @@ $("#hero-track").addEventListener(
     if (idx !== state.heroIdx) {
       state.heroIdx = idx;
       $("#hero-dots").querySelectorAll("i").forEach((d, i) => d.classList.toggle("on", i === idx));
+      scheduleHeroImpression(); // nouvelle carte centrée
     }
   },
   { passive: true }
@@ -582,6 +604,7 @@ function closeDetail(updateUrl = true) {
   if (updateUrl && location.pathname.startsWith("/lac/")) history.replaceState({}, "", "/");
   document.title = DEFAULT_TITLE;
   syncScrollLock();
+  scheduleHeroImpression(); // le hero redevient visible
 }
 
 // Partage natif (feuille iOS/Android) avec repli presse-papier.
