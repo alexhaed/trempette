@@ -59,10 +59,10 @@
     .panel p { font-size: 12px; color: var(--glacier); margin: 0 0 12px; }
     .chartbox { position: relative; height: 280px; }
     .updated { font-size: 12px; color: var(--glacier); }
-    .legend { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--glacier); margin: -6px 0 12px; }
-    .legend .lg-ring { width: 11px; height: 11px; border: 2px solid #F4B740; border-radius: 50%; display: inline-block; }
-    .legend .lg-x { color: #F4B740; font-weight: 800; font-size: 14px; line-height: 1; }
-    .legend .lg-sep { opacity: .5; }
+    .legend { font-size: 12px; color: var(--glacier); margin: 14px 0 2px; line-height: 1.7; }
+    .legend .lg-ring { width: 10px; height: 10px; border: 2px solid #F4B740; border-radius: 50%; display: inline-block; vertical-align: middle; }
+    .legend .lg-x { color: #F4B740; font-weight: 800; font-size: 14px; line-height: 1; vertical-align: middle; }
+    .legend .lg-sep { opacity: .5; margin: 0 4px; }
   </style>
 </head>
 <body>
@@ -99,7 +99,7 @@
       <h2>Mesure réelle vs modèle</h2>
       <p>Lignes pleines = mesure in-situ (bouées) · lignes pointillées = modèle Alplakes au même point.</p>
       <div class="chartbox"><canvas id="chartTemp" role="img" aria-label="Températures mesurées et modélisées aux bouées"></canvas></div>
-	  <p class="legend"><span class="lg-ring"></span> flux en retard (mesure figée, bouée conservée) <span class="lg-sep">·</span> <span class="lg-x">✕</span>&nbsp;bouée écartée ce cycle (périmée / aberrante)</p>
+	  <p class="legend"><span class="lg-ring"></span>&nbsp;flux en retard (mesure figée, bouée conservée) <span class="lg-sep">·</span> <span class="lg-x">✕</span>&nbsp;bouée écartée ce cycle (périmée / aberrante)</p>
     </div>
 
     <div class="panel">
