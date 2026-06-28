@@ -30,13 +30,13 @@
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"WebApplication","name":"Trempette","url":"https://trempette.app/","description":"Température actuelle de l'eau des plages des lacs romands (Léman, Neuchâtel, Bienne, Morat, Joux), avec air et vent.","applicationCategory":"Weather","operatingSystem":"Web","inLanguage":"fr","offers":{"@type":"Offer","price":"0","priceCurrency":"CHF"}}
   </script>
-  <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/icons/icon-180.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
   <!-- Jeu d'icônes linéaires -->
@@ -55,6 +55,7 @@
       <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
       <symbol id="i-locate" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 2v3.5M12 18.5V22M2 12h3.5M18.5 12H22"></path></g></symbol>
       <symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></g></symbol>
+      <symbol id="i-share" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"></path></g></symbol>
     </defs>
   </svg>
 
@@ -69,7 +70,7 @@
     <!-- En-tête : logo + marque + rafraîchir -->
     <header class="head">
       <div class="brand">
-        <img class="brand-logo" src="img/logo.png" alt="" width="34" height="34" />
+        <img class="brand-logo" src="/img/logo.png" alt="" width="34" height="34" />
         <span class="brand-name">Une p'tite trempette?</span>
       </div>
       <button id="refresh" class="icon-btn" title="Rafraîchir" aria-label="Rafraîchir">
@@ -133,7 +134,7 @@
     <footer class="foot">
       <p id="updated" class="updated"></p>
       <p class="credits">Eau : Alplakes &amp; Datalakes (Eawag) · Air &amp; vent : open-meteo.com</p>
-      <p class="version">v1.50 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
+      <p class="version">v1.51 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
     </footer>
     </div>
   </div>
@@ -170,6 +171,10 @@
       <a id="d-map" class="d-map" target="_blank" rel="noopener">Voir sur la carte
         <svg width="13" height="13" aria-hidden="true"><use href="#i-arrow"></use></svg>
       </a>
+      <button id="d-share" class="d-share" type="button">
+        <svg width="15" height="15" aria-hidden="true"><use href="#i-share"></use></svg>
+        <span id="d-share-label">Partager cette plage</span>
+      </button>
     </div>
   </div>
 
@@ -199,7 +204,7 @@
     </div>
   </div>
 
-  <script src="js/app.js"></script>
+  <script src="/js/app.js"></script>
 
   <!-- Cloudflare Web Analytics (cookieless) -->
   <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "769c92d71e2b497481216d0138c40da3"}'></script>

@@ -5,7 +5,7 @@
 // À incrémenter à chaque release pour que le cache-first récupère le nouveau
 // shell (sinon les visiteurs récurrents gardent l'ancien JS/CSS). Aligné sur
 // le numéro de version affiché en bas de page.
-const VERSION = "v1.50";
+const VERSION = "v1.51";
 const SHELL = `trempette-shell-${VERSION}`;
 const DATA = `trempette-data-${VERSION}`;
 
@@ -36,6 +36,17 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.origin !== self.location.origin) return;
+
+  // Deep links partageables /lac/<lac>/<plage> : réseau d'abord (le Worker y
+  // injecte les bonnes balises meta/OG), repli sur le shell en cache si hors-ligne.
+  if (e.request.mode === "navigate" && url.pathname.startsWith("/lac/")) {
+    e.respondWith(
+      fetch(e.request).catch(() =>
+        caches.match("index.html").then((r) => r || caches.match("."))
+      )
+    );
+    return;
+  }
 
   if (url.pathname.endsWith("/data.json")) {
     e.respondWith(

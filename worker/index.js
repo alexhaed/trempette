@@ -56,6 +56,168 @@ async function getTips(env) {
   return Array.isArray(t) && t.length ? t : DEFAULT_TIPS;
 }
 
+// --- URLs publiques partageables / SEO : /lac/<lac>/<plage> ------------------
+// Le slug de lac vient du nom PUBLIC (pas de l'id interne : geneva→leman, etc.).
+// Ces slugs sont permanents (les changer casserait liens partagés + référencement).
+const SITE = "https://trempette.app";
+const LAKE_SLUG = { geneva: "leman", neuchatel: "neuchatel", biel: "bienne", murten: "morat", joux: "joux" };
+const SLUG_LAKE = Object.fromEntries(Object.entries(LAKE_SLUG).map(([k, v]) => [v, k]));
+const LAKE_DISPLAY = { leman: "Léman", neuchatel: "Lac de Neuchâtel", bienne: "Lac de Bienne", morat: "Lac de Morat", joux: "Lac de Joux" };
+
+function slugify(s) {
+  return String(s)
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "") // retire les diacritiques (accents)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+const lakeSlugOf = (b) => LAKE_SLUG[b.lake] || slugify(b.lakeName);
+const beachPath = (b) => `/lac/${lakeSlugOf(b)}/${slugify(b.name)}`;
+
+const esc = (s) =>
+  String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+const tempTxt = (v) => (v == null ? null : `${(Math.round(v * 10) / 10).toFixed(1)} °C`);
+
+async function getData(env) {
+  let body = await env.DATA.get(DATA_KEY);
+  if (!body) body = JSON.stringify(await regenerate(env)); // KV vide (1er appel) : amorçage
+  return JSON.parse(body);
+}
+
+function buildBeachMeta(beach, lakeSlug, lakeBeaches) {
+  const lakeName = beach.lakeName;
+  const temp = tempTxt(beach.water);
+  const canonical = SITE + beachPath(beach);
+  const title = `${beach.name} — température de l'eau${temp ? ` (${temp})` : ""} | Trempette`;
+  const description =
+    `Température de l'eau à ${beach.name}, ${lakeName}${temp ? ` : ${temp} actuellement` : ""}. ` +
+    `Air, vent et tendance — pour savoir si c'est le moment d'aller se baigner.`;
+  const ogTitle = `${beach.name}${temp ? ` · ${temp}` : ""} — ${lakeName}`;
+
+  const air = beach.air != null ? `Air ${Math.round(beach.air)} °C. ` : "";
+  const wind = beach.wind != null ? `Vent ${Math.round(beach.wind)} km/h.` : "";
+  const sibs = lakeBeaches
+    .filter((x) => x.id !== beach.id)
+    .slice(0, 14)
+    .map((x) => `<a href="${beachPath(x)}">${esc(x.name)}</a>`)
+    .join(" · ");
+  const bodyHtml =
+    `<noscript><section style="max-width:680px;margin:0 auto;padding:18px;color:#F7F2E7;font-family:sans-serif">` +
+    `<h1>${esc(beach.name)} — eau ${esc(temp || "n/d")}</h1>` +
+    `<p>${esc(lakeName)}${beach.group ? ` · ${esc(beach.group)}` : ""}. ${air}${wind}</p>` +
+    (sibs ? `<p>Autres plages du ${esc(lakeName)} : ${sibs}</p>` : "") +
+    `<p><a href="/lac/${lakeSlug}">${esc(lakeName)}</a> · <a href="/">Trempette — toutes les plages romandes</a></p>` +
+    `</section></noscript>`;
+
+  const jsonld = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Place",
+    name: beach.name,
+    url: canonical,
+    geo: { "@type": "GeoCoordinates", latitude: beach.lat, longitude: beach.lng },
+    containedInPlace: { "@type": "BodyOfWater", name: lakeName },
+    ...(beach.water != null
+      ? {
+          additionalProperty: {
+            "@type": "PropertyValue",
+            name: "Température de l'eau",
+            value: Math.round(beach.water * 10) / 10,
+            unitCode: "CEL",
+          },
+        }
+      : {}),
+  }).replace(/</g, "\\u003c");
+
+  return { title, description, ogTitle, ogDescription: description, canonical, jsonld, bodyHtml };
+}
+
+function buildLakeMeta(lakeSlug, lakeBeaches) {
+  const lakeName = LAKE_DISPLAY[lakeSlug] || lakeSlug;
+  const canonical = SITE + `/lac/${lakeSlug}`;
+  const warm = [...lakeBeaches].sort((a, b) => (b.water ?? -99) - (a.water ?? -99));
+  const sample = warm.slice(0, 4).map((b) => b.name).join(", ");
+  const title = `${lakeName} — température de l'eau des plages | Trempette`;
+  const description =
+    `Température actuelle de l'eau des plages du ${lakeName}${sample ? ` (${sample}…)` : ""}. ` +
+    `Air, vent et tendance, mises à jour en continu.`;
+
+  const items = warm
+    .map((b) => `<li><a href="${beachPath(b)}">${esc(b.name)}</a>${b.water != null ? ` — ${esc(tempTxt(b.water))}` : ""}</li>`)
+    .join("");
+  const bodyHtml =
+    `<noscript><section style="max-width:680px;margin:0 auto;padding:18px;color:#F7F2E7;font-family:sans-serif">` +
+    `<h1>Température de l'eau — ${esc(lakeName)}</h1><ul>${items}</ul>` +
+    `<p><a href="/">Trempette — tous les lacs romands</a></p></section></noscript>`;
+
+  const jsonld = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `Plages du ${lakeName}`,
+    itemListElement: warm.map((b, i) => ({ "@type": "ListItem", position: i + 1, name: b.name, url: SITE + beachPath(b) })),
+  }).replace(/</g, "\\u003c");
+
+  return { title, description, ogTitle: title, ogDescription: description, canonical, jsonld, bodyHtml };
+}
+
+// Sert l'index.html en réécrivant les balises <head> (titre, description, OG,
+// canonical), en injectant le JSON-LD et un <noscript> de repli pour les
+// crawlers sans JS. L'app (avec JS) lit le chemin et ouvre la bonne plage.
+async function renderShell(request, env, meta) {
+  const page = await env.ASSETS.fetch(new Request(new URL("/index.html", request.url)));
+  const rewriter = new HTMLRewriter()
+    .on("title", { element: (e) => e.setInnerContent(meta.title) })
+    .on('meta[name="description"]', { element: (e) => e.setAttribute("content", meta.description) })
+    .on('link[rel="canonical"]', { element: (e) => e.setAttribute("href", meta.canonical) })
+    .on('meta[property="og:title"]', { element: (e) => e.setAttribute("content", meta.ogTitle) })
+    .on('meta[property="og:description"]', { element: (e) => e.setAttribute("content", meta.ogDescription) })
+    .on('meta[property="og:url"]', { element: (e) => e.setAttribute("content", meta.canonical) })
+    .on('meta[name="twitter:title"]', { element: (e) => e.setAttribute("content", meta.ogTitle) })
+    .on('meta[name="twitter:description"]', { element: (e) => e.setAttribute("content", meta.ogDescription) })
+    .on("head", { element: (e) => e.append(`<script type="application/ld+json">${meta.jsonld}</script>`, { html: true }) })
+    .on("body", { element: (e) => e.append(meta.bodyHtml, { html: true }) });
+  const res = rewriter.transform(page);
+  const h = new Headers(res.headers);
+  h.set("content-type", "text/html; charset=utf-8");
+  h.set("cache-control", "public, max-age=300");
+  h.delete("x-robots-tag"); // ces pages DOIVENT être indexées
+  return new Response(res.body, { status: 200, headers: h });
+}
+
+async function handleLacRoute(request, env, url) {
+  const parts = url.pathname
+    .replace(/^\/lac\//, "")
+    .replace(/\/+$/, "")
+    .split("/")
+    .filter(Boolean)
+    .map((s) => decodeURIComponent(s).toLowerCase());
+  const [lakeSlug, beachSlugWanted, extra] = parts;
+  if (extra || !lakeSlug || !SLUG_LAKE[lakeSlug]) return Response.redirect(new URL("/", url).toString(), 302);
+
+  const data = await getData(env);
+  const lakeBeaches = data.beaches.filter((b) => lakeSlugOf(b) === lakeSlug);
+
+  if (beachSlugWanted) {
+    const beach = lakeBeaches.find((b) => slugify(b.name) === beachSlugWanted);
+    if (!beach) return Response.redirect(new URL(`/lac/${lakeSlug}`, url).toString(), 302);
+    return renderShell(request, env, buildBeachMeta(beach, lakeSlug, lakeBeaches));
+  }
+  return renderShell(request, env, buildLakeMeta(lakeSlug, lakeBeaches));
+}
+
+function handleSitemap(data) {
+  const lastmod = (data.updatedAt || new Date().toISOString()).slice(0, 10);
+  const urls = [`${SITE}/`, ...Object.keys(SLUG_LAKE).map((s) => `${SITE}/lac/${s}`)];
+  for (const b of data.beaches) urls.push(SITE + beachPath(b));
+  const body =
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+    urls.map((u) => `  <url><loc>${u}</loc><lastmod>${lastmod}</lastmod></url>`).join("\n") +
+    `\n</urlset>\n`;
+  return new Response(body, {
+    headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "public, max-age=3600" },
+  });
+}
+
 // Validation légère avant écriture (évite de casser le rendu de la page).
 function validTips(t) {
   if (!Array.isArray(t)) return "tips : tableau attendu";
@@ -433,6 +595,19 @@ export default {
           "cache-control": "no-cache",
         },
       });
+    }
+
+    // Sitemap dynamique (accueil + 5 lacs + toutes les plages).
+    if (url.pathname === "/sitemap.xml") {
+      return handleSitemap(await getData(env));
+    }
+
+    // Pages partageables / indexables par plage et par lac.
+    if (url.pathname === "/lac" || url.pathname === "/lac/") {
+      return Response.redirect(new URL("/", url).toString(), 302);
+    }
+    if (url.pathname.startsWith("/lac/")) {
+      return handleLacRoute(request, env, url);
     }
 
     // Tout le reste = fichiers statiques (index.html, css, js, icônes…).

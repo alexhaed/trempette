@@ -680,6 +680,28 @@ body {
   font-weight: 600;
   font-size: 13px;
 }
+.d-share {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 11px 14px;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  background: var(--glass);
+  color: var(--creme);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.1s;
+}
+.d-share:hover { background: rgba(247, 242, 231, 0.16); }
+.d-share:active { transform: scale(0.985); }
+.d-share.copied { background: rgba(52, 180, 194, 0.22); border-color: var(--turq-light); }
 
 @media (min-width: 520px) {
   .detail { align-items: center; }

@@ -5,6 +5,22 @@
 const FAV_KEY = "templac_favoris"; // ordre des favoris (tableau d'ids), conservé d'avant le renommage
 const COLLAPSE_KEY = "trempette_lacs_replies"; // lacs repliés en mode « Par lac »
 
+// --- URLs partageables /lac/<lac>/<plage> (mêmes slugs que le Worker) ---
+// Titre d'accueil figé : sur un deep link, le Worker a déjà réécrit <title> avec
+// le nom de la plage, donc on ne peut pas le lire depuis document.title ici.
+const DEFAULT_TITLE = "Trempette — Températures des plages romandes";
+const LAKE_SLUG = { geneva: "leman", neuchatel: "neuchatel", biel: "bienne", murten: "morat", joux: "joux" };
+const slugify = (s) =>
+  String(s).normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+const beachPath = (b) => `/lac/${LAKE_SLUG[b.lake] || slugify(b.lakeName)}/${slugify(b.name)}`;
+function beachFromPath(pathname) {
+  const m = pathname.match(/^\/lac\/([^/]+)\/([^/]+)\/?$/);
+  if (!m) return null;
+  const lake = decodeURIComponent(m[1]).toLowerCase();
+  const slug = decodeURIComponent(m[2]).toLowerCase();
+  return state.beaches.find((b) => (LAKE_SLUG[b.lake] || slugify(b.lakeName)) === lake && slugify(b.name) === slug) || null;
+}
+
 const state = {
   beaches: [],
   updatedAt: null,
@@ -68,10 +84,11 @@ function toggleLake(lake) {
 
 // ---- Chargement des données ----
 let lastLoadedAt = 0;
+let routeApplied = false; // applyInitialRoute() ne doit s'exécuter qu'une fois
 
 async function load() {
   try {
-    const r = await fetch(`data.json?t=${Math.floor(Date.now() / 60000)}`);
+    const r = await fetch(`/data.json?t=${Math.floor(Date.now() / 60000)}`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
     state.beaches = data.beaches || [];
@@ -85,6 +102,11 @@ async function load() {
     // Astuce tirée une seule fois par chargement (pas à chaque renderAll, pour
     // ne pas la faire sauter quand on change de tri / favori).
     renderTip();
+    // Deep link : ouvre le détail si l'URL cible une plage (une seule fois).
+    if (!routeApplied) {
+      routeApplied = true;
+      applyInitialRoute();
+    }
   } catch (e) {
     listEl.innerHTML = `<p class="empty">Impossible de charger les données.<br>${e.message}</p>`;
   }
@@ -488,7 +510,7 @@ function forecastText(b) {
   return trendInfo(b.trend).txt;
 }
 
-function openDetail(b) {
+function openDetail(b, push = true) {
   const water = fmt(b.water);
 
   $("#d-lake").textContent = b.lakeName + (b.group ? " · " + b.group : "");
@@ -518,12 +540,69 @@ function openDetail(b) {
     setFavIcon();
   };
 
+  $("#d-share").onclick = () => shareBeach(b);
+
+  // URL partageable (deep link) + titre d'onglet adapté.
+  if (push) history.pushState({ d: b.id }, "", beachPath(b));
+  document.title = `${b.name}${water != null ? ` — ${water}°` : ""} · Trempette`;
+
   $("#detail").hidden = false;
   syncScrollLock();
 }
-function closeDetail() {
+function closeDetail(updateUrl = true) {
   $("#detail").hidden = true;
+  // Revient à l'accueil dans la barre d'adresse sans empiler d'entrée superflue.
+  if (updateUrl && location.pathname.startsWith("/lac/")) history.replaceState({}, "", "/");
+  document.title = DEFAULT_TITLE;
   syncScrollLock();
+}
+
+// Partage natif (feuille iOS/Android) avec repli presse-papier.
+async function shareBeach(b) {
+  const url = location.origin + beachPath(b);
+  const w = fmt(b.water);
+  const title = `${b.name} — ${w != null ? w + "°" : "température de l'eau"}`;
+  const text = `${b.name} : ${w != null ? w + " °C" : "température de l'eau"} dans ${b.lakeName} 🌊`;
+  try {
+    if (navigator.share) return await navigator.share({ title, text, url });
+    await navigator.clipboard.writeText(url);
+    flashShareCopied();
+  } catch (e) {
+    if (e && e.name === "AbortError") return; // partage annulé par l'utilisateur
+    try {
+      await navigator.clipboard.writeText(url);
+      flashShareCopied();
+    } catch {
+      /* presse-papier indisponible : on n'insiste pas */
+    }
+  }
+}
+function flashShareCopied() {
+  const btn = $("#d-share");
+  const label = $("#d-share-label");
+  const old = label.textContent;
+  label.textContent = "Lien copié !";
+  btn.classList.add("copied");
+  setTimeout(() => {
+    label.textContent = old;
+    btn.classList.remove("copied");
+  }, 1800);
+}
+
+// Ouvre/ferme le détail selon l'URL (boutons Précédent/Suivant du navigateur).
+window.addEventListener("popstate", () => {
+  const b = beachFromPath(location.pathname);
+  if (b) openDetail(b, false);
+  else closeDetail(false);
+});
+
+// Au chargement : si l'URL pointe une plage, ouvre directement son détail.
+function applyInitialRoute() {
+  const b = beachFromPath(location.pathname);
+  if (b) {
+    history.replaceState({ d: b.id }, "", beachPath(b)); // normalise (slash final, casse)
+    openDetail(b, false);
+  }
 }
 
 // Bloque le défilement de la page tant qu'un overlay est ouvert (sinon, sur
@@ -782,7 +861,7 @@ if ("serviceWorker" in navigator) {
   }
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("sw.js", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" });
       // Cherche une mise à jour à chaque retour au premier plan (les PWA iOS
       // restent « ouvertes » longtemps).
       document.addEventListener("visibilitychange", () => {
