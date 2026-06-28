@@ -56,6 +56,10 @@
     .panel p { font-size: 12px; color: var(--glacier); margin: 0 0 12px; }
     .chartbox { position: relative; height: 280px; }
     .updated { font-size: 12px; color: var(--glacier); }
+    .legend { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--glacier); margin: -6px 0 12px; }
+    .legend .lg-ring { width: 11px; height: 11px; border: 2px solid #F4B740; border-radius: 50%; display: inline-block; }
+    .legend .lg-x { color: #FF5252; font-weight: 800; font-size: 14px; line-height: 1; }
+    .legend .lg-sep { opacity: .5; }
   </style>
 </head>
 <body>
@@ -91,6 +95,7 @@
     <div class="panel">
       <h2>Mesure réelle vs modèle</h2>
       <p>Lignes pleines = mesure in-situ (bouées) · lignes pointillées = modèle Alplakes au même point.</p>
+      <p class="legend"><span class="lg-ring"></span> flux en retard (mesure figée, bouée conservée) <span class="lg-sep">·</span> <span class="lg-x">✕</span> bouée écartée ce cycle (périmée / aberrante, hors correction)</p>
       <div class="chartbox"><canvas id="chartTemp" role="img" aria-label="Températures mesurées et modélisées aux bouées"></canvas></div>
     </div>
 
@@ -169,7 +174,7 @@
       const cards = [
         ["Biais LéXPLORE", last && last.lex && last.lex.b != null ? fmt(last.lex.b) + " °C" : "—", buoyHint("lex")],
         ["Biais Buchillon", last && last.buch && last.buch.b != null ? fmt(last.buch.b) + " °C" : "—", buoyHint("buch")],
-        ["Correction moy. " + rangeLabel(), fmt(mean(pts.map((p) => p.c))) + " °C", last ? last.n + " plages" : ""],
+        ["Corr. moy. " + rangeLabel(), fmt(mean(pts.map((p) => p.c))) + " °C", last ? last.n + " plages" : ""],
         ["Biais moyen " + rangeLabel(), fmt(mean(pts.flatMap((p) => [p.lex && p.lex.b, p.buch && p.buch.b])), 2) + " °C", "2 bouées"],
         ["Cycles sans bouée", String(pannes), reasonHint],
         ["Cycles en retard", String(lagCycles), lagHint],
@@ -182,12 +187,26 @@
       const col = { lexI: "#34B4C2", lexM: "#34B4C2", buchI: "#F46B5A", buchM: "#F46B5A", corr: "#BDEAF0" };
       const baseLine = { pointRadius: 0, tension: 0.25, borderWidth: 2, spanGaps: false };
 
+      // Marqueurs sur les lignes de mesure, pour repérer d'un coup d'œil les cycles
+      // particuliers : ◯ ambre = flux en retard (mesure figée, bouée conservée) ;
+      // ✕ rouge = bouée écartée ce cycle (périmée/aberrante, hors correction).
+      const MARK = { lag: "#F4B740", drop: "#FF5252" };
+      const markState = (p, key) => (p.drop && p.drop[key]) ? "drop" : (p[key] && p[key].lag) ? "lag" : null;
+      const mesureMarks = (key) => ({
+        pointRadius: pts.map((p) => ({ lag: 4, drop: 5 }[markState(p, key)] || 0)),
+        pointHoverRadius: pts.map((p) => ({ lag: 5, drop: 6 }[markState(p, key)] || 0)),
+        pointStyle: pts.map((p) => (markState(p, key) === "drop" ? "crossRot" : "circle")),
+        pointBackgroundColor: pts.map(() => "transparent"),       // ◯ creux pour le retard
+        pointBorderColor: pts.map((p) => MARK[markState(p, key)] || "transparent"),
+        pointBorderWidth: pts.map((p) => (markState(p, key) ? 2 : 0)),
+      });
+
       const tempData = {
         labels,
         datasets: [
-          { ...baseLine, label: "LéXPLORE mesure", data: pts.map((p) => p.lex && p.lex.i), borderColor: col.lexI, pointRadius: pts.map((p) => (p.lex && p.lex.lag ? 3 : 0)), pointBackgroundColor: col.lexI },
+          { ...baseLine, label: "LéXPLORE mesure", data: pts.map((p) => p.lex && p.lex.i), borderColor: col.lexI, ...mesureMarks("lex") },
           { ...baseLine, label: "LéXPLORE modèle", data: pts.map((p) => p.lex && p.lex.m), borderColor: col.lexM, borderDash: [5, 4] },
-          { ...baseLine, label: "Buchillon mesure", data: pts.map((p) => p.buch && p.buch.i), borderColor: col.buchI, pointRadius: pts.map((p) => (p.buch && p.buch.lag ? 3 : 0)), pointBackgroundColor: col.buchI },
+          { ...baseLine, label: "Buchillon mesure", data: pts.map((p) => p.buch && p.buch.i), borderColor: col.buchI, ...mesureMarks("buch") },
           { ...baseLine, label: "Buchillon modèle", data: pts.map((p) => p.buch && p.buch.m), borderColor: col.buchM, borderDash: [5, 4] },
         ],
       };
