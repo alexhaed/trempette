@@ -28,6 +28,10 @@ invocation_logs = true
 binding = "DATA"
 id = "33ea916d941a4a9da24d077190b7ceea"
 
+# Account ID (non secret) pour l'API SQL Analytics Engine (page /admin/stats).
+[vars]
+CF_ACCOUNT_ID = "969163f12693b836e150279b843b0ea7"
+
 # Statistiques de consultation par plage (events open/fav/share via POST /e).
 # Le dataset est créé automatiquement au 1er writeDataPoint ; pas d'id à coller.
 [[analytics_engine_datasets]]

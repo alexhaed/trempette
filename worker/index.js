@@ -19,6 +19,7 @@ import bundledLakes from "../scripts/lakes.json";
 import plagesHtml from "./plages.html";
 import correctionHtml from "./correction.html";
 import tipsHtml from "./tips.html";
+import statsHtml from "./stats.html";
 import {
   flattenLakes,
   fetchWindow,
@@ -431,6 +432,16 @@ async function handleAdmin(request, env, ctx, pathname) {
     return htmlPage(tipsHtml);
   }
 
+  // Statistiques de consultation par plage.
+  if (pathname === "/admin/stats" || pathname === "/admin/stats/") {
+    return htmlPage(statsHtml);
+  }
+
+  if (pathname === "/admin/stats-data") {
+    if (!authorized(request, env)) return json({ error: "unauthorized" }, 401);
+    return handleStatsData(request, env);
+  }
+
   if (pathname === "/admin/tips-data") {
     if (!authorized(request, env)) return json({ error: "unauthorized" }, 401);
 
@@ -636,6 +647,103 @@ async function handleEvent(request, env) {
     /* écriture best-effort : ne jamais faire échouer la requête */
   }
   return NO_CONTENT;
+}
+
+// Exécute une requête sur l'API SQL d'Analytics Engine et renvoie les lignes.
+async function aeQuery(env, sql) {
+  const r = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/analytics_engine/sql`,
+    { method: "POST", headers: { Authorization: `Bearer ${env.AE_API_TOKEN}` }, body: sql }
+  );
+  if (!r.ok) throw new Error(`AE ${r.status} ${await r.text().catch(() => "")}`);
+  return (await r.json()).data || [];
+}
+
+// GET /admin/stats-data?range=24h|7d|30d — agrège les events pour le dashboard.
+async function handleStatsData(request, env) {
+  if (!env.CF_ACCOUNT_ID || !env.AE_API_TOKEN) {
+    return json({ error: "Analytics Engine non configuré (CF_ACCOUNT_ID / AE_API_TOKEN)" }, 503);
+  }
+  const range = new URL(request.url).searchParams.get("range") || "24h";
+  const DAYS = { "24h": 1, "7d": 7, "30d": 30 };
+  const days = DAYS[range] || 1;
+  const T = "trempette_views";
+  const WIN = `timestamp > NOW() - INTERVAL '${days}' DAY`;
+  const N = (x) => Number(x) || 0;
+
+  // Une requête par dimension de session (navigateur/OS/appareil/pays/referrer/mode).
+  const dim = (col) =>
+    aeQuery(env, `SELECT ${col} k, SUM(_sample_interval) n FROM ${T} WHERE ${WIN} GROUP BY k ORDER BY n DESC LIMIT 12`)
+      .then((rows) => rows.map((r) => ({ k: r.k || "?", n: N(r.n) })));
+
+  try {
+    const [beaches, daily, hourly, browsers, os, devices, countries, referrers, modes] = await Promise.all([
+      // Table plages : opens/favs/shares en une passe (agrégation conditionnelle).
+      aeQuery(
+        env,
+        `SELECT blob2 beach, blob3 lake,
+           SUM(IF(blob1='open',_sample_interval,0)) opens,
+           SUM(IF(blob1='fav',_sample_interval,0)) favs,
+           SUM(IF(blob1='share',_sample_interval,0)) shares
+         FROM ${T} WHERE ${WIN} GROUP BY beach, lake ORDER BY opens DESC LIMIT 100`
+      ),
+      aeQuery(
+        env,
+        `SELECT toStartOfInterval(timestamp, INTERVAL '1' DAY) day, SUM(IF(blob1='open',_sample_interval,0)) opens
+         FROM ${T} WHERE ${WIN} GROUP BY day ORDER BY day`
+      ),
+      aeQuery(
+        env,
+        `SELECT toHour(timestamp) hour, SUM(IF(blob1='open',_sample_interval,0)) opens
+         FROM ${T} WHERE ${WIN} GROUP BY hour ORDER BY hour`
+      ),
+      dim("blob4"),
+      dim("blob5"),
+      dim("blob6"),
+      dim("blob7"),
+      dim("blob8"),
+      dim("blob9"),
+    ]);
+
+    const beachRows = beaches.map((r) => ({
+      beach: r.beach,
+      lake: r.lake,
+      opens: N(r.opens),
+      favs: N(r.favs),
+      shares: N(r.shares),
+    }));
+
+    // Agrégats dérivés (sans requête supplémentaire).
+    const lakeMap = new Map();
+    for (const b of beachRows) lakeMap.set(b.lake, (lakeMap.get(b.lake) || 0) + b.opens);
+    const lakes = [...lakeMap.entries()].map(([lake, opens]) => ({ lake, opens })).sort((a, b) => b.opens - a.opens);
+
+    const kpis = {
+      opens: beachRows.reduce((s, b) => s + b.opens, 0),
+      favs: beachRows.reduce((s, b) => s + b.favs, 0),
+      shares: beachRows.reduce((s, b) => s + b.shares, 0),
+      beaches: beachRows.filter((b) => b.opens + b.favs + b.shares > 0).length,
+      countries: countries.length,
+    };
+
+    return json({
+      range,
+      generatedAt: new Date().toISOString(),
+      kpis,
+      beaches: beachRows,
+      lakes,
+      daily: daily.map((r) => ({ day: r.day, opens: N(r.opens) })),
+      hourly: hourly.map((r) => ({ hour: N(r.hour), opens: N(r.opens) })),
+      browsers,
+      os,
+      devices,
+      countries,
+      referrers,
+      modes,
+    });
+  } catch (e) {
+    return json({ error: String(e.message || e) }, 502);
+  }
 }
 
 export default {
