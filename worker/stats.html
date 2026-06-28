@@ -196,7 +196,7 @@
       const k = d.kpis;
       $("#cards").innerHTML = [
         ["Ouvertures", k.opens], ["Impressions", k.impressions], ["Favoris", k.favs], ["Partages", k.shares],
-        ["Plages vues", k.beaches], ["Pays", k.countries],
+        ["Plages vues", k.beaches],
       ].map((c) => `<div class="card"><div class="lbl">${c[0]}</div><div class="val">${c[1] ?? 0}</div></div>`).join("");
 
       // Top plages
@@ -212,7 +212,7 @@
         : `<div class="empty">Aucune consultation sur la période.</div>`;
 
       // Tendance par jour
-      const days = d.daily.map((x) => x.day.slice(5, 10).replace("-", "."));
+      const days = d.daily.map((x) => { const [mo, da] = x.day.slice(5, 10).split("-"); return da + "." + mo; });
       if (chartDaily) chartDaily.destroy();
       chartDaily = new Chart($("#chartDaily"), {
         type: "line",
