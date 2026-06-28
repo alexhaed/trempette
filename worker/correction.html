@@ -27,7 +27,10 @@
     h1 { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 24px; letter-spacing: -0.02em; margin: 0 0 4px; }
     .sub { color: var(--glacier); font-size: 13px; margin: 0 0 22px; }
     .apphead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
-    .topnav { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .topnav { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .topnav::-webkit-scrollbar { display: none; }
+    .topnav > * { flex-shrink: 0; white-space: nowrap; }
+    @media (max-width: 560px) { .topnav { width: 100%; } }
     .topnav a { font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--creme); text-decoration: none; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 10px; padding: 6px 11px; }
     .topnav a:hover { background: rgba(247, 242, 231, 0.16); }
     .topnav a.current { border-color: var(--turq-light); }
@@ -95,7 +98,7 @@
     <div class="panel">
       <h2>Mesure réelle vs modèle</h2>
       <p>Lignes pleines = mesure in-situ (bouées) · lignes pointillées = modèle Alplakes au même point.</p>
-      <p class="legend"><span class="lg-ring"></span> flux en retard (mesure figée, bouée conservée) <span class="lg-sep">·</span> <span class="lg-x">✕</span> bouée écartée ce cycle (périmée / aberrante, hors correction)</p>
+      <p class="legend"><span class="lg-ring"></span> flux en retard (mesure figée, bouée conservée) <span class="lg-sep">·</span> <span class="lg-x">✕</span>&nbsp;bouée écartée ce cycle (périmée / aberrante)</p>
       <div class="chartbox"><canvas id="chartTemp" role="img" aria-label="Températures mesurées et modélisées aux bouées"></canvas></div>
     </div>
 
