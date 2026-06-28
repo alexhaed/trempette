@@ -58,7 +58,7 @@
     .updated { font-size: 12px; color: var(--glacier); }
     .legend { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--glacier); margin: -6px 0 12px; }
     .legend .lg-ring { width: 11px; height: 11px; border: 2px solid #F4B740; border-radius: 50%; display: inline-block; }
-    .legend .lg-x { color: #FF5252; font-weight: 800; font-size: 14px; line-height: 1; }
+    .legend .lg-x { color: #E83FD0; font-weight: 800; font-size: 14px; line-height: 1; }
     .legend .lg-sep { opacity: .5; }
   </style>
 </head>
@@ -190,7 +190,7 @@
       // Marqueurs sur les lignes de mesure, pour repérer d'un coup d'œil les cycles
       // particuliers : ◯ ambre = flux en retard (mesure figée, bouée conservée) ;
       // ✕ rouge = bouée écartée ce cycle (périmée/aberrante, hors correction).
-      const MARK = { lag: "#F4B740", drop: "#FF5252" };
+      const MARK = { lag: "#F4B740", drop: "#E83FD0" };
       const markState = (p, key) => (p.drop && p.drop[key]) ? "drop" : (p[key] && p[key].lag) ? "lag" : null;
       const mesureMarks = (key) => ({
         pointRadius: pts.map((p) => ({ lag: 4, drop: 5 }[markState(p, key)] || 0)),
