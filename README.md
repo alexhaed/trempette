@@ -9,6 +9,10 @@ Eau (Alplakes / Eawag) + air & vent (open-meteo), pour chaque plage, avec
 tendance de réchauffement de l'eau. Tri par lac / « plage la plus chaude » /
 favoris, recherche, géolocalisation « plages les plus proches », vue détail.
 
+**PWA** installable, pages **partageables/indexables** par plage
+(`/lac/<lac>/<plage>`), **formulaire de contact**, astuces « Le savais-tu ? » et
+**générateur de widget iOS** (Scriptable, `/widget/`).
+
 Sur le **Léman**, la température du modèle est **recalée en temps réel** par les
 mesures in-situ des bouées LéXPLORE et Buchillon (voir « Correction de biais »).
 
@@ -26,7 +30,10 @@ Worker Cloudflare « trempette »
    │     ├─ Léman : correction de biais via 2 bouées in-situ live (Datalakes)
    │     └─ historique du biais → KV (clé "history", pour le moniteur)
    ├─ GET /data.json → renvoyé depuis KV (run_worker_first)
-   └─ /admin → back-office protégé (moniteur du biais + éditeur des plages)
+   ├─ POST /e        → events de consultation → Analytics Engine (stats par plage)
+   ├─ POST /contact  → formulaire de contact (Resend + Turnstile)
+   ├─ /lac/<lac>/<plage> → pages partageables/indexables (meta OG injectées)
+   └─ /admin → back-office protégé (correction · stats · plages · astuces)
 ```
 
 - **Pas de proxy, pas de backend.** L'app ne fait que lire `/data.json`.
@@ -108,13 +115,32 @@ pas de bouée → modèle brut.
 
 ## Back-office `/admin`
 
-Protégé par un secret (`ADMIN_TOKEN`), `noindex`. Deux pages avec nav commune :
+Protégé par un secret (`ADMIN_TOKEN`), `noindex`. Quatre pages avec nav commune :
 
 - **`/admin`** (= `/admin/correction`) — **Correction biais** : moniteur de
   l'historique (mesure vs modèle, biais et correction appliquée heure par heure).
   Source : clé KV `history`, un point compact par cycle, rétention 90 j.
+- **`/admin/stats`** — **Statistiques** de consultation (voir ci-dessous).
 - **`/admin/plages`** — éditeur du catalogue des plages (écrit dans KV
   `catalogue` → le run suivant rebâtit `data.json`).
+- **`/admin/tips`** — éditeur des astuces « Le savais-tu ? » affichées au hasard
+  sur la page d'accueil (KV `tips`).
+
+## Statistiques de consultation
+
+Mesure quelles plages sont consultées, **sans cookie ni donnée personnelle** :
+
+- Le client envoie un ping `POST /e` (`navigator.sendBeacon`) sur **ouverture** de
+  détail, **impression** (carte favori vue dans le hero), **favori** et **partage**.
+  Le Worker l'enrichit (navigateur, OS, appareil, pays via `request.cf`, referrer,
+  mode PWA — **jamais l'IP ni de cookie**) et l'écrit dans **Workers Analytics
+  Engine** (dataset `trempette_views`, rétention 90 j).
+- **`/admin/stats`** interroge Analytics Engine (API SQL) pour 24 h / 7 j / 30 j :
+  top plages, top lacs, activité par jour, heure de la journée,
+  navigateur/OS/appareil/pays/provenance — plus les **visites** de **Cloudflare
+  Web Analytics** (API GraphQL RUM). Au-delà de 90 j, un **snapshot quotidien**
+  (cron → KV `stats-daily`) conserve l'historique par plage (vue « 1 an »).
+- Secret/vars : `AE_API_TOKEN` (Account Analytics Read), `CF_ACCOUNT_ID`.
 
 ## Développement
 
@@ -128,10 +154,13 @@ npx wrangler dev --test-scheduled   # puis visiter /__scheduled pour tester le c
 | Fichier | Rôle |
 |---|---|
 | `public/` | App web (index.html, css/, js/, icons/, img/, sw.js, manifest) |
-| `worker/index.js` | Worker : assets + cron + /data.json + /admin, orchestration KV |
+| `public/widget/` | Générateur de widget iOS Scriptable (`/widget/`) |
+| `worker/index.js` | Worker : assets + cron + /data.json + /admin + /e + /contact, orchestration KV |
 | `worker/correction.html` | Back-office : moniteur de la correction de biais (`/admin`) |
+| `worker/stats.html` | Back-office : statistiques de consultation (`/admin/stats`) |
 | `worker/plages.html` | Back-office : éditeur des plages (`/admin/plages`) |
-| `wrangler.toml` | Config Worker (assets, KV, cron) |
+| `worker/tips.html` | Back-office : éditeur des astuces « Le savais-tu ? » (`/admin/tips`) |
+| `wrangler.toml` | Config Worker (assets, KV, cron, Analytics Engine, vars) |
 | `scripts/lakes.json` | Catalogue lacs & plages (coordonnées) |
 | `scripts/build-data.mjs` | Récupération Alplakes/open-meteo/Datalakes, interpolation, correction de biais IDW, historique |
 
