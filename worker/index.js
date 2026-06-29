@@ -671,6 +671,30 @@ async function aeQuery(env, sql) {
   return (await r.json()).data || [];
 }
 
+// Visites/jour issues de Cloudflare Web Analytics (dataset RUM), via l'API
+// GraphQL. siteTag = identifiant du site Web Analytics (≠ token du beacon).
+// Même token Account Analytics Read que l'API SQL. Best-effort.
+const RUM_SITE_TAG = "ac015916adb9407c9eaae24a74aff619";
+async function rumVisitsByDay(env, days) {
+  const today = dayStr(new Date());
+  const from = dayStr(new Date(Date.now() - (days - 1) * 86400e3));
+  const query =
+    `query { viewer { accounts(filter:{accountTag:"${env.CF_ACCOUNT_ID}"}) { ` +
+    `rumPageloadEventsAdaptiveGroups(limit:1000, orderBy:[date_ASC], ` +
+    `filter:{date_geq:"${from}", date_leq:"${today}", siteTag:"${RUM_SITE_TAG}"}) ` +
+    `{ dimensions{date} sum{visits} count } } } }`;
+  const r = await fetch("https://api.cloudflare.com/client/v4/graphql", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${env.AE_API_TOKEN}`, "content-type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+  if (!r.ok) throw new Error(`RUM ${r.status}`);
+  const j = await r.json();
+  if (j.errors) throw new Error("RUM " + JSON.stringify(j.errors));
+  const rows = j.data?.viewer?.accounts?.[0]?.rumPageloadEventsAdaptiveGroups || [];
+  return rows.map((x) => ({ date: x.dimensions.date, visits: x.sum.visits, pageviews: x.count }));
+}
+
 // GET /admin/stats-data?range=24h|7d|30d — agrège les events pour le dashboard.
 async function handleStatsData(request, env) {
   if (!env.CF_ACCOUNT_ID || !env.AE_API_TOKEN) {
@@ -738,7 +762,17 @@ async function handleStatsData(request, env) {
     for (const b of beachRows) lakeMap.set(b.lake, (lakeMap.get(b.lake) || 0) + b.opens);
     const lakes = [...lakeMap.entries()].map(([lake, opens]) => ({ lake, opens })).sort((a, b) => b.opens - a.opens);
 
+    // Visites/jour (Cloudflare Web Analytics) — best-effort : un échec côté RUM
+    // ne doit pas faire échouer tout le dashboard.
+    let visits = [];
+    try {
+      visits = await rumVisitsByDay(env, days);
+    } catch (e) {
+      console.warn("[stats] RUM KO", e);
+    }
+
     const kpis = {
+      visits: visits.length ? visits.reduce((s, v) => s + (v.visits || 0), 0) : null,
       opens: beachRows.reduce((s, b) => s + b.opens, 0),
       impressions: beachRows.reduce((s, b) => s + b.impressions, 0),
       favs: beachRows.reduce((s, b) => s + b.favs, 0),
@@ -754,6 +788,7 @@ async function handleStatsData(request, env) {
       beaches: beachRows,
       lakes,
       daily: daily.map((r) => ({ day: r.day, opens: N(r.opens) })),
+      visits,
       hourly: hourly.map((r) => ({ hour: N(r.hour), opens: N(r.opens) })),
       browsers,
       os,

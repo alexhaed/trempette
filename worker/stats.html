@@ -113,7 +113,7 @@
     </div>
 
     <div class="grid2">
-      <div class="panel"><h2>Ouvertures par jour</h2><div class="chartbox"><canvas id="chartDaily"></canvas></div></div>
+      <div class="panel"><h2>Activité par jour</h2><div class="chartbox"><canvas id="chartDaily"></canvas></div></div>
       <div class="panel"><h2>Heure de la journée <span style="color:var(--glacier);font-weight:400;font-size:11px">(Europe/Zurich)</span></h2><div class="chartbox"><canvas id="chartHourly"></canvas></div></div>
     </div>
 
@@ -194,10 +194,10 @@
       }
       // KPIs
       const k = d.kpis;
-      $("#cards").innerHTML = [
-        ["Ouvertures", k.opens], ["Impressions", k.impressions], ["Favoris", k.favs], ["Partages", k.shares],
-        ["Plages vues", k.beaches],
-      ].map((c) => `<div class="card"><div class="lbl">${c[0]}</div><div class="val">${c[1] ?? 0}</div></div>`).join("");
+      const cards = [];
+      if (k.visits != null) cards.push(["Visites", k.visits]);
+      cards.push(["Ouvertures", k.opens], ["Impressions", k.impressions], ["Favoris", k.favs], ["Partages", k.shares], ["Plages vues", k.beaches]);
+      $("#cards").innerHTML = cards.map((c) => `<div class="card"><div class="lbl">${c[0]}</div><div class="val">${c[1] ?? 0}</div></div>`).join("");
 
       // Top plages
       const b = d.beaches;
@@ -211,14 +211,19 @@
           + `</tbody></table>`
         : `<div class="empty">Aucune consultation sur la période.</div>`;
 
-      // Tendance par jour
-      const days = d.daily.map((x) => { const [mo, da] = x.day.slice(5, 10).split("-"); return da + "." + mo; });
+      // Activité par jour : ouvertures (Analytics Engine) + visites (Web Analytics)
+      const dmap = {};
+      for (const x of d.daily) { const k0 = x.day.slice(0, 10); (dmap[k0] = dmap[k0] || {}).opens = x.opens; }
+      for (const x of (d.visits || [])) { (dmap[x.date] = dmap[x.date] || {}).visits = x.visits; }
+      const dkeys = Object.keys(dmap).sort();
+      const dlabels = dkeys.map((k0) => { const [, mo, da] = k0.split("-"); return da + "." + mo; });
+      const hasVisits = (d.visits || []).length > 0;
+      const ds = [{ label: "Ouvertures", data: dkeys.map((k0) => dmap[k0].opens || 0), borderColor: COL.water, backgroundColor: "rgba(52,180,194,.15)", fill: true, tension: .25, pointRadius: 2 }];
+      if (hasVisits) ds.push({ label: "Visites (site)", data: dkeys.map((k0) => dmap[k0].visits ?? null), borderColor: "#F46B5A", backgroundColor: "transparent", fill: false, tension: .25, pointRadius: 2, spanGaps: true });
+      const dopts = baseOpts();
+      dopts.plugins.legend = { display: hasVisits, labels: { color: COL.text, font: { size: 11 }, boxWidth: 12 } };
       if (chartDaily) chartDaily.destroy();
-      chartDaily = new Chart($("#chartDaily"), {
-        type: "line",
-        data: { labels: days, datasets: [{ data: d.daily.map((x) => x.opens), borderColor: COL.water, backgroundColor: "rgba(52,180,194,.15)", fill: true, tension: .25, pointRadius: 2 }] },
-        options: baseOpts(),
-      });
+      chartDaily = new Chart($("#chartDaily"), { type: "line", data: { labels: dlabels, datasets: ds }, options: dopts });
 
       // Heure de la journée (décalée Europe/Zurich)
       const off = zurichOffset();
