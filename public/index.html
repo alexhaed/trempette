@@ -39,6 +39,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
+  <!-- Anti-CLS : si l'utilisateur a des favoris, le carrousel « Mes plages »
+       sera haut. On pose la classe AVANT le 1er rendu pour réserver sa hauteur
+       (via .has-favs en CSS), sinon le remplissage post-data décalerait la page. -->
+  <script>
+    try {
+      var f = JSON.parse(localStorage.getItem("templac_favoris") || "[]");
+      if (Array.isArray(f) && f.length) document.documentElement.classList.add("has-favs");
+    } catch (e) {}
+  </script>
 </head>
 <body>
   <!-- Jeu d'icônes linéaires -->
@@ -136,7 +145,7 @@
     <footer class="foot">
       <p id="updated" class="updated"></p>
       <p class="credits">Eau : Alplakes &amp; Datalakes (Eawag) · Air &amp; vent : open-meteo.com</p>
-      <p class="version">v1.54 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
+      <p class="version">v1.55 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
     </footer>
     </div>
   </div>

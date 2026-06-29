@@ -150,7 +150,12 @@ body {
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  /* Hauteur réservée dès le 1er rendu pour éviter le saut (CLS) quand les
+     données arrivent : état « aucun favori » (placeholder) par défaut, carte
+     pleine quand .has-favs est posé (script en <head>). */
+  min-height: 132px;
 }
+.has-favs .hero-track { min-height: 300px; }
 .hero-track::-webkit-scrollbar { display: none; }
 
 .hero-card {
