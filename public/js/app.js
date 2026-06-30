@@ -300,17 +300,6 @@ $("#hero-track").addEventListener(
 
 // ---- Liste des plages ----
 function visibleBeaches() {
-  const q = norm(state.query);
-  if (q) {
-    // Recherche transverse : nom (complet + mots) et commune/région, préfixe,
-    // insensible aux accents ; triée du plus chaud au plus froid, sans en-têtes.
-    const matches = state.beaches.filter((b) => {
-      const words = [b.name].concat(b.name.split(/[\s’'–-]+/));
-      return words.some((w) => norm(w).startsWith(q)) || norm(b.group).startsWith(q);
-    });
-    return { groups: [{ header: null, items: sortWarm(matches) }] };
-  }
-
   if (state.sort === "fav") {
     const items = state.favOrder.map(byId).filter(Boolean);
     return { groups: [{ header: null, items }] };
@@ -701,12 +690,6 @@ function activateNear(btn) {
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       btn.classList.remove("is-locating");
-      // Recherche par nom et géoloc sont exclusives : on vide le champ.
-      if (state.query) {
-        searchInput.value = "";
-        state.query = "";
-        $("#search-clear").hidden = true;
-      }
       state.userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       state.sort = "near";
       setActiveSeg(btn);
@@ -725,20 +708,6 @@ function activateNear(btn) {
     { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
   );
 }
-
-const searchInput = $("#search");
-searchInput.addEventListener("input", (e) => {
-  state.query = e.target.value;
-  $("#search-clear").hidden = !state.query;
-  renderList();
-});
-$("#search-clear").addEventListener("click", () => {
-  searchInput.value = "";
-  state.query = "";
-  $("#search-clear").hidden = true;
-  renderList();
-  searchInput.focus();
-});
 
 let refreshing = false;
 async function refresh() {
