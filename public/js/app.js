@@ -668,26 +668,32 @@ function syncScrollLock() {
 }
 
 // ---- Événements ----
+function setActiveSeg(btn) {
+  document.querySelectorAll(".seg-btn").forEach((b) => b.classList.remove("is-active"));
+  btn.classList.add("is-active");
+}
+
 document.querySelectorAll(".seg-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".seg-btn").forEach((b) => b.classList.remove("is-active"));
-    btn.classList.add("is-active");
-    $("#locate").classList.remove("is-active"); // sort d'un éventuel mode proximité
+    if (btn.dataset.sort === "near") return activateNear(btn);
+    setActiveSeg(btn);
     state.sort = btn.dataset.sort;
     renderList();
   });
 });
 
-// ---- Géolocalisation : plages les plus proches ----
-$("#locate").addEventListener("click", () => {
-  const btn = $("#locate");
-  // Re-cliquer en mode proximité : on quitte et on revient à « Par lac ».
-  if (btn.classList.contains("is-active")) {
-    btn.classList.remove("is-active");
-    document.querySelector('.seg-btn[data-sort="lake"]').click();
+// ---- Onglet « Plus proche » : tri par distance (géolocalisation) ----
+function activateNear(btn) {
+  // Position déjà connue : bascule directe, sans redemander l'autorisation.
+  if (state.userPos) {
+    setActiveSeg(btn);
+    state.sort = "near";
+    renderList();
     return;
   }
   if (!navigator.geolocation) {
+    setActiveSeg(btn);
+    state.sort = "near";
     listEl.innerHTML = `<p class="empty">La géolocalisation n'est pas disponible sur cet appareil.</p>`;
     return;
   }
@@ -703,21 +709,22 @@ $("#locate").addEventListener("click", () => {
       }
       state.userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       state.sort = "near";
-      document.querySelectorAll(".seg-btn").forEach((b) => b.classList.remove("is-active"));
-      btn.classList.add("is-active");
+      setActiveSeg(btn);
       renderList();
     },
     (err) => {
       btn.classList.remove("is-locating");
+      setActiveSeg(btn);
+      state.sort = "near";
       const msg =
         err.code === err.PERMISSION_DENIED
-          ? "Géolocalisation refusée. Autorisez l'accès à votre position pour voir les plages les plus proches."
-          : "Position indisponible. Réessayez dans un instant.";
+          ? "Géolocalisation refusée. Autorise l'accès à ta position pour voir les plages les plus proches."
+          : "Position indisponible. Réessaie dans un instant.";
       listEl.innerHTML = `<p class="empty">${msg}</p>`;
     },
     { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
   );
-});
+}
 
 const searchInput = $("#search");
 searchInput.addEventListener("input", (e) => {
