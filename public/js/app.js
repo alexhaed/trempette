@@ -211,10 +211,14 @@ function renderHero() {
   const track = $("#hero-track");
   const dots = $("#hero-dots");
   const favs = state.favOrder.map(byId).filter(Boolean);
+  // La réservation de hauteur (anti-CLS, posée d'abord par le script en <head>)
+  // doit suivre l'état RÉEL : si aucune carte favori ne s'affiche (favoris vides
+  // ou ids périmés), on retire .has-favs pour que le hero reste compact.
+  document.documentElement.classList.toggle("has-favs", favs.length > 0);
 
   if (favs.length === 0) {
     track.innerHTML = `<div class="hero-empty">${svgUse("i-star", 26)}
-      <p>Ajouter une plage en favori pour la voir ici</p></div>`;
+      <p>Ajoute une plage en favori pour la voir ici</p></div>`;
     dots.innerHTML = "";
     return;
   }
@@ -357,7 +361,7 @@ function renderList() {
       state.query.trim()
         ? "Aucune plage ne correspond."
         : state.sort === "fav"
-          ? "Aucun favori — toucher l'étoile d'une plage."
+          ? "Aucun favori — touche l'étoile pour ajouter une plage."
           : "Aucune plage trouvée."
     }</p>`;
     return;

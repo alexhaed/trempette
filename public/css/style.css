@@ -105,7 +105,6 @@ body {
   color: var(--glacier);
   font-size: 13.5px;
   line-height: 1.45;
-  max-width: 42ch;
 }
 
 .icon-btn {
@@ -163,7 +162,7 @@ body {
   /* Hauteur réservée dès le 1er rendu pour éviter le saut (CLS) quand les
      données arrivent : état « aucun favori » (placeholder) par défaut, carte
      pleine quand .has-favs est posé (script en <head>). */
-  min-height: 132px;
+  min-height: 88px;
 }
 .has-favs .hero-track { min-height: 300px; }
 .hero-track::-webkit-scrollbar { display: none; }
@@ -251,7 +250,7 @@ body {
 .hero-empty {
   flex: 1; /* remplit la largeur du carrousel (= champ de recherche, liste…) */
   margin: 6px var(--gutter) 0;
-  padding: 26px 20px;
+  padding: 16px 18px;
   text-align: center;
   background: var(--glass);
   border: 1px solid var(--glass-border);
