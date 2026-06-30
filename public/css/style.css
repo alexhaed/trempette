@@ -93,9 +93,19 @@ body {
 .brand-name {
   font-family: "Bricolage Grotesque", sans-serif;
   font-weight: 800;
-  font-size: 21px;
+  /* Taille fluide : suit la largeur de l'écran (plancher 18px pour les petits
+     mobiles, plafond 23px au-delà du conteneur ~480px). */
+  font-size: clamp(18px, 5.6vw, 23px);
   letter-spacing: -0.02em;
   color: var(--creme);
+}
+.tagline {
+  margin: 0;
+  padding: 0 var(--gutter) 6px;
+  color: var(--glacier);
+  font-size: 13.5px;
+  line-height: 1.45;
+  max-width: 42ch;
 }
 
 .icon-btn {
