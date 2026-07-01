@@ -49,7 +49,6 @@ const state = {
   updatedAt: null,
   tips: [], // astuces « Le savais-tu ? » (servies dans data.json)
   sort: "lake", // défaut : Par lac
-  query: "",
   favOrder: loadFavOrder(), // tableau ordonné d'ids favoris
   collapsed: loadCollapsed(), // Set de noms de lacs repliés
   userPos: null, // {lat,lng} si géolocalisé (mode « proximité »)
@@ -360,7 +359,7 @@ function visibleBeaches() {
 const sortWarm = (arr) => [...arr].sort((a, b) => (b.water ?? -99) - (a.water ?? -99));
 
 function renderList() {
-  const isFavMode = state.sort === "fav" && !state.query.trim();
+  const isFavMode = state.sort === "fav";
   $("#reorder-hint").hidden = !isFavMode || state.favOrder.length < 2;
 
   const { groups } = visibleBeaches();
@@ -371,11 +370,9 @@ function renderList() {
   listEl.innerHTML = "";
   if (total === 0) {
     listEl.innerHTML = `<p class="empty">${
-      state.query.trim()
-        ? "Aucune plage ne correspond."
-        : state.sort === "fav"
-          ? "Aucun favori — touche l'étoile pour ajouter une plage."
-          : "Aucune plage trouvée."
+      state.sort === "fav"
+        ? "Aucun favori — touche l'étoile pour ajouter une plage."
+        : "Aucune plage trouvée."
     }</p>`;
     return;
   }
@@ -415,9 +412,9 @@ function beachRow(b, isFavMode) {
 
   const water = fmt(b.water);
   // Par lac : sous-titre = commune/région ; sinon = lac.
-  let sub = state.sort === "lake" && !state.query.trim() ? b.group || b.lakeName : b.lakeName;
+  let sub = state.sort === "lake" ? b.group || b.lakeName : b.lakeName;
   // Mode proximité : préfixe la distance depuis la position de l'utilisateur.
-  if (state.sort === "near" && state.userPos && !state.query.trim()) {
+  if (state.sort === "near" && state.userPos) {
     const km = distanceKm(state.userPos.lat, state.userPos.lng, b.lat, b.lng);
     sub = `<span class="dist-badge">${fmtDist(km)}</span> · ${b.lakeName}`;
   }

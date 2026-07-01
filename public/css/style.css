@@ -79,8 +79,6 @@ body {
   padding: calc(8px + var(--safe-top)) 0 calc(24px + var(--safe-bottom));
 }
 
-.bricolage { font-family: "Bricolage Grotesque", sans-serif; }
-
 /* ---- En-tête ---- */
 .head {
   display: flex;
