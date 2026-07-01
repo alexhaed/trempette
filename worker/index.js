@@ -712,6 +712,10 @@ async function handleStatsData(request, env) {
   const days = DAYS[range] || 1;
   const T = "trempette_views";
   const WIN = `timestamp > NOW() - INTERVAL '${days}' DAY`;
+  // Le graphe « activité par jour » montre toujours ≥ 7 jours (même en filtre 24 h)
+  // pour donner du contexte ; le reste du dashboard respecte la période choisie.
+  const dailyDays = Math.max(days, 7);
+  const DAILY_WIN = `timestamp > NOW() - INTERVAL '${dailyDays}' DAY`;
   const N = (x) => Number(x) || 0;
 
   // Une requête par dimension de session (navigateur/OS/appareil/pays/referrer/mode).
@@ -734,7 +738,7 @@ async function handleStatsData(request, env) {
       aeQuery(
         env,
         `SELECT toStartOfInterval(timestamp, INTERVAL '1' DAY) day, SUM(IF(blob1='open',_sample_interval,0)) opens
-         FROM ${T} WHERE ${WIN} GROUP BY day ORDER BY day`
+         FROM ${T} WHERE ${DAILY_WIN} GROUP BY day ORDER BY day`
       ),
       aeQuery(
         env,
@@ -772,13 +776,17 @@ async function handleStatsData(request, env) {
     // ne doit pas faire échouer tout le dashboard.
     let visits = [];
     try {
-      visits = await rumVisitsByDay(env, days);
+      visits = await rumVisitsByDay(env, dailyDays);
     } catch (e) {
       console.warn("[stats] RUM KO", e);
     }
 
     const kpis = {
-      visits: visits.length ? visits.reduce((s, v) => s + (v.visits || 0), 0) : null,
+      visits: visits.length
+        ? visits
+            .filter((v) => v.date >= dayStr(new Date(Date.now() - (days - 1) * 86400e3)))
+            .reduce((s, v) => s + (v.visits || 0), 0)
+        : null,
       opens: beachRows.reduce((s, b) => s + b.opens, 0),
       impressions: beachRows.reduce((s, b) => s + b.impressions, 0),
       favs: beachRows.reduce((s, b) => s + b.favs, 0),
