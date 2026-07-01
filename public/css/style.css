@@ -93,12 +93,14 @@ body {
 .brand-name {
   font-family: "Bricolage Grotesque", sans-serif;
   font-weight: 800;
-  /* Taille fluide : suit la largeur de l'écran (plancher 18px pour les petits
-     mobiles, plafond 23px au-delà du conteneur ~480px). */
-  font-size: clamp(20px, 6.2vw, 26px);
+  /* Taille fluide : suit la largeur de l'écran (plafond 28px au-delà du
+     conteneur ~480px). Sous 340px le titre déborderait sur le bouton refresh
+     → on le fige à 20px (garde-fou anti-retour à la ligne). */
+  font-size: clamp(21px, 6.8vw, 28px);
   letter-spacing: -0.02em;
   color: var(--creme);
 }
+@media (max-width: 340px) { .brand-name { font-size: 20px; } }
 .tagline {
   margin: 2px var(--gutter) 6px;
   padding: 2px 0 2px 11px;
