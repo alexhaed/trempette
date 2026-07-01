@@ -423,6 +423,9 @@ body {
   flex: none;
 }
 .beach-temp.na { font-size: 16px; color: rgba(247, 242, 231, 0.6); }
+/* Picto météo discret dans la liste : petit, glacier atténué, collé au chiffre. */
+.beach-wx { display: inline-flex; align-items: center; color: var(--glacier); opacity: 0.72; margin-right: -4px; }
+.beach-wx svg { fill: none; stroke: currentColor; }
 
 .beach-star {
   border: none;
@@ -628,6 +631,9 @@ body {
 }
 .d-cell:first-child .d-cell-label { color: var(--amber); }
 .d-cell-val { font-family: "Bricolage Grotesque", sans-serif; font-weight: 700; font-size: 24px; }
+.d-cell-wide { grid-column: 1 / -1; }
+.d-sky-val { display: inline-flex; align-items: center; gap: 8px; font-size: 20px; }
+.d-sky-val svg { fill: none; stroke: var(--glacier); flex-shrink: 0; }
 .d-wind-val { flex-direction: row; align-items: center; gap: 8px; }
 
 .d-map {

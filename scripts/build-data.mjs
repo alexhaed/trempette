@@ -160,13 +160,15 @@ export async function fetchWeatherAll(fetchFn, beaches, tries = 1) {
   const lng = beaches.map((b) => b.lng).join(",");
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
-    `&current=temperature_2m,wind_speed_10m,wind_direction_10m&wind_speed_unit=kmh`;
+    `&current=temperature_2m,wind_speed_10m,wind_direction_10m,weather_code,is_day&wind_speed_unit=kmh`;
   const r = await fetchJSON(fetchFn, url, tries);
   const arr = Array.isArray(r) ? r : [r];
   return arr.map((x) => ({
     air: x?.current?.temperature_2m ?? null,
     wind: x?.current?.wind_speed_10m ?? null,
     windDir: x?.current?.wind_direction_10m ?? null,
+    weatherCode: x?.current?.weather_code ?? null,
+    isDay: x?.current?.is_day ?? null,
   }));
 }
 

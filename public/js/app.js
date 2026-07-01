@@ -175,6 +175,27 @@ function trendInfo(slope) {
 function windAngle(deg) {
   return deg == null ? null : (deg + 180) % 360;
 }
+
+// Météo (codes WMO open-meteo) → icône (id de symbole SVG) + libellé « Ciel ».
+// isDay : 0 = nuit ; 1/null → jour par défaut (variantes soleil/lune).
+function weather(code, isDay) {
+  if (code == null) return null;
+  const day = isDay !== 0;
+  const M = [
+    [[0], day ? "i-sun" : "i-wx-moon", "Dégagé"],
+    [[1], day ? "i-wx-pcloud-day" : "i-wx-pcloud-night", "Beau temps"],
+    [[2], day ? "i-wx-pcloud-day" : "i-wx-pcloud-night", "Éclaircies"],
+    [[3], "i-wx-cloud", "Couvert"],
+    [[45, 48], "i-wx-fog", "Brouillard"],
+    [[51, 53, 55, 56, 57], "i-wx-rain", "Bruine"],
+    [[61, 63, 65, 66, 67], "i-wx-rain", "Pluie"],
+    [[80, 81, 82], "i-wx-rain", "Averses"],
+    [[71, 73, 75, 77, 85, 86], "i-wx-snow", "Neige"],
+    [[95, 96, 99], "i-wx-thunder", "Orage"],
+  ];
+  for (const [codes, id, label] of M) if (codes.includes(code)) return { id, label };
+  return { id: "i-wx-cloud", label: "—" };
+}
 function norm(s) {
   return (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 }
@@ -399,6 +420,8 @@ function beachRow(b, isFavMode) {
     sub = `<span class="dist-badge">${fmtDist(km)}</span> · ${b.lakeName}`;
   }
   const fav = isFav(b.id);
+  const wx = weather(b.weatherCode, b.isDay);
+  const wxHtml = wx ? `<span class="beach-wx" title="${wx.label}" aria-label="Ciel : ${wx.label}">${svgUse(wx.id, 17)}</span>` : "";
 
   row.innerHTML = `
     ${isFavMode ? `<button class="drag-handle" aria-label="Réordonner">${svgUse("i-grip", 18)}</button>` : ""}
@@ -406,6 +429,7 @@ function beachRow(b, isFavMode) {
       <div class="beach-name">${b.name}</div>
       <div class="beach-sub">${sub}</div>
     </div>
+    ${wxHtml}
     <div class="beach-temp${water == null ? " na" : ""}">${water != null ? `${water}°` : "n/d"}</div>
     <button class="beach-star ${fav ? "on" : ""}" aria-label="${fav ? "Retirer des favoris" : "Ajouter aux favoris"}" aria-pressed="${fav}">${svgUse("i-star", 22)}</button>`;
 
@@ -571,6 +595,11 @@ function openDetail(b, push = true) {
   const ang = windAngle(b.windDir);
   $("#d-wind-arrow").style.transform = ang != null ? `rotate(${ang}deg)` : "";
   $("#d-wind-arrow").style.opacity = ang != null ? "1" : "0";
+
+  const sky = weather(b.weatherCode, b.isDay);
+  $("#d-sky").textContent = sky ? sky.label : "n/d";
+  $("#d-sky-use").setAttribute("href", "#" + (sky ? sky.id : "i-wx-cloud"));
+  $("#d-sky-ico").style.opacity = sky ? "1" : "0.4";
 
   $("#d-map").href = mapUrl(b);
 

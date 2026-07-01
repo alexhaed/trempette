@@ -260,7 +260,7 @@ async function regenerate(env) {
   try {
     weather = await fetchWeatherAll(fetch, beaches, TRIES);
   } catch {
-    weather = beaches.map(() => ({ air: null, wind: null, windDir: null }));
+    weather = beaches.map(() => ({ air: null, wind: null, windDir: null, weatherCode: null, isDay: null }));
   }
 
   // 2. Fenêtres d'eau en cache + détection d'un nouveau run quotidien.
@@ -304,7 +304,7 @@ async function regenerate(env) {
   // 4. Payload : interpolation locale + météo fraîche.
   const out = beaches.map((b, i) => {
     const wi = interpolate(cache[b.id], now);
-    const wx = weather[i] ?? { air: null, wind: null, windDir: null };
+    const wx = weather[i] ?? { air: null, wind: null, windDir: null, weatherCode: null, isDay: null };
     return {
       id: b.id,
       name: b.name,
@@ -319,6 +319,8 @@ async function regenerate(env) {
       air: wx.air,
       wind: wx.wind,
       windDir: wx.windDir,
+      weatherCode: wx.weatherCode,
+      isDay: wx.isDay,
     };
   });
 
@@ -342,6 +344,10 @@ async function regenerate(env) {
         if (b.wind == null && p.wind != null) {
           b.wind = p.wind;
           b.windDir = p.windDir;
+        }
+        if (b.weatherCode == null && p.weatherCode != null) {
+          b.weatherCode = p.weatherCode;
+          b.isDay = p.isDay;
         }
       }
     }
