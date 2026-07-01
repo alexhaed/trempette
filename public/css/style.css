@@ -95,16 +95,17 @@ body {
   font-weight: 800;
   /* Taille fluide : suit la largeur de l'écran (plancher 18px pour les petits
      mobiles, plafond 23px au-delà du conteneur ~480px). */
-  font-size: clamp(18px, 5.6vw, 23px);
+  font-size: clamp(20px, 6.2vw, 26px);
   letter-spacing: -0.02em;
   color: var(--creme);
 }
 .tagline {
-  margin: 0;
-  padding: 0 var(--gutter) 6px;
-  color: var(--glacier);
-  font-size: 13.5px;
-  line-height: 1.45;
+  margin: 2px var(--gutter) 6px;
+  padding: 2px 0 2px 11px;
+  border-left: 3px solid var(--turq-light);
+  color: rgba(247, 242, 231, 0.9);
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .icon-btn {
@@ -122,6 +123,8 @@ body {
 }
 .icon-btn:active { transform: scale(0.92); }
 .refresh-icon { display: inline-block; }
+#refresh { width: 34px; height: 34px; border-radius: 11px; }
+#refresh .refresh-icon { width: 16px; height: 16px; }
 .icon-btn.is-spinning { pointer-events: none; }
 .icon-btn.is-spinning .refresh-icon { animation: spin 0.6s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
