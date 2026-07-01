@@ -104,7 +104,7 @@ body {
 .tagline {
   margin: 2px var(--gutter) 6px;
   padding: 2px 0 2px 11px;
-  border-left: 3px solid var(--turq-light);
+  border-left: 3px solid var(--coral);
   color: rgba(247, 242, 231, 0.9);
   font-size: 13px;
   line-height: 1.4;
