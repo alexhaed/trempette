@@ -5,9 +5,9 @@
 App web **mobile-first** de consultation des températures des plages des
 lacs romands : **Léman, Neuchâtel, Bienne, Morat, Joux**.
 
-Eau (Alplakes / Eawag) + air & vent (open-meteo), pour chaque plage, avec
-tendance de réchauffement de l'eau. Tri par lac / « plage la plus chaude » /
-favoris, recherche, géolocalisation « plages les plus proches », vue détail.
+Eau (Alplakes / Eawag) + air, vent & ciel (open-meteo), pour chaque plage, avec
+tendance de réchauffement de l'eau. Quatre tris — **par lac**, **plus chaude**,
+**plus proche** (géolocalisation) et **favoris** — plus la vue détail.
 
 **PWA** installable, pages **partageables/indexables** par plage
 (`/lac/<lac>/<plage>`), **formulaire de contact**, astuces « Le savais-tu ? » et
@@ -25,7 +25,7 @@ Worker Cloudflare « trempette »
    ├─ sert le site statique (public/, binding ASSETS)
    ├─ Cron Trigger toutes les 30 min  → régénère les données → KV
    │     ├─ Alplakes   → température de l'eau (pas de CORS → appel côté serveur)
-   │     ├─ open-meteo → air + vent (un seul appel groupé)
+   │     ├─ open-meteo → air + vent + ciel (météo, un seul appel groupé)
    │     ├─ interpolation linéaire à l'instant présent (+ tendance °C/h)
    │     ├─ Léman : correction de biais via 2 bouées in-situ live (Datalakes)
    │     └─ historique du biais → KV (clé "history", pour le moniteur)
@@ -56,7 +56,8 @@ Worker Cloudflare « trempette »
 - **Modèles par lac** : Léman `delft3d-flow/geneva`, Neuchâtel `mitgcm/neuchatel`,
   Bienne `delft3d-flow/biel`, Morat `delft3d-flow/murten`, Joux `delft3d-flow/joux`.
   Liste complète : <https://alplakes-api.eawag.ch/simulations/metadata>.
-- **Air & vent** : `current=temperature_2m,wind_speed_10m,wind_direction_10m&wind_speed_unit=kmh`.
+- **Air, vent & ciel** : `current=temperature_2m,wind_speed_10m,wind_direction_10m,weather_code,is_day&wind_speed_unit=kmh`.
+  Le `weather_code` (WMO) + `is_day` donnent le picto météo « Ciel » (liste + détail).
 - **Plages** : catalogue dans `scripts/lakes.json` (points dans l'eau, au large).
 - **Plan gratuit** : Alplakes throttle les appels parallèles → récupération
   séquentielle ; `TRIES=1` côté Worker pour rester sous la limite de 50
