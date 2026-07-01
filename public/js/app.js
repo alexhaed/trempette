@@ -365,6 +365,8 @@ function renderList() {
 
   const { groups } = visibleBeaches();
   const total = groups.reduce((n, g) => n + g.items.length, 0);
+  // Indice « voir les détails » : dans les modes hors Favoris, dès qu'il y a des plages.
+  $("#tap-hint").hidden = isFavMode || total < 1;
 
   listEl.innerHTML = "";
   if (total === 0) {
