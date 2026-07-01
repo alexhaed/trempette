@@ -193,7 +193,8 @@ function wgs84ToLv95(lat, lng) {
 }
 function mapUrl(b) {
   const { E, N } = wgs84ToLv95(b.lat, b.lng);
-  return `https://map.geo.admin.ch/#/map?center=${E},${N}&z=10&crosshair=marker`;
+  // bgLayer=ch.swisstopo.swissimage → fond aérien (SWISSIMAGE) au lieu de la carte.
+  return `https://map.geo.admin.ch/#/map?center=${E},${N}&z=10&bgLayer=ch.swisstopo.swissimage&crosshair=marker`;
 }
 
 const svgUse = (id, size, style) =>
