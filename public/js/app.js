@@ -43,6 +43,16 @@ function beachFromPath(pathname) {
   const slug = decodeURIComponent(m[2]).toLowerCase();
   return state.beaches.find((b) => (LAKE_SLUG[b.lake] || slugify(b.lakeName)) === lake && slugify(b.name) === slug) || null;
 }
+// /lac/<lac> (sans plage) → slug du lac, sinon null.
+function lakeSlugFromPath(pathname) {
+  const m = pathname.match(/^\/lac\/([^/]+)\/?$/);
+  return m ? decodeURIComponent(m[1]).toLowerCase() : null;
+}
+// slug de lac → nom d'affichage du lac (clé de regroupement « Par lac »).
+function lakeNameFromSlug(slug) {
+  const b = state.beaches.find((x) => (LAKE_SLUG[x.lake] || slugify(x.lakeName)) === slug);
+  return b ? b.lakeName : null;
+}
 
 const state = {
   beaches: [],
@@ -387,6 +397,7 @@ function renderList() {
       const h = document.createElement("button");
       h.type = "button";
       h.className = "group-title" + (collapsed ? " collapsed" : "");
+      h.dataset.lake = g.header;
       h.setAttribute("aria-expanded", String(!collapsed));
       h.innerHTML =
         `${svgUse("i-waves", 14)}<span class="gt-name">${label}</span>` +
@@ -675,7 +686,20 @@ function applyInitialRoute() {
   if (b) {
     history.replaceState({ d: b.id }, "", beachPath(b)); // normalise (slash final, casse)
     openDetail(b, false);
+    return;
   }
+  // /lac/<lac> (footer, sitemap…) : atterrit en « Par lac » avec ce lac déplié
+  // et les autres repliés. Repli en mémoire seulement (n'écrase pas la
+  // préférence de repli enregistrée par l'utilisateur).
+  const target = lakeNameFromSlug(lakeSlugFromPath(location.pathname) || "");
+  if (!target) return;
+  state.sort = "lake";
+  state.collapsed = new Set(state.beaches.map((x) => x.lakeName).filter((n) => n !== target));
+  const seg = document.querySelector('.seg-btn[data-sort="lake"]');
+  if (seg) setActiveSeg(seg);
+  renderList();
+  const header = [...document.querySelectorAll(".group-title")].find((h) => h.dataset.lake === target);
+  if (header) header.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 // Bloque le défilement de la page tant qu'un overlay est ouvert (sinon, sur
