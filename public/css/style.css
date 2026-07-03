@@ -477,6 +477,10 @@ body {
 .foot .updated { margin: 0; font-size: 12px; font-weight: 600; color: var(--glacier); }
 .foot .credits { margin: 3px 0 0; font-size: 11px; color: rgba(247, 242, 231, 0.5); }
 .foot .version { margin: 3px 0 0; font-size: 11px; letter-spacing: 0.3px; color: rgba(247, 242, 231, 0.4); }
+.foot-lacs { margin: 6px 0 0; font-size: 11px; }
+.foot-lacs a { color: rgba(247, 242, 231, 0.42); text-decoration: none; }
+.foot-lacs a:not(:first-child)::before { content: "·"; margin: 0 6px; color: rgba(247, 242, 231, 0.28); }
+.foot-lacs a:hover { color: var(--glacier); }
 
 /* ---- Infos & contact ---- */
 .info-link {

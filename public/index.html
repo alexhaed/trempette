@@ -145,8 +145,13 @@
     <!-- Pied de page -->
     <footer class="foot">
       <p id="updated" class="updated"></p>
+      <!-- Liens de lac : discrets, mais de vrais <a> pour que les pages /lac/…
+           (et leurs plages) soient reliées à la home → crawl/indexation SEO. -->
+      <nav class="foot-lacs" aria-label="Températures par lac">
+        <a href="/lac/leman">Léman</a><a href="/lac/neuchatel">Neuchâtel</a><a href="/lac/bienne">Bienne</a><a href="/lac/morat">Morat</a><a href="/lac/joux">Joux</a>
+      </nav>
       <p class="credits">Eau : Alplakes &amp; Datalakes (Eawag) · Air &amp; vent : open-meteo.com</p>
-      <p class="version">v1.66 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
+      <p class="version">v1.67 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
     </footer>
     </div>
   </div>
