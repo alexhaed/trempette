@@ -477,7 +477,11 @@ function renderTip() {
     box.hidden = true;
     return;
   }
-  const t = state.tips[Math.floor(Math.random() * state.tips.length)];
+  // En mode installé (standalone), inutile de proposer « ajouter à l'écran
+  // d'accueil » → on écarte ces astuces du tirage.
+  const pool = isStandalone() ? state.tips.filter((t) => t.href !== "#install") : state.tips;
+  if (!pool.length) { box.hidden = true; return; }
+  const t = pool[Math.floor(Math.random() * pool.length)];
   body.textContent = t.text || "";
   if (t.cta && t.href) {
     body.append(" ");
@@ -488,6 +492,11 @@ function renderTip() {
       a.addEventListener("click", (e) => {
         e.preventDefault();
         openInfo();
+      });
+    } else if (t.href === "#install") {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        openInstall();
       });
     } else if (/^https?:/i.test(t.href)) {
       a.target = "_blank";
@@ -705,7 +714,7 @@ function applyInitialRoute() {
 // Bloque le défilement de la page tant qu'un overlay est ouvert (sinon, sur
 // mobile, le scroll « passe » à la page derrière et on se sent coincé).
 function syncScrollLock() {
-  const open = !$("#detail").hidden || !$("#info").hidden;
+  const open = !$("#detail").hidden || !$("#info").hidden || !$("#install").hidden;
   document.documentElement.style.overflow = open ? "hidden" : "";
 }
 
@@ -872,6 +881,81 @@ $("#info-close").addEventListener("click", closeInfo);
 $("#info").addEventListener("click", (e) => {
   if (e.target.id === "info") closeInfo();
 });
+
+// ---- Ajout à l'écran d'accueil (overlay #install) ----
+// Aucune API unique entre plateformes : Android/Chromium expose une pop-up
+// native (beforeinstallprompt), iOS impose une manip manuelle via Partager.
+let deferredInstall = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstall = e; // conservé pour déclencher la pop-up au clic
+});
+window.addEventListener("appinstalled", () => { deferredInstall = null; });
+
+const isStandalone = () =>
+  (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+
+function platformInstall() {
+  const ua = navigator.userAgent;
+  const iOS = /iP(hone|ad|od)/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (isStandalone()) return "installed";
+  if (deferredInstall) return "prompt"; // Android/Chromium : pop-up native dispo
+  if (iOS) return /CriOS/.test(ua) ? "ios-chrome" : /FxiOS|EdgiOS/.test(ua) ? "ios-other" : "ios-safari";
+  return "generic";
+}
+
+function installContent(kind) {
+  const share = svgUse("i-share-ios", 17, "vertical-align:-3px");
+  if (kind === "installed") return `<p>✅ Trempette est déjà sur ton écran d'accueil.</p>`;
+  if (kind === "prompt")
+    return `<p class="install-intro">Accès en un tap, plein écran, même hors-ligne.</p>
+      <button id="install-go" class="install-btn" type="button">Installer l'application</button>`;
+  const steps = {
+    "ios-safari": [
+      `Touche l'icône <strong>Partager</strong> ${share} en bas de Safari`,
+      `Fais défiler et choisis <strong>« Sur l'écran d'accueil »</strong>`,
+      `Confirme avec <strong>Ajouter</strong>`,
+    ],
+    "ios-chrome": [
+      `Touche l'icône <strong>Partager</strong> ${share}`,
+      `Touche <strong>« En voir plus »</strong>`,
+      `Choisis <strong>« Sur l'écran d'accueil »</strong>`,
+    ],
+    "ios-other": [
+      `Ouvre le menu <strong>Partager</strong> ${share} de ton navigateur`,
+      `Via <strong>« En voir plus »</strong> si besoin, choisis <strong>« Sur l'écran d'accueil »</strong>`,
+    ],
+    generic: [
+      `Ouvre le <strong>menu</strong> de ton navigateur (⋮)`,
+      `Choisis <strong>« Installer l'application »</strong> ou <strong>« Ajouter à l'écran d'accueil »</strong>`,
+    ],
+  }[kind] || [];
+  return `<p class="install-intro">Accès en un tap, plein écran, même hors-ligne.</p>
+    <ol class="install-steps">${steps.map((s) => `<li>${s}</li>`).join("")}</ol>`;
+}
+
+function openInstall() {
+  $("#install-body").innerHTML = installContent(platformInstall());
+  $("#install").hidden = false;
+  syncScrollLock();
+  const go = $("#install-go");
+  if (go)
+    go.addEventListener("click", async () => {
+      if (!deferredInstall) return;
+      deferredInstall.prompt();
+      await deferredInstall.userChoice.catch(() => {});
+      deferredInstall = null;
+      closeInstall();
+    });
+}
+const closeInstall = () => {
+  $("#install").hidden = true;
+  syncScrollLock();
+};
+$("#install-close").addEventListener("click", closeInstall);
+$("#install").addEventListener("click", (e) => {
+  if (e.target.id === "install") closeInstall();
+});
 $("#contact-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const email = $("#contact-email").value.trim();
@@ -923,6 +1007,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     closeDetail();
     closeInfo();
+    closeInstall();
   }
 });
 

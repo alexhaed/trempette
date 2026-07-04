@@ -497,6 +497,27 @@ body {
 .info-text strong { color: #fff; font-weight: 700; }
 .info-text a { color: inherit; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--turq-light); }
 .info-text a:hover { text-decoration-color: var(--creme); }
+/* Overlay « Ajouter à l'écran d'accueil » */
+.install-intro { color: var(--glacier); }
+.install-steps { margin: 4px 0 0; padding-left: 0; list-style: none; counter-reset: step; }
+.install-steps li {
+  position: relative; margin: 0 0 12px; padding-left: 40px; font-size: 14.5px;
+  line-height: 1.5; color: var(--creme); min-height: 28px; display: flex; align-items: center; flex-wrap: wrap;
+  gap: 0 4px;
+}
+.install-steps li::before {
+  counter-increment: step; content: counter(step);
+  position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--turq-light); color: #06262e; font-weight: 800; font-size: 14px;
+}
+.install-steps svg { color: var(--creme); }
+.install-btn {
+  width: 100%; margin-top: 6px; padding: 13px 14px; border: none; border-radius: 12px;
+  background: var(--turq-light); color: #06262e; font-family: inherit; font-weight: 700;
+  font-size: 15px; cursor: pointer;
+}
+.install-btn:active { transform: scale(0.99); }
 .info-sep { border: none; border-top: 1px solid var(--glass-border); margin: 16px 0 12px; }
 .contact-intro { margin: 0 0 10px; font-size: 14px; line-height: 1.6; color: var(--creme); }
 .contact-form { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
