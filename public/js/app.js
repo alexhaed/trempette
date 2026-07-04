@@ -908,7 +908,7 @@ function installContent(kind) {
   const share = svgUse("i-share-ios", 17, "vertical-align:-3px");
   if (kind === "installed") return `<p>✅ Trempette est déjà sur ton écran d'accueil.</p>`;
   if (kind === "prompt")
-    return `<p class="install-intro">Accès en un tap, plein écran, même hors-ligne.</p>
+    return `<p class="install-intro">Accès en un tap, plein écran, comme une app.</p>
       <button id="install-go" class="install-btn" type="button">Installer l'application</button>`;
   const steps = {
     "ios-safari": [
@@ -930,7 +930,7 @@ function installContent(kind) {
       `Choisis <strong>« Installer l'application »</strong> ou <strong>« Ajouter à l'écran d'accueil »</strong>`,
     ],
   }[kind] || [];
-  return `<p class="install-intro">Accès en un tap, plein écran, même hors-ligne.</p>
+  return `<p class="install-intro">Accès en un tap, plein écran, comme une app.</p>
     <ol class="install-steps">${steps.map((s) => `<li>${s}</li>`).join("")}</ol>`;
 }
 
