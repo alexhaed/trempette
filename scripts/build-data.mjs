@@ -243,6 +243,22 @@ export const LEMAN_BUOYS = [
     dataset: 597, // station Buchillon, axe `y` = wt1 (température eau à 1 m)
     parse: (g) => latestValid(g?.x, g?.y),
   },
+  {
+    // Station OFEV « Genève, Halle de l'Île » (exutoire du Rhône) — mesure de
+    // surface de l'eau qui SORT du lac, indépendante d'Eawag (source BAFU via
+    // Existenz). AJOUTÉE EN OBSERVATION SEULE : son biais est calculé et tracé
+    // dans le moniteur, mais elle est EXCLUE de la correction IDW (le temps de
+    // juger son comportement). Comparaison modèle à 0,2 m (eau de surface).
+    id: "_foen_geneve",
+    name: "Genève (exutoire)",
+    lat: 46.2047,
+    lng: 6.1415,
+    model: "delft3d-flow",
+    lake: "geneva",
+    depth: DEPTH, // 0,2 m (surface), ≠ bouées comparées à 1 m
+    foenLoc: "2606", // station OFEV via Existenz (pas Datalakes)
+    observeOnly: true,
+  },
 ];
 
 // Dernière valeur finie et plausible (°C) d'une série, avec son horodatage.
@@ -273,6 +289,15 @@ async function fetchBuoyInsitu(fetchFn, buoy, tries) {
   return buoy.parse(g);
 }
 
+// Dernière température (°C) d'une station OFEV, via l'API Existenz (open data
+// BAFU). 1 sous-requête. Renvoie { time, temp } comme les bouées.
+const EXISTENZ = "https://api.existenz.ch/apiv1/hydro/latest";
+async function fetchFoenInsitu(fetchFn, loc, tries) {
+  const r = await fetchJSON(fetchFn, `${EXISTENZ}?locations=${loc}&parameters=temperature`, tries);
+  const m = ((r && r.payload) || []).find((x) => x.par === "temperature" && Number.isFinite(x.val));
+  return m && m.val > -2 && m.val < 40 ? { time: m.timestamp * 1000, temp: m.val } : null;
+}
+
 // Calcule le biais (mesure − modèle) à chaque bouée du Léman, à l'instant de la
 // mesure (comparaison à profil égal dans le temps). Réutilise le cache de
 // fenêtres `cache` (clés `_buoy_*`) et la détection de run quotidien `endDates`.
@@ -298,7 +323,7 @@ export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 
   const results = [];
   const state = cache._buoyState || (cache._buoyState = {});
   for (const buoy of LEMAN_BUOYS) {
-    const base = { name: buoy.name, lat: buoy.lat, lng: buoy.lng, bias: null, insitu: null, model: null };
+    const base = { name: buoy.name, lat: buoy.lat, lng: buoy.lng, bias: null, insitu: null, model: null, observeOnly: !!buoy.observeOnly };
     // Écarte la bouée : journalise la cause (niveau warning, filtrable « [bias] »
     // dans les logs Cloudflare) puis enregistre le résultat avec sa raison.
     const drop = (reason, detail) => {
@@ -330,17 +355,19 @@ export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 
     // plus bas par le modèle à l'heure de la mesure quand on calcule le biais.
     if (c) base.model = interpolate(c, now).water;
 
-    // 2. Mesure in-situ (Datalakes).
+    // 2. Mesure in-situ : Datalakes (bouées) ou Existenz/OFEV (stations foenLoc).
     let insitu = null;
     let fetchErr = null;
     try {
-      insitu = await fetchBuoyInsitu(fetchFn, buoy, tries);
+      insitu = buoy.foenLoc
+        ? await fetchFoenInsitu(fetchFn, buoy.foenLoc, tries)
+        : await fetchBuoyInsitu(fetchFn, buoy, tries);
     } catch (e) {
       fetchErr = e;
     }
 
     // 3. Diagnostic dans l'ordre le plus informatif.
-    if (fetchErr) { drop("reseau", `Datalakes ${fetchErr?.message || fetchErr}`); continue; }
+    if (fetchErr) { drop("reseau", `${buoy.foenLoc ? "Existenz" : "Datalakes"} ${fetchErr?.message || fetchErr}`); continue; }
     if (!insitu) { drop("pas-mesure", "aucune valeur récente valide"); continue; }
     base.insitu = insitu.temp;
 
@@ -369,7 +396,9 @@ export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 
 // Décale aussi `next.temp` du même offset pour rester cohérent.
 // `results` = sortie de computeLemanBiases ; on ne garde que les bouées exploitables.
 export function applyLemanBias(beaches, out, results) {
-  const biases = (results || []).filter((b) => b && b.bias != null);
+  // Les stations « observation seule » (ex. exutoire de Genève) sont exclues de
+  // la correction : leur biais est suivi dans le moniteur mais ne pilote rien.
+  const biases = (results || []).filter((b) => b && b.bias != null && !b.observeOnly);
   if (!biases.length) return;
   for (let i = 0; i < beaches.length; i++) {
     const b = beaches[i];
@@ -424,10 +453,12 @@ export function pushHistory(history, now, results, out) {
   const drop = {};
   if (by["LéXPLORE"] && by["LéXPLORE"].bias == null) drop.lex = by["LéXPLORE"].reason;
   if (by["Buchillon"] && by["Buchillon"].bias == null) drop.buch = by["Buchillon"].reason;
+  if (by["Genève (exutoire)"] && by["Genève (exutoire)"].bias == null) drop.gva = by["Genève (exutoire)"].reason;
   const point = {
     t: now,
     lex: buoy(by["LéXPLORE"]),
     buch: buoy(by["Buchillon"]),
+    gva: buoy(by["Genève (exutoire)"]), // observation seule (hors correction)
     n: corrected.length,
     c: round2(meanCorr),
   };
