@@ -268,10 +268,13 @@
     }
 
     async function enter() {
+      // Token présent : app affichée tout de suite (chargement en fond), pas le
+      // login. Repli sur le gate seulement si erreur/401.
+      $("#gate").style.display = "none";
+      $("#app").style.display = "block";
+      $("#status").textContent = "Chargement…";
       try {
         const [d] = await Promise.all([fetchStats(), ensureBeachInfo()]);
-        $("#gate").style.display = "none";
-        $("#app").style.display = "block";
         render(d);
       } catch (e) {
         $("#gate-msg").textContent = e.message;

@@ -155,21 +155,22 @@
     }
 
     async function start() {
+      // Token présent : app affichée tout de suite (chargement en fond), pas le
+      // login. Repli sur le gate seulement si erreur/401.
+      $("#gate").style.display = "none";
+      $("#app").style.display = "block";
       try {
         const tips = await api("GET");
         load(tips);
-        $("#gate").style.display = "none";
-        $("#app").style.display = "block";
       } catch (e) {
+        $("#app").style.display = "none";
+        $("#gate").style.display = "block";
         if (e.message === "unauthorized") {
           TOKEN = "";
           localStorage.removeItem(TOKEN_KEY);
           $("#gate-msg").textContent = "Mot de passe incorrect.";
-          $("#gate").style.display = "block";
-          $("#app").style.display = "none";
         } else {
           $("#gate-msg").textContent = "Erreur : " + e.message;
-          $("#gate").style.display = "block";
         }
       }
     }

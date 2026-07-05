@@ -246,10 +246,12 @@
     }
 
     async function enter() {
+      // Token présent : on affiche l'app tout de suite (chargement en fond),
+      // pas le formulaire de login. Repli sur le gate seulement si erreur/401.
+      $("#gate").style.display = "none";
+      $("#app").style.display = "block";
       try {
         HISTORY = (await loadHistory()).sort((a, b) => a.t - b.t);
-        $("#gate").style.display = "none";
-        $("#app").style.display = "block";
         render();
       } catch (e) {
         $("#gate-msg").textContent = e.message;
