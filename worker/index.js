@@ -230,6 +230,7 @@ function validTips(t) {
     if (x.text.length > 400) return "astuce trop longue (max 400)";
     if (x.cta != null && (typeof x.cta !== "string" || x.cta.length > 80)) return "libellé de lien invalide";
     if (x.href != null && (typeof x.href !== "string" || x.href.length > 300)) return "lien invalide";
+    if (x.enabled != null && typeof x.enabled !== "boolean") return "champ actif invalide";
   }
   return null;
 }

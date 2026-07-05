@@ -42,8 +42,11 @@
     textarea { resize: vertical; min-height: 58px; line-height: 1.4; }
     input:focus, select:focus, textarea:focus { outline: none; border-color: var(--turq-light); }
     select option { color: #12333b; }
-    .col-text { width: 50%; } .col-cta { width: 18%; } .col-href { width: 24%; }
+    .col-text { width: 44%; } .col-cta { width: 17%; } .col-href { width: 22%; }
+    .col-on { width: 7%; text-align: center; }
+    .col-on input { width: 18px; height: 18px; accent-color: var(--turq-light); cursor: pointer; }
     .col-act { white-space: nowrap; text-align: right; width: 1%; }
+    tr.off .col-text, tr.off .col-cta, tr.off .col-href { opacity: .4; }
     .order-btn { border: none; background: none; color: var(--glacier); font-size: 15px; padding: 2px 5px; cursor: pointer; line-height: 1; }
     .order-btn:hover { color: var(--creme); }
     .order-btn:disabled { opacity: .3; cursor: default; }
@@ -111,6 +114,7 @@
     <table>
       <thead>
         <tr>
+          <th class="col-on">Actif</th>
           <th class="col-text">Phrase</th>
           <th class="col-cta">Libellé du lien</th>
           <th class="col-href">Lien</th>
@@ -187,8 +191,9 @@
         text: t.text || "",
         cta: t.cta || "",
         href: t.href || "",
+        enabled: t.enabled !== false, // défaut actif (rétrocompatible)
       }));
-      if (!rows.length) rows.push({ text: "", cta: "", href: "" });
+      if (!rows.length) rows.push({ text: "", cta: "", href: "", enabled: true });
       render();
     }
 
@@ -200,7 +205,9 @@
       tb.innerHTML = "";
       rows.forEach((r, i) => {
         const tr = document.createElement("tr");
+        if (!r.enabled) tr.className = "off";
         tr.innerHTML = `
+          <td class="col-on"><input type="checkbox" data-i="${i}" data-k="enabled" ${r.enabled ? "checked" : ""} title="Afficher cette astuce" /></td>
           <td class="col-text"><textarea data-i="${i}" data-k="text" placeholder="Le savais-tu ? …">${esc(r.text)}</textarea></td>
           <td class="col-cta"><input data-i="${i}" data-k="cta" value="${esc(r.cta)}" placeholder="En savoir plus" /></td>
           <td class="col-href"><input data-i="${i}" data-k="href" value="${esc(r.href)}" list="href-presets" placeholder="#info, /widget/, https://…" /></td>
@@ -217,7 +224,12 @@
     $("#rows").addEventListener("input", (e) => {
       const el = e.target, i = el.dataset.i, k = el.dataset.k;
       if (i == null) return;
-      rows[i][k] = el.value;
+      if (el.type === "checkbox") {
+        rows[i][k] = el.checked;
+        el.closest("tr").classList.toggle("off", !el.checked);
+      } else {
+        rows[i][k] = el.value;
+      }
     });
     $("#rows").addEventListener("click", (e) => {
       const t = e.target;
@@ -238,7 +250,7 @@
       }
     });
     $("#add").addEventListener("click", () => {
-      rows.push({ text: "", cta: "", href: "" });
+      rows.push({ text: "", cta: "", href: "", enabled: true });
       render();
       const tas = $("#rows").querySelectorAll('textarea[data-k="text"]');
       tas[tas.length - 1]?.focus();
@@ -247,7 +259,7 @@
     function clean() {
       // Ignore les lignes entièrement vides ; conserve l'ordre.
       return rows
-        .map((r) => ({ text: r.text.trim(), cta: r.cta.trim(), href: r.href.trim() }))
+        .map((r) => ({ text: r.text.trim(), cta: r.cta.trim(), href: r.href.trim(), enabled: r.enabled !== false }))
         .filter((r) => r.text || r.cta || r.href);
     }
 

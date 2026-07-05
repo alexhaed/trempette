@@ -479,7 +479,9 @@ function renderTip() {
   }
   // En mode installé (standalone), inutile de proposer « ajouter à l'écran
   // d'accueil » → on écarte ces astuces du tirage.
-  const pool = isStandalone() ? state.tips.filter((t) => t.href !== "#install") : state.tips;
+  // N'affiche que les astuces actives (case cochée en admin ; défaut = actif).
+  let pool = state.tips.filter((t) => t.enabled !== false);
+  if (isStandalone()) pool = pool.filter((t) => t.href !== "#install");
   if (!pool.length) { box.hidden = true; return; }
   const t = pool[Math.floor(Math.random() * pool.length)];
   body.textContent = t.text || "";
