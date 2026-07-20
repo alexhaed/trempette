@@ -976,6 +976,18 @@ export default {
     }
 
     // Tout le reste = fichiers statiques (index.html, css, js, icônes…).
-    return env.ASSETS.fetch(request);
+    const res = await env.ASSETS.fetch(request);
+    // Fichier absent : une navigation (URL tapée à la main, ancien lien) tombait
+    // sur une page blanche. On la renvoie vers l'accueil plutôt que sur un 404 nu.
+    // Les vraies ressources (image, css… : requêtes non-HTML ou chemin à extension)
+    // gardent leur 404 pour ne pas masquer un lien cassé.
+    if (res.status === 404 && request.method === "GET") {
+      const accept = request.headers.get("accept") || "";
+      const hasExt = /\.[a-z0-9]+$/i.test(url.pathname);
+      if (accept.includes("text/html") && !hasExt) {
+        return Response.redirect(new URL("/", url).toString(), 302);
+      }
+    }
+    return res;
   },
 };

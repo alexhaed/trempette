@@ -11,11 +11,16 @@ const SEEN_KEY = "trempette_lacs_vus";
 // Migration : lacs existants avant l'ajout de la Gruyère. Sans cette liste, les
 // utilisateurs ayant déjà une préférence verraient TOUS leurs lacs repliés.
 const LAKES_BEFORE_SEEN = ["Léman", "Lac de Neuchâtel", "Lac de Bienne", "Lac de Morat", "Lac de Joux"];
+// L'indice « clique sur une plage pour voir les détails » ne sert qu'au tout
+// premier contact : dès qu'un détail a été ouvert (une fois, mémorisé), on le retire.
+const TAP_KEY = "trempette_detail_vu";
+let detailSeen = false;
+try { detailSeen = localStorage.getItem(TAP_KEY) === "1"; } catch (e) {}
 
 // --- URLs partageables /lac/<lac>/<plage> (mêmes slugs que le Worker) ---
 // Titre d'accueil figé : sur un deep link, le Worker a déjà réécrit <title> avec
 // le nom de la plage, donc on ne peut pas le lire depuis document.title ici.
-const DEFAULT_TITLE = "Trempette — Températures des plages romandes";
+const DEFAULT_TITLE = "Trempette — Températures des lacs romands";
 const LAKE_SLUG = { geneva: "leman", neuchatel: "neuchatel", biel: "bienne", murten: "morat", joux: "joux", gruyere: "gruyere" };
 const slugify = (s) =>
   String(s).normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -414,12 +419,16 @@ function renderHero() {
   // ou ids périmés), on retire .has-favs pour que le hero reste compact.
   document.documentElement.classList.toggle("has-favs", favs.length > 0);
 
+  // Aucun favori : on masque toute la section « Mes plages » plutôt que d'afficher
+  // un placeholder qui occupe le haut de l'écran au détriment des températures.
+  const section = $("#hero");
   if (favs.length === 0) {
-    track.innerHTML = `<div class="hero-empty">${svgUse("i-star", 26)}
-      <p>Ajoute une plage en favori pour la voir ici</p></div>`;
+    if (section) section.hidden = true;
+    track.innerHTML = "";
     dots.innerHTML = "";
     return;
   }
+  if (section) section.hidden = false;
 
   if (state.heroIdx >= favs.length) state.heroIdx = 0;
 
@@ -552,8 +561,9 @@ function renderList() {
 
   const { groups } = visibleBeaches();
   const total = groups.reduce((n, g) => n + g.items.length, 0);
-  // Indice « voir les détails » : dans les modes hors Favoris, dès qu'il y a des plages.
-  $("#tap-hint").hidden = isFavMode || total < 1;
+  // Indice « voir les détails » : modes hors Favoris, s'il y a des plages, et
+  // tant que l'utilisateur n'a jamais ouvert de détail (geste alors acquis).
+  $("#tap-hint").hidden = isFavMode || total < 1 || detailSeen;
 
   listEl.innerHTML = "";
   if (total === 0) {
@@ -819,6 +829,15 @@ function openDetail(b, push = true) {
   $("#detail").hidden = false;
   syncScrollLock();
   track("open", b);
+
+  // 1re ouverture d'un détail : l'indice « clique pour les détails » a fait son
+  // office, on le retire définitivement (mémorisé d'une visite à l'autre).
+  if (!detailSeen) {
+    detailSeen = true;
+    try { localStorage.setItem(TAP_KEY, "1"); } catch (e) {}
+    const hint = $("#tap-hint");
+    if (hint) hint.hidden = true;
+  }
 }
 function closeDetail(updateUrl = true) {
   $("#detail").hidden = true;
@@ -925,7 +944,18 @@ function activateNear(btn) {
   if (!navigator.geolocation) {
     setActiveSeg(btn);
     state.sort = "near";
-    listEl.innerHTML = `<p class="empty">La géolocalisation n'est pas disponible sur cet appareil.</p>`;
+    listEl.innerHTML = `<div class="empty geoloc-fail">
+      <p>La géolocalisation n'est pas disponible sur cet appareil.</p>
+      <div class="geoloc-actions">
+        <button type="button" class="geoloc-back">Voir par lac</button>
+      </div>
+    </div>`;
+    listEl.querySelector(".geoloc-back").addEventListener("click", () => {
+      const lakeBtn = document.querySelector('.seg-btn[data-sort="lake"]');
+      setActiveSeg(lakeBtn);
+      state.sort = "lake";
+      renderList();
+    });
     return;
   }
   btn.classList.add("is-locating");
@@ -941,28 +971,42 @@ function activateNear(btn) {
       btn.classList.remove("is-locating");
       setActiveSeg(btn);
       state.sort = "near";
-      const msg =
-        err.code === err.PERMISSION_DENIED
-          ? "Géolocalisation refusée. Autorise l'accès à ta position pour voir les plages les plus proches."
-          : "Position indisponible. Réessaie dans un instant.";
-      listEl.innerHTML = `<p class="empty">${msg}</p>`;
+      const denied = err.code === err.PERMISSION_DENIED;
+      const msg = denied
+        ? "Géolocalisation refusée. Autorise l'accès à ta position dans les réglages du navigateur, ou parcours les plages par lac."
+        : "Position indisponible pour l'instant.";
+      listEl.innerHTML = `<div class="empty geoloc-fail">
+        <p>${msg}</p>
+        <div class="geoloc-actions">
+          <button type="button" class="geoloc-retry">Réessayer</button>
+          <button type="button" class="geoloc-back">Voir par lac</button>
+        </div>
+      </div>`;
+      // Réessayer : relance la demande de position (utile si l'erreur était
+      // temporaire, ou après que l'utilisateur a changé l'autorisation).
+      listEl.querySelector(".geoloc-retry").addEventListener("click", () => activateNear(btn));
+      // Repli sans friction vers le mode « Par lac » (jamais un écran vide).
+      listEl.querySelector(".geoloc-back").addEventListener("click", () => {
+        const lakeBtn = document.querySelector('.seg-btn[data-sort="lake"]');
+        setActiveSeg(lakeBtn);
+        state.sort = "lake";
+        renderList();
+      });
     },
     { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
   );
 }
 
+// Rafraîchissement des données. Le bouton d'en-tête a été retiré ; ne subsistent
+// que les déclencheurs automatiques (retour d'onglet, bfcache) et le pull-to-refresh.
 let refreshing = false;
 async function refresh() {
   if (refreshing) return;
   refreshing = true;
-  const btn = $("#refresh");
-  btn.classList.add("is-spinning");
-  // durée mini pour que le retour visuel soit perceptible même si le fetch est instantané
+  // durée mini pour que le retour visuel du pull-to-refresh reste perceptible
   await Promise.all([load(), new Promise((r) => setTimeout(r, 600))]);
-  btn.classList.remove("is-spinning");
   refreshing = false;
 }
-$("#refresh").addEventListener("click", refresh);
 
 // ---- Pull-to-refresh (tactile) ----
 (() => {
