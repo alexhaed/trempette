@@ -502,6 +502,9 @@ async function handleAdmin(request, env, ctx, pathname) {
         text: x.text.trim(),
         cta: x.cta ? x.cta.trim() : "",
         href: x.href ? x.href.trim() : "",
+        // Préserve l'état actif/désactivé (défaut actif) : sans ce champ, une
+        // astuce désactivée réapparaissait active après enregistrement.
+        enabled: x.enabled !== false,
       }));
       await env.DATA.put(TIPS_KEY, JSON.stringify(tips));
       // Reflète tout de suite dans data.json (lu par la page), sans relancer le
