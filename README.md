@@ -6,7 +6,8 @@ App web **mobile-first** de consultation des températures des plages des
 lacs romands : **Léman, Neuchâtel, Bienne, Morat, Joux, Gruyère**.
 
 Eau (Alplakes / Eawag) + air, vent & ciel (open-meteo), pour chaque plage, avec
-tendance de réchauffement de l'eau. Quatre tris — **par lac**, **plus chaude**,
+tendance de réchauffement de l'eau et **prévision sur 24 h** (« le plus chaud
+vers 18 h » + courbe). Quatre tris — **par lac**, **plus chaude**,
 **plus proche** (géolocalisation) et **favoris** — plus la vue détail.
 
 **PWA** installable, pages **partageables/indexables** par plage
@@ -27,6 +28,7 @@ Worker Cloudflare « trempette »
    │     ├─ Alplakes   → température de l'eau (pas de CORS → appel côté serveur)
    │     ├─ open-meteo → air + vent + ciel (météo, un seul appel groupé)
    │     ├─ interpolation linéaire à l'instant présent (+ tendance °C/h)
+   │     ├─ prévision 24 h + max, extraits de la même fenêtre (0 appel de plus)
    │     ├─ Léman : correction de biais via 2 bouées in-situ live (Datalakes)
    │     └─ historique du biais → KV (clé "history", pour le moniteur)
    ├─ GET /data.json → renvoyé depuis KV (run_worker_first)
@@ -64,6 +66,21 @@ Worker Cloudflare « trempette »
     Liste (132 lacs) : <https://alplakes-api.eawag.ch/simulations/1d/metadata>.
     Le cache de fenêtres est alors keyé **par lac** (`1d:<lake>`) → 1 seul appel
     pour toutes les plages du lac. Rafraîchi au-delà de 12 h (Simstrat = 1 run/jour).
+- **Prévision 24 h** (`fc` dans `data.json`) : la fenêtre Alplakes s'étend déjà à
+  **+30 h**, mais seuls « maintenant » et le point suivant étaient exploités. On en
+  tire donc, **sans aucun appel supplémentaire**, une série sur 24 h glissantes
+  `{ t0, step, v[] }` + le maximum — ~3 Ko au total. La série est rejetée (`null`)
+  si le pas est irrégulier, plutôt que de tracer une courbe fausse ; la tolérance
+  est **relative** (25 %), car certains lacs ont ~1 s de gigue dans les horodatages
+  (2,99 vs 3,00 h) — une tolérance absolue les écartait tous.
+  La correction de biais du Léman **décale aussi cette série et son maximum**,
+  sinon la courbe contredirait la température corrigée affichée au-dessus.
+  Côté client : une phrase (« Le plus chaud vers 18 h ») et une **sparkline SVG**
+  faite main (lissage **cubique monotone** Fritsch-Carlson — la courbe ne dépasse
+  jamais les valeurs réelles, contrairement à un Catmull-Rom uniforme qui déraille
+  sur des points non équidistants). Le maximum est recalculé **sur la courbe
+  affichée** (elle démarre à la température actuelle) : si l'eau ne remonte plus,
+  le maximum est le premier point.
 - **Air, vent & ciel** : `current=temperature_2m,wind_speed_10m,wind_direction_10m,weather_code,is_day&wind_speed_unit=kmh`.
   Le `weather_code` (WMO) + `is_day` donnent le picto météo « Ciel » (liste + détail).
 - **Plages** : catalogue dans `scripts/lakes.json` (points dans l'eau, au large).
