@@ -497,6 +497,8 @@ body {
 .info-text strong { color: #fff; font-weight: 700; }
 .info-text a { color: inherit; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--turq-light); }
 .info-text a:hover { text-decoration-color: var(--creme); }
+/* Mention IA : note de transparence, discrète (plus petite et atténuée). */
+.info-text p.info-ia { margin-top: 14px; font-size: 12.5px; color: var(--glacier); }
 /* Overlay « Ajouter à l'écran d'accueil » */
 .install-intro { color: var(--glacier); }
 .install-steps { margin: 4px 0 0; padding-left: 0; list-style: none; counter-reset: step; }
