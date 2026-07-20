@@ -222,19 +222,40 @@ function peakWhen(at) {
   return `${sameDay ? "" : "demain "}vers ${h} h`;
 }
 
-// Lissage Catmull-Rom → Bézier cubique : adoucit les angles tout en passant
-// par TOUS les points (tension basse = léger, pas de sur-oscillation).
+// Lissage cubique MONOTONE (Fritsch-Carlson) → Bézier.
+// Pas un Catmull-Rom uniforme : nos points ne sont PAS équidistants (le premier
+// intervalle « maintenant → 1er point du modèle » est bien plus court que les
+// 3 h suivantes). Les tangentes calculées sur p2−p0 projetaient alors les points
+// de contrôle trop loin, et la courbe dépassait les valeurs réelles.
+// Ici les tangentes sont bornées : la courbe ne sort JAMAIS de l'intervalle des
+// points — aucune température inventée au-dessus du max ni sous le min.
 function smoothPath(p) {
-  if (p.length < 3) return p.map((q, i) => `${i ? "L" : "M"}${q.x} ${q.y}`).join(" ");
-  const T = 0.2;
-  let d = `M${p[0].x.toFixed(1)} ${p[0].y.toFixed(1)}`;
-  for (let i = 0; i < p.length - 1; i++) {
-    const p0 = p[i - 1] || p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] || p2;
-    const c1x = p1.x + (p2.x - p0.x) * T, c1y = p1.y + (p2.y - p0.y) * T;
-    const c2x = p2.x - (p3.x - p1.x) * T, c2y = p2.y - (p3.y - p1.y) * T;
-    d += ` C${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+  const n = p.length;
+  if (n < 3) return p.map((q, i) => `${i ? "L" : "M"}${q.x.toFixed(1)} ${q.y.toFixed(1)}`).join(" ");
+  const dx = [], d = [];
+  for (let i = 0; i < n - 1; i++) {
+    dx[i] = p[i + 1].x - p[i].x;
+    d[i] = (p[i + 1].y - p[i].y) / dx[i];
   }
-  return d;
+  // Tangentes : moyenne des pentes voisines, forcées à 0 sur un extremum local.
+  const m = [d[0]];
+  for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  m[n - 1] = d[n - 2];
+  // Bornage Fritsch-Carlson : garantit la monotonie segment par segment.
+  for (let i = 0; i < n - 1; i++) {
+    if (d[i] === 0) { m[i] = 0; m[i + 1] = 0; continue; }
+    const a = m[i] / d[i], b = m[i + 1] / d[i];
+    const s = a * a + b * b;
+    if (s > 9) { const t = 3 / Math.sqrt(s); m[i] = t * a * d[i]; m[i + 1] = t * b * d[i]; }
+  }
+  let out = `M${p[0].x.toFixed(1)} ${p[0].y.toFixed(1)}`;
+  for (let i = 0; i < n - 1; i++) {
+    const h = dx[i] / 3;
+    out += ` C${(p[i].x + h).toFixed(1)} ${(p[i].y + m[i] * h).toFixed(1)},` +
+      ` ${(p[i + 1].x - h).toFixed(1)} ${(p[i + 1].y - m[i + 1] * h).toFixed(1)},` +
+      ` ${p[i + 1].x.toFixed(1)} ${p[i + 1].y.toFixed(1)}`;
+  }
+  return out;
 }
 
 // Courbe compacte + graduations discrètes (min/max en °C, heures rondes).
@@ -284,12 +305,19 @@ function sparkline(pts, peak, gridStart = 0) {
 function renderForecast(b) {
   const line = $("#d-peak");
   const box = $("#d-spark");
+  const trend = $("#d-trend-txt");
   const fc = b.fc;
   if (!fc || !Array.isArray(fc.v) || fc.v.length < 3) {
+    // Pas de prévision : on garde l'ancienne ligne (point suivant / tendance),
+    // sinon on perdrait toute indication d'évolution.
+    trend.textContent = forecastText(b);
+    trend.hidden = false;
     line.hidden = box.hidden = true;
     box.innerHTML = "";
     return;
   }
+  // La phrase du pic + la courbe remplacent la ligne « Température prévue à… ».
+  trend.hidden = true;
   const now = Date.now();
   const t0 = new Date(fc.t0).getTime();
   const stepMs = (fc.step || 3) * 3600e3;
@@ -743,7 +771,6 @@ function openDetail(b, push = true) {
 
   const v = verdict(b.water);
   $("#d-verdict").innerHTML = v ? `<span>${v}</span>` : "";
-  $("#d-trend-txt").textContent = forecastText(b);
   renderForecast(b);
 
   $("#d-air").textContent = b.air != null ? `${Math.round(b.air)}°` : "n/d";
