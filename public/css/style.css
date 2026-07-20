@@ -659,6 +659,20 @@ body {
 .d-spark .sf { fill: rgba(52, 180, 194, 0.16); stroke: none; }
 .d-spark .pkdot { fill: var(--creme-warm); }
 .d-spark .nowdot { fill: var(--creme); opacity: 0.55; }
+/* Graduations : volontairement très discrètes (repères, pas un graphique). */
+.d-spark .grid {
+  stroke: rgba(247, 242, 231, 0.13);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+.d-spark .ylab,
+.d-spark .xlab {
+  fill: rgba(247, 242, 231, 0.45);
+  font-size: 8.5px;
+  font-family: "Hanken Grotesk", system-ui, sans-serif;
+}
+.d-spark .ylab { text-anchor: end; }
+.d-spark .xlab { text-anchor: middle; }
 
 .d-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .d-cell {

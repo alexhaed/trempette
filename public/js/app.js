@@ -222,26 +222,63 @@ function peakWhen(at) {
   return `${sameDay ? "" : "demain "}vers ${h} h`;
 }
 
-// Courbe compacte. Les points sont placés selon le TEMPS (le 1er intervalle est
-// plus court : on préfixe la valeur actuelle), pas selon leur index.
-function sparkline(pts, peak) {
-  const W = 300, H = 52, P = 7;
+// Lissage Catmull-Rom → Bézier cubique : adoucit les angles tout en passant
+// par TOUS les points (tension basse = léger, pas de sur-oscillation).
+function smoothPath(p) {
+  if (p.length < 3) return p.map((q, i) => `${i ? "L" : "M"}${q.x} ${q.y}`).join(" ");
+  const T = 0.2;
+  let d = `M${p[0].x.toFixed(1)} ${p[0].y.toFixed(1)}`;
+  for (let i = 0; i < p.length - 1; i++) {
+    const p0 = p[i - 1] || p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] || p2;
+    const c1x = p1.x + (p2.x - p0.x) * T, c1y = p1.y + (p2.y - p0.y) * T;
+    const c2x = p2.x - (p3.x - p1.x) * T, c2y = p2.y - (p3.y - p1.y) * T;
+    d += ` C${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+  }
+  return d;
+}
+
+// Courbe compacte + graduations discrètes (min/max en °C, heures rondes).
+// Les points sont placés selon le TEMPS (le 1er intervalle est plus court :
+// on préfixe la valeur actuelle), pas selon leur index.
+function sparkline(pts, peak, gridStart = 0) {
+  const W = 300, H = 76;            // hauteur : place pour les libellés d'heures
+  const L = 34, R = 294, TOP = 9, BOT = 50; // zone de tracé
   const ts = pts.map((p) => p.t);
   const vs = pts.map((p) => p.v);
   const t0 = ts[0], t1 = ts[ts.length - 1];
   let lo = Math.min(...vs), hi = Math.max(...vs);
   if (hi - lo < 0.6) { const m = (hi + lo) / 2; lo = m - 0.3; hi = m + 0.3; } // évite la ligne plate
-  const x = (t) => P + ((t - t0) / (t1 - t0)) * (W - 2 * P);
-  const y = (v) => P + (1 - (v - lo) / (hi - lo)) * (H - 2 * P);
-  const d = pts.map((p, i) => `${i ? "L" : "M"}${x(p.t).toFixed(1)} ${y(p.v).toFixed(1)}`).join(" ");
-  const area = `${d} L${x(t1).toFixed(1)} ${H - P} L${x(t0).toFixed(1)} ${H - P} Z`;
+  const x = (t) => L + ((t - t0) / (t1 - t0)) * (R - L);
+  const y = (v) => TOP + (1 - (v - lo) / (hi - lo)) * (BOT - TOP);
+
+  const xy = pts.map((p) => ({ x: x(p.t), y: y(p.v) }));
+  const d = smoothPath(xy);
+  const area = `${d} L${R} ${BOT} L${L} ${BOT} Z`;
+
+  // Graduations Y : seulement min et max (2 repères suffisent, restent lisibles).
+  const grid = [hi, lo]
+    .map((v) => `<line class="grid" x1="${L}" y1="${y(v).toFixed(1)}" x2="${R}" y2="${y(v).toFixed(1)}"></line>` +
+      `<text class="ylab" x="${L - 5}" y="${(y(v) + 3).toFixed(1)}">${fmt(v)}°</text>`)
+    .join("");
+
+  // Graduations X : un repère tous les 2 points du modèle (= 6 h). On ne filtre
+  // PAS sur des heures rondes : la grille Alplakes est à 3 h UTC, ce qui tombe
+  // en local sur 2/5/8/11 h… (jamais un multiple de 6). L'index reste régulier.
+  const hourOf = (t) => Number(new Intl.DateTimeFormat("fr-CH", { timeZone: "Europe/Zurich", hour: "numeric", hourCycle: "h23" })
+    .formatToParts(new Date(t)).find((q) => q.type === "hour").value);
+  const first = gridStart; // saute le point « maintenant » préfixé
+  const xlab = pts
+    .map((p, i) => ((i - first) >= 0 && (i - first) % 2 === 0
+      ? `<text class="xlab" x="${x(p.t).toFixed(1)}" y="${H - 6}">${hourOf(p.t)} h</text>` : ""))
+    .join("");
+
   const pt = peak ? new Date(peak.at).getTime() : null;
   const pkDot = pt != null && pt >= t0 && pt <= t1
     ? `<circle class="pkdot" cx="${x(pt).toFixed(1)}" cy="${y(peak.temp).toFixed(1)}" r="3.6"></circle>`
     : "";
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution de la température sur 24 h">` +
-    `<path class="sf" d="${area}"></path><path class="sl" d="${d}"></path>` +
-    `<circle class="nowdot" cx="${x(t0).toFixed(1)}" cy="${y(vs[0]).toFixed(1)}" r="2.6"></circle>${pkDot}</svg>`;
+    `${grid}<path class="sf" d="${area}"></path><path class="sl" d="${d}"></path>` +
+    `<circle class="nowdot" cx="${xy[0].x.toFixed(1)}" cy="${xy[0].y.toFixed(1)}" r="2.6"></circle>${pkDot}${xlab}</svg>`;
 }
 
 function renderForecast(b) {
@@ -267,7 +304,7 @@ function renderForecast(b) {
   line.innerHTML = pk && gain != null && gain > 0.2
     ? `Le plus chaud <span class="pk">${peakWhen(pk.at)}</span> (${fmt(pk.temp)}°)`
     : "C'est le plus chaud des prochaines 24 h.";
-  box.innerHTML = sparkline(pts, pk);
+  box.innerHTML = sparkline(pts, pk, pts.length > fc.v.length ? 1 : 0);
   line.hidden = box.hidden = false;
 }
 
