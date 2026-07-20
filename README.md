@@ -3,7 +3,7 @@
 **→ <https://trempette.app/>**
 
 App web **mobile-first** de consultation des températures des plages des
-lacs romands : **Léman, Neuchâtel, Bienne, Morat, Joux**.
+lacs romands : **Léman, Neuchâtel, Bienne, Morat, Joux, Gruyère**.
 
 Eau (Alplakes / Eawag) + air, vent & ciel (open-meteo), pour chaque plage, avec
 tendance de réchauffement de l'eau. Quatre tris — **par lac**, **plus chaude**,
@@ -198,6 +198,7 @@ npx wrangler dev --test-scheduled   # puis visiter /__scheduled pour tester le c
 | `worker/tips.html` | Back-office : éditeur des astuces « Le savais-tu ? » (`/admin/tips`) |
 | `wrangler.toml` | Config Worker (assets, KV, cron, Analytics Engine, vars) |
 | `scripts/lakes.json` | Catalogue lacs & plages (coordonnées) |
+| `scripts/og.html` | Source de l’image de partage `public/og.png` (rendu via Chrome headless) |
 | `scripts/build-data.mjs` | Récupération Alplakes/open-meteo/Datalakes, interpolation, correction de biais IDW, historique |
 
 ---
