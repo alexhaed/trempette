@@ -637,6 +637,29 @@ body {
   min-height: 1em;
 }
 
+/* ---- Prévision 24 h (pic + sparkline) ---- */
+.d-peak {
+  text-align: center;
+  font-size: 14px;
+  color: var(--creme);
+  margin: -8px 0 0;
+}
+.d-peak .pk { font-weight: 700; color: var(--creme-warm); }
+.d-spark { margin: 6px 0 16px; }
+/* Pas de preserveAspectRatio="none" : le ratio est conservé, donc le point du
+   pic reste rond et l'épaisseur du trait homogène. */
+.d-spark svg { display: block; width: 100%; height: auto; }
+.d-spark .sl {
+  fill: none;
+  stroke: var(--turq-light);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.d-spark .sf { fill: rgba(52, 180, 194, 0.16); stroke: none; }
+.d-spark .pkdot { fill: var(--creme-warm); }
+.d-spark .nowdot { fill: var(--creme); opacity: 0.55; }
+
 .d-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .d-cell {
   background: var(--glass);

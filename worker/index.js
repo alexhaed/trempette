@@ -25,6 +25,7 @@ import {
   fetchWindow,
   is1D,
   interpolate,
+  forecast,
   fetchLakeEndDates,
   fetchWeatherAll,
   pool,
@@ -337,6 +338,7 @@ async function regenerate(env) {
       water: wi.water,
       trend: wi.trend,
       next: wi.next,
+      fc: forecast(cache[winKey(b)], now), // prévision 24 h + pic (même fenêtre, 0 appel de plus)
       air: wx.air,
       wind: wx.wind,
       windDir: wx.windDir,

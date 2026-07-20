@@ -126,6 +126,33 @@ export async function fetchWindow(fetchFn, beach, now, tries = 1) {
 
 // Interpole la température d'eau à `now` depuis une fenêtre en cache. Renvoie
 // aussi la tendance (°C/h) et le prochain point de prévision (marque 3 h UTC).
+// Prévision « 24 h glissantes » tirée des points bruts de la fenêtre DÉJÀ en
+// cache (aucun appel réseau supplémentaire) + le pic sur la période.
+// Format compact : { t0 ISO, step (h), v: [°C], peak: { at, temp } }.
+// null si la série est trop courte ou à pas irrégulier (on préfère ne rien
+// afficher plutôt qu'une courbe fausse).
+export function forecast(win, now, hours = 24) {
+  const times = win?.times ?? [];
+  const temps = win?.temps ?? [];
+  const end = now + hours * 3600e3;
+  const idx = [];
+  for (let i = 0; i < times.length; i++) if (times[i] >= now && times[i] <= end) idx.push(i);
+  if (idx.length < 3) return null;
+  const step = (times[idx[1]] - times[idx[0]]) / 3600e3;
+  for (let k = 1; k < idx.length; k++) {
+    if (Math.abs((times[idx[k]] - times[idx[k - 1]]) / 3600e3 - step) > 0.01) return null;
+  }
+  const v = idx.map((i) => round1(temps[i]));
+  let pk = 0;
+  for (let k = 1; k < v.length; k++) if (v[k] > v[pk]) pk = k;
+  return {
+    t0: new Date(times[idx[0]]).toISOString(),
+    step: round1(step),
+    v,
+    peak: { at: new Date(times[idx[pk]]).toISOString(), temp: v[pk] },
+  };
+}
+
 export function interpolate(win, now) {
   const times = win?.times ?? [];
   const temps = win?.temps ?? [];
@@ -443,6 +470,12 @@ export function applyLemanBias(beaches, out, results) {
     o.water = round1(o.water + corr);
     o.bias = round2(corr);
     if (o.next && o.next.temp != null) o.next.temp = round1(o.next.temp + corr);
+    // La courbe de prévision doit subir le même décalage, sinon elle serait
+    // incohérente avec la température corrigée affichée au-dessus.
+    if (o.fc) {
+      o.fc.v = o.fc.v.map((x) => round1(x + corr));
+      if (o.fc.peak) o.fc.peak.temp = round1(o.fc.peak.temp + corr);
+    }
   }
 }
 

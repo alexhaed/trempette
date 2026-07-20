@@ -205,6 +205,72 @@ function windAngle(deg) {
   return deg == null ? null : (deg + 180) % 360;
 }
 
+// ---- Prévision 24 h glissantes : phrase du pic + sparkline ----
+// `b.fc` = { t0 ISO, step (h), v: [°C], peak: { at, temp } }, calculé côté
+// Worker depuis la fenêtre Alplakes déjà téléchargée (aucun appel de plus).
+
+// Heure locale (Europe/Zurich) au format « 18 h », + « demain » si autre jour.
+function peakWhen(at) {
+  const d = new Date(at);
+  const opt = { timeZone: "Europe/Zurich" };
+  // formatToParts : on récupère le NOMBRE seul (fr-CH formate déjà « 21 h »,
+  // ce qui doublonnait avec le « h » ajouté ensuite).
+  const h = new Intl.DateTimeFormat("fr-CH", { ...opt, hour: "numeric", hourCycle: "h23" })
+    .formatToParts(d)
+    .find((p) => p.type === "hour").value;
+  const sameDay = d.toLocaleDateString("fr-CH", opt) === new Date().toLocaleDateString("fr-CH", opt);
+  return `${sameDay ? "" : "demain "}vers ${h} h`;
+}
+
+// Courbe compacte. Les points sont placés selon le TEMPS (le 1er intervalle est
+// plus court : on préfixe la valeur actuelle), pas selon leur index.
+function sparkline(pts, peak) {
+  const W = 300, H = 52, P = 7;
+  const ts = pts.map((p) => p.t);
+  const vs = pts.map((p) => p.v);
+  const t0 = ts[0], t1 = ts[ts.length - 1];
+  let lo = Math.min(...vs), hi = Math.max(...vs);
+  if (hi - lo < 0.6) { const m = (hi + lo) / 2; lo = m - 0.3; hi = m + 0.3; } // évite la ligne plate
+  const x = (t) => P + ((t - t0) / (t1 - t0)) * (W - 2 * P);
+  const y = (v) => P + (1 - (v - lo) / (hi - lo)) * (H - 2 * P);
+  const d = pts.map((p, i) => `${i ? "L" : "M"}${x(p.t).toFixed(1)} ${y(p.v).toFixed(1)}`).join(" ");
+  const area = `${d} L${x(t1).toFixed(1)} ${H - P} L${x(t0).toFixed(1)} ${H - P} Z`;
+  const pt = peak ? new Date(peak.at).getTime() : null;
+  const pkDot = pt != null && pt >= t0 && pt <= t1
+    ? `<circle class="pkdot" cx="${x(pt).toFixed(1)}" cy="${y(peak.temp).toFixed(1)}" r="3.6"></circle>`
+    : "";
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution de la température sur 24 h">` +
+    `<path class="sf" d="${area}"></path><path class="sl" d="${d}"></path>` +
+    `<circle class="nowdot" cx="${x(t0).toFixed(1)}" cy="${y(vs[0]).toFixed(1)}" r="2.6"></circle>${pkDot}</svg>`;
+}
+
+function renderForecast(b) {
+  const line = $("#d-peak");
+  const box = $("#d-spark");
+  const fc = b.fc;
+  if (!fc || !Array.isArray(fc.v) || fc.v.length < 3) {
+    line.hidden = box.hidden = true;
+    box.innerHTML = "";
+    return;
+  }
+  const now = Date.now();
+  const t0 = new Date(fc.t0).getTime();
+  const stepMs = (fc.step || 3) * 3600e3;
+  const pts = [];
+  // La courbe démarre sur la température affichée, pour rester cohérente.
+  if (b.water != null && now < t0) pts.push({ t: now, v: b.water });
+  fc.v.forEach((v, i) => pts.push({ t: t0 + i * stepMs, v }));
+
+  const pk = fc.peak;
+  const gain = b.water != null && pk ? pk.temp - b.water : null;
+  // Gain négligeable → on ne promet pas un « plus chaud » imperceptible.
+  line.innerHTML = pk && gain != null && gain > 0.2
+    ? `Le plus chaud <span class="pk">${peakWhen(pk.at)}</span> (${fmt(pk.temp)}°)`
+    : "C'est le plus chaud des prochaines 24 h.";
+  box.innerHTML = sparkline(pts, pk);
+  line.hidden = box.hidden = false;
+}
+
 // Météo (codes WMO open-meteo) → icône (id de symbole SVG) + libellé « Ciel ».
 // isDay : 0 = nuit ; 1/null → jour par défaut (variantes soleil/lune).
 function weather(code, isDay) {
@@ -641,6 +707,7 @@ function openDetail(b, push = true) {
   const v = verdict(b.water);
   $("#d-verdict").innerHTML = v ? `<span>${v}</span>` : "";
   $("#d-trend-txt").textContent = forecastText(b);
+  renderForecast(b);
 
   $("#d-air").textContent = b.air != null ? `${Math.round(b.air)}°` : "n/d";
   $("#d-wind").textContent = b.wind != null ? `${Math.round(b.wind)} km/h` : "n/d";

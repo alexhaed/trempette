@@ -152,7 +152,7 @@
         <a href="/lac/leman">Léman</a><a href="/lac/neuchatel">Neuchâtel</a><a href="/lac/bienne">Bienne</a><a href="/lac/morat">Morat</a><a href="/lac/joux">Joux</a><a href="/lac/gruyere">Gruyère</a>
       </nav>
       <p class="credits">Eau : Alplakes &amp; Datalakes (Eawag) · Air &amp; vent : open-meteo.com</p>
-      <p class="version">v1.76 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
+      <p class="version">v1.77 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
     </footer>
     </div>
   </div>
@@ -173,6 +173,9 @@
       </div>
       <p id="d-verdict" class="d-verdict"></p>
       <p id="d-trend-txt" class="d-trend-txt"></p>
+      <!-- Prévision 24 h glissantes : phrase (pic) + sparkline -->
+      <p id="d-peak" class="d-peak" hidden></p>
+      <div id="d-spark" class="d-spark" hidden></div>
       <div class="d-grid">
         <div class="d-cell">
           <span class="d-cell-label"><svg width="15" height="15" aria-hidden="true"><use href="#i-sun"></use></svg> Air</span>
