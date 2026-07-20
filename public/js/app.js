@@ -578,11 +578,18 @@ function renderList() {
 
   listEl.innerHTML = "";
   if (total === 0) {
-    listEl.innerHTML = `<p class="empty">${
-      state.sort === "fav"
-        ? "Aucun favori — touche l'étoile pour ajouter une plage."
-        : "Aucune plage trouvée."
-    }</p>`;
+    if (state.sort === "fav") {
+      // Comme l'échec de géoloc : un repli « Voir par lac » plutôt qu'un cul-de-sac.
+      listEl.innerHTML = `<div class="empty geoloc-fail">
+        <p>Aucun favori — touche l'étoile pour ajouter une plage.</p>
+        <div class="geoloc-actions">
+          <button type="button" class="geoloc-back">Voir par lac</button>
+        </div>
+      </div>`;
+      listEl.querySelector(".geoloc-back").addEventListener("click", goToLakeView);
+    } else {
+      listEl.innerHTML = `<p class="empty">Aucune plage trouvée.</p>`;
+    }
     return;
   }
 
@@ -938,6 +945,15 @@ function setActiveSeg(btn) {
   btn.classList.add("is-active");
 }
 
+// Bascule vers l'onglet « Par lac ». Repli commun aux états vides (favoris,
+// échec de géolocalisation) via le bouton « Voir par lac ».
+function goToLakeView() {
+  const lakeBtn = document.querySelector('.seg-btn[data-sort="lake"]');
+  setActiveSeg(lakeBtn);
+  state.sort = "lake";
+  renderList();
+}
+
 document.querySelectorAll(".seg-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     if (btn.dataset.sort === "near") return activateNear(btn);
@@ -1012,12 +1028,7 @@ function renderGeolocFail(btn, { canRetry = true, blocked = false, denied = fals
   const retry = listEl.querySelector(".geoloc-retry");
   if (retry) retry.addEventListener("click", () => activateNear(btn));
   // Repli sans friction vers le mode « Par lac » (jamais un écran vide).
-  listEl.querySelector(".geoloc-back").addEventListener("click", () => {
-    const lakeBtn = document.querySelector('.seg-btn[data-sort="lake"]');
-    setActiveSeg(lakeBtn);
-    state.sort = "lake";
-    renderList();
-  });
+  listEl.querySelector(".geoloc-back").addEventListener("click", goToLakeView);
 }
 
 // Rafraîchissement des données. Le bouton d'en-tête a été retiré ; ne subsistent
