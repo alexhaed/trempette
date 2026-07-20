@@ -215,9 +215,12 @@ function peakWhen(at) {
   const opt = { timeZone: "Europe/Zurich" };
   // formatToParts : on récupère le NOMBRE seul (fr-CH formate déjà « 21 h »,
   // ce qui doublonnait avec le « h » ajouté ensuite).
-  const h = new Intl.DateTimeFormat("fr-CH", { ...opt, hour: "numeric", hourCycle: "h23" })
-    .formatToParts(d)
-    .find((p) => p.type === "hour").value;
+  // Number() : évite « 00 h » / « 08 h » (fr-CH complète parfois à 2 chiffres).
+  const h = Number(
+    new Intl.DateTimeFormat("fr-CH", { ...opt, hour: "numeric", hourCycle: "h23" })
+      .formatToParts(d)
+      .find((p) => p.type === "hour").value
+  );
   const sameDay = d.toLocaleDateString("fr-CH", opt) === new Date().toLocaleDateString("fr-CH", opt);
   return `${sameDay ? "" : "demain "}vers ${h} h`;
 }
@@ -261,7 +264,7 @@ function smoothPath(p) {
 // Courbe compacte + graduations discrètes (min/max en °C, heures rondes).
 // Les points sont placés selon le TEMPS (le 1er intervalle est plus court :
 // on préfixe la valeur actuelle), pas selon leur index.
-function sparkline(pts, peak, gridStart = 0) {
+function sparkline(pts, bestIdx, gridStart = 0) {
   const W = 300, H = 76;            // hauteur : place pour les libellés d'heures
   const L = 34, R = 294, TOP = 9, BOT = 50; // zone de tracé
   const ts = pts.map((p) => p.t);
@@ -288,18 +291,25 @@ function sparkline(pts, peak, gridStart = 0) {
   const hourOf = (t) => Number(new Intl.DateTimeFormat("fr-CH", { timeZone: "Europe/Zurich", hour: "numeric", hourCycle: "h23" })
     .formatToParts(new Date(t)).find((q) => q.type === "hour").value);
   const first = gridStart; // saute le point « maintenant » préfixé
+  // Ancrage adapté aux bords : centré déborderait du viewBox (libellé coupé).
+  const anchor = (px) => (px < 16 ? "start" : px > W - 16 ? "end" : "middle");
   const xlab = pts
-    .map((p, i) => ((i - first) >= 0 && (i - first) % 2 === 0
-      ? `<text class="xlab" x="${x(p.t).toFixed(1)}" y="${H - 6}">${hourOf(p.t)} h</text>` : ""))
+    .map((p, i) => {
+      if ((i - first) < 0 || (i - first) % 2 !== 0) return "";
+      const px = x(p.t);
+      return `<text class="xlab" text-anchor="${anchor(px)}" x="${px.toFixed(1)}" y="${H - 6}">${hourOf(p.t)} h</text>`;
+    })
     .join("");
 
-  const pt = peak ? new Date(peak.at).getTime() : null;
-  const pkDot = pt != null && pt >= t0 && pt <= t1
-    ? `<circle class="pkdot" cx="${x(pt).toFixed(1)}" cy="${y(peak.temp).toFixed(1)}" r="3.6"></circle>`
-    : "";
+  // Point marquant le maximum de la courbe AFFICHÉE (peut être « maintenant »).
+  const pkDot = `<circle class="pkdot" cx="${xy[bestIdx].x.toFixed(1)}" cy="${xy[bestIdx].y.toFixed(1)}" r="3.6"></circle>`;
+  // Point « maintenant » : inutile s'il coïncide avec le maximum.
+  const nowDot = bestIdx === 0
+    ? ""
+    : `<circle class="nowdot" cx="${xy[0].x.toFixed(1)}" cy="${xy[0].y.toFixed(1)}" r="2.6"></circle>`;
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution de la température sur 24 h">` +
     `${grid}<path class="sf" d="${area}"></path><path class="sl" d="${d}"></path>` +
-    `<circle class="nowdot" cx="${xy[0].x.toFixed(1)}" cy="${xy[0].y.toFixed(1)}" r="2.6"></circle>${pkDot}${xlab}</svg>`;
+    `${nowDot}${pkDot}${xlab}</svg>`;
 }
 
 function renderForecast(b) {
@@ -326,13 +336,19 @@ function renderForecast(b) {
   if (b.water != null && now < t0) pts.push({ t: now, v: b.water });
   fc.v.forEach((v, i) => pts.push({ t: t0 + i * stepMs, v }));
 
-  const pk = fc.peak;
-  const gain = b.water != null && pk ? pk.temp - b.water : null;
+  // Maximum de la courbe AFFICHÉE (et non `fc.peak`, calculé côté serveur sur
+  // les seuls points futurs) : si la température actuelle dépasse toute la
+  // suite, le vrai maximum est le 1er point. Une seule source de vérité pour la
+  // phrase ET le point, sinon les deux se contredisent.
+  let bestIdx = 0;
+  for (let i = 1; i < pts.length; i++) if (pts[i].v > pts[bestIdx].v) bestIdx = i;
+  const best = pts[bestIdx];
+  const gain = b.water != null ? best.v - b.water : null;
   // Gain négligeable → on ne promet pas un « plus chaud » imperceptible.
-  line.innerHTML = pk && gain != null && gain > 0.2
-    ? `Le plus chaud <span class="pk">${peakWhen(pk.at)}</span> (${fmt(pk.temp)}°)`
+  line.innerHTML = bestIdx > 0 && gain != null && gain > 0.2
+    ? `Le plus chaud <span class="pk">${peakWhen(best.t)}</span> (${fmt(best.v)}°)`
     : "C'est le plus chaud des prochaines 24 h.";
-  box.innerHTML = sparkline(pts, pk, pts.length > fc.v.length ? 1 : 0);
+  box.innerHTML = sparkline(pts, bestIdx, pts.length > fc.v.length ? 1 : 0);
   line.hidden = box.hidden = false;
 }
 

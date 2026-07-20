@@ -674,7 +674,6 @@ body {
   font-family: "Hanken Grotesk", system-ui, sans-serif;
 }
 .d-spark .ylab { text-anchor: end; }
-.d-spark .xlab { text-anchor: middle; }
 
 .d-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .d-cell {
