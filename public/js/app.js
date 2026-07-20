@@ -941,21 +941,10 @@ function activateNear(btn) {
     renderList();
     return;
   }
+  setActiveSeg(btn);
+  state.sort = "near";
   if (!navigator.geolocation) {
-    setActiveSeg(btn);
-    state.sort = "near";
-    listEl.innerHTML = `<div class="empty geoloc-fail">
-      <p>La géolocalisation n'est pas disponible sur cet appareil.</p>
-      <div class="geoloc-actions">
-        <button type="button" class="geoloc-back">Voir par lac</button>
-      </div>
-    </div>`;
-    listEl.querySelector(".geoloc-back").addEventListener("click", () => {
-      const lakeBtn = document.querySelector('.seg-btn[data-sort="lake"]');
-      setActiveSeg(lakeBtn);
-      state.sort = "lake";
-      renderList();
-    });
+    renderGeolocFail(btn, { canRetry: false });
     return;
   }
   btn.classList.add("is-locating");
@@ -969,32 +958,51 @@ function activateNear(btn) {
     },
     (err) => {
       btn.classList.remove("is-locating");
-      setActiveSeg(btn);
-      state.sort = "near";
       const denied = err.code === err.PERMISSION_DENIED;
-      const msg = denied
-        ? "Géolocalisation refusée. Autorise l'accès à ta position dans les réglages du navigateur, ou parcours les plages par lac."
-        : "Position indisponible pour l'instant.";
-      listEl.innerHTML = `<div class="empty geoloc-fail">
-        <p>${msg}</p>
-        <div class="geoloc-actions">
-          <button type="button" class="geoloc-retry">Réessayer</button>
-          <button type="button" class="geoloc-back">Voir par lac</button>
-        </div>
-      </div>`;
-      // Réessayer : relance la demande de position (utile si l'erreur était
-      // temporaire, ou après que l'utilisateur a changé l'autorisation).
-      listEl.querySelector(".geoloc-retry").addEventListener("click", () => activateNear(btn));
-      // Repli sans friction vers le mode « Par lac » (jamais un écran vide).
-      listEl.querySelector(".geoloc-back").addEventListener("click", () => {
-        const lakeBtn = document.querySelector('.seg-btn[data-sort="lake"]');
-        setActiveSeg(lakeBtn);
-        state.sort = "lake";
-        renderList();
-      });
+      // Un refus PERMANENT ne re-déclenche PAS la popup : rappeler
+      // getCurrentPosition renverrait aussitôt la même erreur → un bouton
+      // « Réessayer » y serait un leurre. On interroge l'API Permissions pour
+      // ne le proposer que si un nouvel essai peut réellement aboutir (état
+      // « prompt », ou simple erreur temporaire de position).
+      if (denied && navigator.permissions && navigator.permissions.query) {
+        navigator.permissions
+          .query({ name: "geolocation" })
+          .then((p) => renderGeolocFail(btn, { canRetry: p.state !== "denied", blocked: p.state === "denied" }))
+          .catch(() => renderGeolocFail(btn, { canRetry: true, denied: true }));
+      } else {
+        renderGeolocFail(btn, { canRetry: true, denied });
+      }
     },
     { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
   );
+}
+
+// Écran d'échec de géolocalisation — jamais un cul-de-sac : au moins « Voir par
+// lac », et « Réessayer » uniquement quand il peut aboutir (voir activateNear).
+function renderGeolocFail(btn, { canRetry = true, blocked = false, denied = false } = {}) {
+  const msg = blocked
+    ? "Géolocalisation bloquée pour ce site. Réautorise-la dans les réglages du navigateur (icône près de la barre d'adresse), puis reviens ici — ou parcours les plages par lac."
+    : denied
+    ? "Géolocalisation refusée. Autorise l'accès à ta position, ou parcours les plages par lac."
+    : navigator.geolocation
+    ? "Position indisponible pour l'instant."
+    : "La géolocalisation n'est pas disponible sur cet appareil.";
+  listEl.innerHTML = `<div class="empty geoloc-fail">
+    <p>${msg}</p>
+    <div class="geoloc-actions">
+      ${canRetry ? `<button type="button" class="geoloc-retry">Réessayer</button>` : ""}
+      <button type="button" class="geoloc-back">Voir par lac</button>
+    </div>
+  </div>`;
+  const retry = listEl.querySelector(".geoloc-retry");
+  if (retry) retry.addEventListener("click", () => activateNear(btn));
+  // Repli sans friction vers le mode « Par lac » (jamais un écran vide).
+  listEl.querySelector(".geoloc-back").addEventListener("click", () => {
+    const lakeBtn = document.querySelector('.seg-btn[data-sort="lake"]');
+    setActiveSeg(lakeBtn);
+    state.sort = "lake";
+    renderList();
+  });
 }
 
 // Rafraîchissement des données. Le bouton d'en-tête a été retiré ; ne subsistent
