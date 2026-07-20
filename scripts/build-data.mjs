@@ -257,9 +257,14 @@ export const LEMAN_BUOYS = [
   {
     // Station OFEV « Genève, Halle de l'Île » (exutoire du Rhône) — mesure de
     // surface de l'eau qui SORT du lac, indépendante d'Eawag (source BAFU via
-    // Existenz). AJOUTÉE EN OBSERVATION SEULE : son biais est calculé et tracé
-    // dans le moniteur, mais elle est EXCLUE de la correction IDW (le temps de
-    // juger son comportement). Comparaison modèle à 0,2 m (eau de surface).
+    // Existenz). STATION D'APPOINT (`backup`) : n'entre dans l'IDW que si la
+    // couverture des bouées Eawag est dégradée (< 2 exploitables).
+    //
+    // 15,6 j d'observation (749 cycles) ont montré : disponibilité 100 % (contre
+    // 70 % LéXPLORE / 65 % Buchillon), stabilité identique à Buchillon
+    // (|Δ| 0,07 °C), cycle jour/nuit plat — MAIS une queue plus grasse
+    // (5,6 % des cycles au-delà de ±2 °C, contre 0 % pour Buchillon). D'où :
+    // appoint seulement, avec un seuil « aberrant » resserré à 3 °C.
     id: "_foen_geneve",
     name: "Genève (exutoire)",
     lat: 46.2047,
@@ -268,7 +273,8 @@ export const LEMAN_BUOYS = [
     lake: "geneva",
     depth: DEPTH, // 0,2 m (surface), ≠ bouées comparées à 1 m
     foenLoc: "2606", // station OFEV via Existenz (pas Datalakes)
-    observeOnly: true,
+    backup: true,
+    maxBias: 3,
   },
 ];
 
@@ -329,12 +335,15 @@ async function fetchFoenInsitu(fetchFn, loc, tries) {
 // « périmé »). État inter-cycles stocké dans `cache._buoyState`.
 const LAG_MS = 2 * 3600e3;
 const PERIME_MS = 6 * 3600e3;
+// Biais au-delà duquel une station est écartée (probable défaut). Surchargeable
+// par station via `maxBias` (l'appoint de Genève est plus strict).
+const ABERRANT_MAX = 5;
 
 export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 1) {
   const results = [];
   const state = cache._buoyState || (cache._buoyState = {});
   for (const buoy of LEMAN_BUOYS) {
-    const base = { name: buoy.name, lat: buoy.lat, lng: buoy.lng, bias: null, insitu: null, model: null, observeOnly: !!buoy.observeOnly };
+    const base = { name: buoy.name, lat: buoy.lat, lng: buoy.lng, bias: null, insitu: null, model: null, backup: !!buoy.backup };
     // Écarte la bouée : journalise la cause (niveau warning, filtrable « [bias] »
     // dans les logs Cloudflare) puis enregistre le résultat avec sa raison.
     const drop = (reason, detail) => {
@@ -395,7 +404,9 @@ export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 
     if (modelAtObs == null) { drop("pas-modele", "interpolation hors fenêtre"); continue; }
     base.model = modelAtObs;
     const bias = insitu.temp - modelAtObs;
-    if (Math.abs(bias) > 5) { drop("aberrant", `biais ${bias.toFixed(1)} °C`); continue; }
+    // Seuil « aberrant » par station (3 °C pour l'appoint de Genève, 5 par défaut).
+    const maxBias = buoy.maxBias ?? ABERRANT_MAX;
+    if (Math.abs(bias) > maxBias) { drop("aberrant", `biais ${bias.toFixed(1)} °C (max ${maxBias})`); continue; }
     if (lagging) console.warn(`[bias] ${buoy.name} flux en retard ~${(frozenFor / 3600e3).toFixed(1)} h — bouée conservée`);
     results.push({ ...base, bias, reason: "ok", lag: lagging, lagH: lagging ? round1(frozenFor / 3600e3) : 0 });
   }
@@ -407,9 +418,13 @@ export async function computeLemanBiases(fetchFn, now, cache, endDates, tries = 
 // Décale aussi `next.temp` du même offset pour rester cohérent.
 // `results` = sortie de computeLemanBiases ; on ne garde que les bouées exploitables.
 export function applyLemanBias(beaches, out, results) {
-  // Les stations « observation seule » (ex. exutoire de Genève) sont exclues de
-  // la correction : leur biais est suivi dans le moniteur mais ne pilote rien.
-  const biases = (results || []).filter((b) => b && b.bias != null && !b.observeOnly);
+  // Stations d'appoint (`backup`, ex. exutoire de Genève) : elles n'entrent dans
+  // l'IDW que si la couverture des bouées de référence est DÉGRADÉE (< 2
+  // exploitables). Quand les 2 bouées Eawag répondent, la correction validée
+  // reste strictement inchangée ; sinon on évite de servir le modèle brut.
+  const usable = (results || []).filter((b) => b && b.bias != null);
+  const main = usable.filter((b) => !b.backup);
+  const biases = main.length >= 2 ? main : usable;
   if (!biases.length) return;
   for (let i = 0; i < beaches.length; i++) {
     const b = beaches[i];

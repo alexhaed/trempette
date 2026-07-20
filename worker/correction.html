@@ -178,7 +178,7 @@
       const cards = [
         ["Biais LéXPLORE", last && last.lex && last.lex.b != null ? fmt(last.lex.b) + " °C" : "—", buoyHint("lex")],
         ["Biais Buchillon", last && last.buch && last.buch.b != null ? fmt(last.buch.b) + " °C" : "—", buoyHint("buch")],
-        ["Biais Genève (obs.)", last && last.gva && last.gva.b != null ? fmt(last.gva.b) + " °C" : "—", "hors correction · " + buoyHint("gva")],
+        ["Biais Genève (appoint)", last && last.gva && last.gva.b != null ? fmt(last.gva.b) + " °C" : "—", "appoint si <2 bouées · " + buoyHint("gva")],
         ["Corr. moy. " + rangeLabel(), fmt(mean(pts.map((p) => p.c))) + " °C", last ? last.n + " plages" : ""],
         ["Biais moyen " + rangeLabel(), fmt(mean(pts.flatMap((p) => [p.lex && p.lex.b, p.buch && p.buch.b])), 2) + " °C", "2 bouées"],
         ["Cycles sans bouée", String(pannes), reasonHint],
@@ -213,7 +213,7 @@
           { ...baseLine, label: "LéXPLORE modèle", data: pts.map((p) => p.lex && p.lex.m), borderColor: col.lexM, borderDash: [5, 4] },
           { ...baseLine, label: "Buchillon mesure", data: pts.map((p) => p.buch && p.buch.i), borderColor: col.buchI, ...mesureMarks("buch") },
           { ...baseLine, label: "Buchillon modèle", data: pts.map((p) => p.buch && p.buch.m), borderColor: col.buchM, borderDash: [5, 4] },
-          { ...baseLine, label: "Genève mesure (obs.)", data: pts.map((p) => p.gva && p.gva.i), borderColor: col.gva, ...mesureMarks("gva") },
+          { ...baseLine, label: "Genève mesure (appoint)", data: pts.map((p) => p.gva && p.gva.i), borderColor: col.gva, ...mesureMarks("gva") },
           { ...baseLine, label: "Genève modèle", data: pts.map((p) => p.gva && p.gva.m), borderColor: col.gva, borderDash: [5, 4] },
         ],
       };
@@ -222,7 +222,7 @@
         datasets: [
           { ...baseLine, label: "Biais LéXPLORE", data: pts.map((p) => p.lex && p.lex.b), borderColor: col.lexI },
           { ...baseLine, label: "Biais Buchillon", data: pts.map((p) => p.buch && p.buch.b), borderColor: col.buchI },
-          { ...baseLine, label: "Biais Genève (obs.)", data: pts.map((p) => p.gva && p.gva.b), borderColor: col.gva },
+          { ...baseLine, label: "Biais Genève (appoint)", data: pts.map((p) => p.gva && p.gva.b), borderColor: col.gva },
           { ...baseLine, label: "Correction moy. plages", data: pts.map((p) => p.c), borderColor: col.corr, borderDash: [2, 3] },
         ],
       };
