@@ -90,6 +90,29 @@ surface, oscille de ±1,5 °C/h par stratification les jours calmes → instable
 représentatif). Les plages, elles, restent affichées à 0,2 m (baignade) : on suppose
 le biais du modèle ~uniforme dans le premier mètre.
 
+S'y ajoute une **station d'appoint**, indépendante d'Eawag :
+
+- **Genève (exutoire)** — station **OFEV/BAFU 2606** (Rhône à la Halle de l'Île,
+  soit l'eau de surface qui *sort* du lac), lue via **api.existenz.ch** (open data,
+  sans clé). Comparée à **0,2 m** (eau de surface, ≠ bouées à 1 m).
+
+Elle n'entre dans l'IDW **que si moins de 2 bouées Eawag sont exploitables** : quand
+les deux répondent, la correction reste strictement celle des bouées. Justification,
+sur **15,6 j / 749 cycles** d'observation préalable :
+
+| | LéXPLORE | Buchillon | Genève |
+|---|---|---|---|
+| Disponibilité | 70 % | 65 % | **100 %** |
+| Stabilité (\|Δ\| entre cycles) | 0,114 °C | 0,070 °C | 0,072 °C |
+| Cycles \|biais\| > 2 °C | — | **0 %** | **5,6 %** |
+
+**30 % des cycles (221/749) n'avaient aucune bouée** → modèle brut servi, alors que
+Genève était disponible avec un biais moyen de **+0,95 °C** (plages ~1 °C trop
+froides). D'où l'appoint. Mais sa queue plus grasse (5,6 % au-delà de ±2 °C, contre
+0 % pour Buchillon) explique qu'on **ne** lui donne **pas** un poids plein quand les
+bouées fonctionnent — et qu'elle ait un seuil « aberrant » resserré à **3 °C**
+(`maxBias` par station, 5 °C par défaut).
+
 Principe, à chaque cycle de cron :
 
 1. à chaque bouée : `biais = mesure_in-situ(1 m) − modèle Alplakes(1 m) au même point`,
@@ -109,18 +132,22 @@ Principe, à chaque cycle de cron :
 
 **Garde-fous** : une bouée est écartée si l'API échoue ou ne renvoie aucune mesure
 récente, si le modèle est indisponible, si la mesure est **périmée** (\>6 h) ou si
-le **biais est aberrant** (\>5 °C). Si son flux **traîne** (horodatage figé ≥2 h —
+le **biais est aberrant** (\>5 °C par défaut, **3 °C** pour l'appoint de Genève —
+seuil `maxBias` réglable par station). Si son flux **traîne** (horodatage figé ≥2 h —
 fréquent : pauses de publication d'environ 5 h, LéXPLORE le soir, Buchillon la nuit),
 la bouée est seulement signalée **« en retard »** dans le moniteur **mais reste
 utilisée** : le biais dérive lentement, donc une mesure de quelques heures reste
 fiable, et c'est mieux que retomber sur le modèle brut. Chaque cas est journalisé
-(`[bias] …`). Si aucune bouée n'est exploitable, on sert le modèle brut ; la valeur
-modèle d'origine est conservée (`waterModel`).
+(`[bias] …`). Si aucune bouée n'est exploitable, l'**appoint de Genève prend le
+relais** ; si lui non plus n'est pas disponible, on sert le modèle brut. La valeur
+modèle d'origine est toujours conservée (`waterModel`).
 
 **Limites** : 2 points au large → correction quasi-locale près d'une bouée, sinon
 ~moyenne du lac ; ne corrige **pas** le sur-réchauffement des hauts-fonds au bord
-(aucune bouée ne le voit). Les autres lacs (Neuchâtel, Bienne, Morat, Joux) n'ont
-pas de bouée → modèle brut.
+(aucune bouée ne le voit). L'appoint de Genève améliore la *disponibilité*, pas la
+*couverture* : il est lui aussi à l'ouest (Petit Lac) et n'apporte rien au Haut Lac.
+Les autres lacs (Neuchâtel, Bienne, Morat, Joux, Gruyère) n'ont pas de station
+in-situ → modèle brut.
 
 ## Back-office `/admin`
 
@@ -175,4 +202,4 @@ npx wrangler dev --test-scheduled   # puis visiter /__scheduled pour tester le c
 
 ---
 
-Données : Alplakes (Eawag) · Datalakes (Eawag) · open-meteo.com
+Données : Alplakes (Eawag) · Datalakes (Eawag) · OFEV/BAFU via existenz.ch · open-meteo.com
