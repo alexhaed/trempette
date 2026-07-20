@@ -642,7 +642,9 @@ body {
   text-align: center;
   font-size: 14px;
   color: var(--creme);
-  margin: -8px 0 0;
+  /* Marge positive : la ligne « Température prévue à… » qui la précédait est
+     désormais masquée, donc la phrase suit directement le badge de verdict. */
+  margin: 16px 0 0;
 }
 .d-peak .pk { font-weight: 700; color: var(--creme-warm); }
 .d-spark { margin: 6px 0 16px; }
