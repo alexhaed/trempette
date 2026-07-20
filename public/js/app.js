@@ -4,6 +4,13 @@
 
 const FAV_KEY = "templac_favoris"; // ordre des favoris (tableau d'ids), conservé d'avant le renommage
 const COLLAPSE_KEY = "trempette_lacs_replies"; // lacs repliés en mode « Par lac »
+// Lacs déjà vus : `collapsed` ne liste que les lacs REPLIÉS, donc un lac ajouté
+// après coup en serait absent → affiché déplié. On mémorise les lacs connus pour
+// replier automatiquement les nouveaux.
+const SEEN_KEY = "trempette_lacs_vus";
+// Migration : lacs existants avant l'ajout de la Gruyère. Sans cette liste, les
+// utilisateurs ayant déjà une préférence verraient TOUS leurs lacs repliés.
+const LAKES_BEFORE_SEEN = ["Léman", "Lac de Neuchâtel", "Lac de Bienne", "Lac de Morat", "Lac de Joux"];
 
 // --- URLs partageables /lac/<lac>/<plage> (mêmes slugs que le Worker) ---
 // Titre d'accueil figé : sur un deep link, le Worker a déjà réécrit <title> avec
@@ -107,6 +114,19 @@ function loadCollapsed() {
 }
 function saveCollapsed() {
   localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...state.collapsed]));
+}
+function loadSeen() {
+  const raw = localStorage.getItem(SEEN_KEY);
+  if (raw === null) return new Set(LAKES_BEFORE_SEEN); // 1re exécution de ce code
+  try {
+    const v = JSON.parse(raw);
+    return new Set(Array.isArray(v) ? v : []);
+  } catch {
+    return new Set(LAKES_BEFORE_SEEN);
+  }
+}
+function saveSeen(lakes) {
+  localStorage.setItem(SEEN_KEY, JSON.stringify(lakes));
 }
 function toggleLake(lake) {
   if (state.collapsed.has(lake)) state.collapsed.delete(lake);
@@ -363,6 +383,17 @@ function visibleBeaches() {
   if (state.collapsed === null) {
     state.collapsed = new Set(lakes.filter((l) => l !== "Léman"));
     saveCollapsed();
+    saveSeen(lakes);
+  } else {
+    // Lac ajouté depuis la dernière visite : absent du set « replié », il
+    // s'afficherait déplié → on le replie explicitement (sauf le Léman).
+    const seen = loadSeen();
+    const nouveaux = lakes.filter((l) => !seen.has(l));
+    if (nouveaux.length) {
+      for (const l of nouveaux) if (l !== "Léman") state.collapsed.add(l);
+      saveCollapsed();
+      saveSeen(lakes);
+    }
   }
   return { groups: lakes.map((lake) => ({ header: lake, items: byLake.get(lake) })) };
 }
