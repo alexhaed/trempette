@@ -138,9 +138,13 @@ export function forecast(win, now, hours = 24) {
   const idx = [];
   for (let i = 0; i < times.length; i++) if (times[i] >= now && times[i] <= end) idx.push(i);
   if (idx.length < 3) return null;
-  const step = (times[idx[1]] - times[idx[0]]) / 3600e3;
+  // Pas MOYEN (et non le 1er intervalle) : certains lacs ont ~1 s de gigue dans
+  // les horodatages (2,99 vs 3,00 h). Tolérance relative → la gigue passe, mais
+  // un vrai trou (point manquant = 2× le pas) est rejeté.
+  const step = (times[idx[idx.length - 1]] - times[idx[0]]) / (idx.length - 1) / 3600e3;
   for (let k = 1; k < idx.length; k++) {
-    if (Math.abs((times[idx[k]] - times[idx[k - 1]]) / 3600e3 - step) > 0.01) return null;
+    const d = (times[idx[k]] - times[idx[k - 1]]) / 3600e3;
+    if (Math.abs(d - step) > step * 0.25) return null;
   }
   const v = idx.map((i) => round1(temps[i]));
   let pk = 0;
