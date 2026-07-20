@@ -296,15 +296,26 @@ function sparkline(pts, bestIdx, gridStart = 0) {
   const hourOf = (t) => Number(new Intl.DateTimeFormat("fr-CH", { timeZone: "Europe/Zurich", hour: "numeric", hourCycle: "h23" })
     .formatToParts(new Date(t)).find((q) => q.type === "hour").value);
   const first = gridStart; // saute le point « maintenant » préfixé
+  const hasNow = gridStart === 1; // pts[0] est la valeur actuelle (préfixée)
   // Ancrage adapté aux bords : centré déborderait du viewBox (libellé coupé).
   const anchor = (px) => (px < 16 ? "start" : px > W - 16 ? "end" : "middle");
-  const xlab = pts
-    .map((p, i) => {
-      if ((i - first) < 0 || (i - first) % 2 !== 0) return "";
-      const px = x(p.t);
-      return `<text class="xlab" text-anchor="${anchor(px)}" x="${px.toFixed(1)}" y="${H - 6}">${hourOf(p.t)} h</text>`;
-    })
-    .join("");
+  const labels = [];
+  // Ancre le bord gauche sur « maintenant » : lève l'ambiguïté passé/futur.
+  // Sans ce repère, la 1re heure ronde (ex. « 23 h ») + la fenêtre qui passe
+  // minuit (23 h → 5 h → 11 h → 17 h) se lisaient comme un historique.
+  if (hasNow) {
+    labels.push(`<text class="xlab xnow" text-anchor="start" x="${L}" y="${H - 6}">maintenant</text>`);
+  }
+  pts.forEach((p, i) => {
+    if ((i - first) < 0 || (i - first) % 2 !== 0) return;
+    if (hasNow && i === first) return; // 1re heure ronde trop proche de « maintenant »
+    const px = x(p.t);
+    if (px > R - 22) return; // réserve le coin droit pour la flèche de sens
+    labels.push(`<text class="xlab" text-anchor="${anchor(px)}" x="${px.toFixed(1)}" y="${H - 6}">${hourOf(p.t)} h</text>`);
+  });
+  // Flèche de sens : rappelle que la courbe va vers le futur (+24 h).
+  labels.push(`<text class="xlab xarrow" text-anchor="end" x="${R}" y="${H - 6}">→</text>`);
+  const xlab = labels.join("");
 
   // Point marquant le maximum de la courbe AFFICHÉE (peut être « maintenant »).
   const pkDot = `<circle class="pkdot" cx="${xy[bestIdx].x.toFixed(1)}" cy="${xy[bestIdx].y.toFixed(1)}" r="3.6"></circle>`;
@@ -312,7 +323,7 @@ function sparkline(pts, bestIdx, gridStart = 0) {
   const nowDot = bestIdx === 0
     ? ""
     : `<circle class="nowdot" cx="${xy[0].x.toFixed(1)}" cy="${xy[0].y.toFixed(1)}" r="2.6"></circle>`;
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution de la température sur 24 h">` +
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Température de l'eau prévue des prochaines 24 h">` +
     `${grid}<path class="sf" d="${area}"></path><path class="sl" d="${d}"></path>` +
     `${nowDot}${pkDot}${xlab}</svg>`;
 }
