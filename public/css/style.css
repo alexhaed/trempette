@@ -600,6 +600,9 @@ body {
   max-height: 92dvh; /* contenu plus haut que l'écran (ex. Infos & contact) → scroll interne */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  /* Le scroll interne ne « chaîne » pas vers la page derrière (pas de rebond
+     qui ferait défiler l'arrière-plan quand on atteint le haut/bas de la carte). */
+  overscroll-behavior: contain;
   animation: slideup 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 @keyframes slideup { from { transform: translateY(100%); } }

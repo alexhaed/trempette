@@ -921,11 +921,15 @@ function applyInitialRoute() {
   if (header) header.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+// Un overlay (détail plage, infos, installation) est-il ouvert ?
+function anyOverlayOpen() {
+  return !$("#detail").hidden || !$("#info").hidden || !$("#install").hidden;
+}
+
 // Bloque le défilement de la page tant qu'un overlay est ouvert (sinon, sur
 // mobile, le scroll « passe » à la page derrière et on se sent coincé).
 function syncScrollLock() {
-  const open = !$("#detail").hidden || !$("#info").hidden || !$("#install").hidden;
-  document.documentElement.style.overflow = open ? "hidden" : "";
+  document.documentElement.style.overflow = anyOverlayOpen() ? "hidden" : "";
 }
 
 // ---- Événements ----
@@ -1051,14 +1055,16 @@ async function refresh() {
   };
 
   window.addEventListener("touchstart", (e) => {
-    if (refreshing || e.touches.length !== 1 || !atTop()) { startY = null; return; }
+    // Overlay ouvert : le pull-to-refresh ne doit PAS s'engager, sinon un swipe
+    // vers le bas dans la carte détail annule son scroll et refresh la page.
+    if (refreshing || anyOverlayOpen() || e.touches.length !== 1 || !atTop()) { startY = null; return; }
     startY = e.touches[0].clientY;
     startX = e.touches[0].clientX;
     engaged = false;
   }, { passive: true });
 
   window.addEventListener("touchmove", (e) => {
-    if (startY == null || refreshing) return;
+    if (startY == null || refreshing || anyOverlayOpen()) return;
     const dy = e.touches[0].clientY - startY;
     const dx = e.touches[0].clientX - startX;
     // N'engage que sur un tirage vers le bas franc et vertical (laisse passer le
