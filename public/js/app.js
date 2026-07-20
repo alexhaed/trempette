@@ -9,7 +9,7 @@ const COLLAPSE_KEY = "trempette_lacs_replies"; // lacs repliés en mode « Par l
 // Titre d'accueil figé : sur un deep link, le Worker a déjà réécrit <title> avec
 // le nom de la plage, donc on ne peut pas le lire depuis document.title ici.
 const DEFAULT_TITLE = "Trempette — Températures des plages romandes";
-const LAKE_SLUG = { geneva: "leman", neuchatel: "neuchatel", biel: "bienne", murten: "morat", joux: "joux" };
+const LAKE_SLUG = { geneva: "leman", neuchatel: "neuchatel", biel: "bienne", murten: "morat", joux: "joux", gruyere: "gruyere" };
 const slugify = (s) =>
   String(s).normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 const beachPath = (b) => `/lac/${LAKE_SLUG[b.lake] || slugify(b.lakeName)}/${slugify(b.name)}`;

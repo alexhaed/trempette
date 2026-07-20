@@ -23,6 +23,7 @@ import statsHtml from "./stats.html";
 import {
   flattenLakes,
   fetchWindow,
+  is1D,
   interpolate,
   fetchLakeEndDates,
   fetchWeatherAll,
@@ -63,9 +64,9 @@ async function getTips(env) {
 // Le slug de lac vient du nom PUBLIC (pas de l'id interne : geneva→leman, etc.).
 // Ces slugs sont permanents (les changer casserait liens partagés + référencement).
 const SITE = "https://trempette.app";
-const LAKE_SLUG = { geneva: "leman", neuchatel: "neuchatel", biel: "bienne", murten: "morat", joux: "joux" };
+const LAKE_SLUG = { geneva: "leman", neuchatel: "neuchatel", biel: "bienne", murten: "morat", joux: "joux", gruyere: "gruyere" };
 const SLUG_LAKE = Object.fromEntries(Object.entries(LAKE_SLUG).map(([k, v]) => [v, k]));
-const LAKE_DISPLAY = { leman: "Léman", neuchatel: "Lac de Neuchâtel", bienne: "Lac de Bienne", morat: "Lac de Morat", joux: "Lac de Joux" };
+const LAKE_DISPLAY = { leman: "Léman", neuchatel: "Lac de Neuchâtel", bienne: "Lac de Bienne", morat: "Lac de Morat", joux: "Lac de Joux", gruyere: "Lac de la Gruyère" };
 
 function slugify(s) {
   return String(s)
@@ -245,10 +246,21 @@ async function getCatalogue(env) {
 
 // La fenêtre en cache permet-elle encore d'interpoler « now » (point après now,
 // marge 2 h) et correspond-elle aux coordonnées actuelles de la plage ?
+// Clé de cache d'une fenêtre : par plage en 3D (une par point), mais par LAC en
+// 1D (Simstrat n'a qu'un profil vertical pour tout le plan d'eau).
+const winKey = (b) => (is1D(b) ? `1d:${b.lake}` : b.id);
+
 function fresh(win, beach, now) {
   const t = win?.times;
   if (!t || t.length < 2) return false;
-  if (win.lat !== beach.lat || win.lng !== beach.lng) return false;
+  if (is1D(beach)) {
+    // 1D : pas de coordonnées à comparer. Simstrat étant mis à jour ~1×/jour et
+    // sans `runEnd` exposé ici, on force un rafraîchissement au-delà de 12 h.
+    if (win.lake !== beach.lake) return false;
+    if (!win.fetchedAt || now - win.fetchedAt > 12 * 3600e3) return false;
+  } else if (win.lat !== beach.lat || win.lng !== beach.lng) {
+    return false;
+  }
   return now >= t[0] && now < t[t.length - 1] - 2 * 3600e3;
 }
 
@@ -273,20 +285,28 @@ async function regenerate(env) {
     /* metadata indisponible : on retombe sur le seul critère « fenêtre périmée » */
   }
 
-  // 3. Ne re-télécharge que les fenêtres nécessaires.
-  const toFetch = beaches.filter((b) => {
-    const c = cache[b.id];
+  // 3. Ne re-télécharge que les fenêtres nécessaires. Dédoublonné par clé : en 1D
+  //    toutes les plages d'un lac partagent la même fenêtre → 1 seul appel.
+  const need = new Map();
+  for (const b of beaches) {
+    const k = winKey(b);
+    if (need.has(k)) continue;
+    const c = cache[k];
     const runEnd = endDates[`${b.model}/${b.lake}`];
-    return !c || (runEnd && c.runEnd !== runEnd) || !fresh(c, b, now);
-  });
-  await pool(toFetch, REFETCH_CONCURRENCY, async (b) => {
+    if (!c || (runEnd && c.runEnd !== runEnd) || !fresh(c, b, now)) need.set(k, b);
+  }
+  await pool([...need.values()], REFETCH_CONCURRENCY, async (b) => {
     try {
       const win = await fetchWindow(fetch, b, now, TRIES);
       if (win.times.length) {
         win.runEnd = endDates[`${b.model}/${b.lake}`] ?? null;
-        win.lat = b.lat;
-        win.lng = b.lng;
-        cache[b.id] = win;
+        win.fetchedAt = now;
+        if (is1D(b)) win.lake = b.lake;
+        else {
+          win.lat = b.lat;
+          win.lng = b.lng;
+        }
+        cache[winKey(b)] = win;
       }
     } catch {
       /* échec ce cycle : on conserve l'ancienne fenêtre si présente */
@@ -304,7 +324,7 @@ async function regenerate(env) {
 
   // 4. Payload : interpolation locale + météo fraîche.
   const out = beaches.map((b, i) => {
-    const wi = interpolate(cache[b.id], now);
+    const wi = interpolate(cache[winKey(b)], now);
     const wx = weather[i] ?? { air: null, wind: null, windDir: null, weatherCode: null, isDay: null };
     return {
       id: b.id,

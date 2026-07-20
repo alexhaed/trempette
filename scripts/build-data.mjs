@@ -84,6 +84,9 @@ const BASE = "https://alplakes-api.eawag.ch";
 // sur cette couche de surface pour les 5 lacs (identique à 0, mais intention claire).
 // Un point peut surcharger via `beach.depth` (les bouées comparent le biais à 1 m).
 const DEPTH = 0.2;
+// Simstrat (1D) ne descend pas sous 1 m : c'est la couche la moins profonde
+// disponible pour ces lacs (retenues, petits lacs).
+const DEPTH_1D = 1;
 
 // Fenêtre large : assez de points (passé + futur) pour interpoler « maintenant »
 // pendant ~24 h, jusqu'au prochain run quotidien, sans re-télécharger.
@@ -92,15 +95,23 @@ const WINDOW_AFTER_H = 30;
 
 // Récupère la fenêtre brute de température d'eau d'une plage (points 3 h UTC).
 // Renvoie des tableaux parallèles { times:[ms], temps:[°C] }, valeurs finies.
+// Modèles 1D (Simstrat) : profil vertical UNIQUE par lac (pas de lat/lng) →
+// une seule température pour tout le plan d'eau. Endpoint, variable et
+// profondeur minimale diffèrent du 3D (delft3d-flow / mitgcm).
+export const is1D = (beach) => beach.model === "simstrat";
+
 export async function fetchWindow(fetchFn, beach, now, tries = 1) {
   const start = new Date(now - WINDOW_BEFORE_H * 3600e3);
   const end = new Date(now + WINDOW_AFTER_H * 3600e3);
-  const depth = beach.depth ?? DEPTH;
-  const url =
-    `${BASE}/simulations/point/${beach.model}/${beach.lake}/` +
-    `${ymdhm(start)}/${ymdhm(end)}/${depth}/${beach.lat}/${beach.lng}?variables=temperature`;
+  const oneD = is1D(beach);
+  const depth = beach.depth ?? (oneD ? DEPTH_1D : DEPTH);
+  const url = oneD
+    ? `${BASE}/simulations/1d/point/${beach.model}/${beach.lake}/` +
+      `${ymdhm(start)}/${ymdhm(end)}/${depth}?variables=T`
+    : `${BASE}/simulations/point/${beach.model}/${beach.lake}/` +
+      `${ymdhm(start)}/${ymdhm(end)}/${depth}/${beach.lat}/${beach.lng}?variables=temperature`;
   const r = await fetchJSON(fetchFn, url, tries);
-  const temps = r?.variables?.temperature?.data ?? [];
+  const temps = (oneD ? r?.variables?.T?.data : r?.variables?.temperature?.data) ?? [];
   const times = (r?.time ?? []).map((t) => new Date(t).getTime());
   const T = [];
   const V = [];

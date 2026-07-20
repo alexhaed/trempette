@@ -53,9 +53,17 @@ Worker Cloudflare « trempette »
   simulations n'étant mises à jour qu'**1×/jour**, la fenêtre brute est mise en
   cache (KV `windows`) et re-téléchargée au nouveau run (ou si elle ne couvre plus
   l'instant présent).
-- **Modèles par lac** : Léman `delft3d-flow/geneva`, Neuchâtel `mitgcm/neuchatel`,
-  Bienne `delft3d-flow/biel`, Morat `delft3d-flow/murten`, Joux `delft3d-flow/joux`.
-  Liste complète : <https://alplakes-api.eawag.ch/simulations/metadata>.
+- **Modèles par lac** — deux familles Alplakes :
+  - **3D** (une température par *point*, avec lat/lng, profondeur 0,2 m) :
+    Léman `delft3d-flow/geneva`, Neuchâtel `mitgcm/neuchatel`,
+    Bienne `delft3d-flow/biel`, Morat `delft3d-flow/murten`, Joux `delft3d-flow/joux`.
+    Liste : <https://alplakes-api.eawag.ch/simulations/metadata>.
+  - **1D Simstrat** (profil vertical **unique par lac** — pas de lat/lng, donc une
+    seule température pour tout le plan d'eau ; endpoint `/simulations/1d/point/…`,
+    variable `T`, profondeur mini **1 m**) : Gruyère `simstrat/gruyere`.
+    Liste (132 lacs) : <https://alplakes-api.eawag.ch/simulations/1d/metadata>.
+    Le cache de fenêtres est alors keyé **par lac** (`1d:<lake>`) → 1 seul appel
+    pour toutes les plages du lac. Rafraîchi au-delà de 12 h (Simstrat = 1 run/jour).
 - **Air, vent & ciel** : `current=temperature_2m,wind_speed_10m,wind_direction_10m,weather_code,is_day&wind_speed_unit=kmh`.
   Le `weather_code` (WMO) + `is_day` donnent le picto météo « Ciel » (liste + détail).
 - **Plages** : catalogue dans `scripts/lakes.json` (points dans l'eau, au large).

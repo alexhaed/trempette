@@ -93,5 +93,16 @@
       { "id": "joux-l-abbaye", "name": "L'Abbaye", "lat": 46.648, "lng": 6.295 },
       { "id": "joux-le-rocheray", "name": "Le Rocheray", "lat": 46.6209, "lng": 6.25 }
     ]
+  },
+  {
+    "name": "Lac de la Gruyère",
+    "model": "simstrat",
+    "lake": "gruyere",
+    "beaches": [
+      { "id": "gruyere-pont-la-ville", "name": "Pont-la-Ville", "lat": 46.69, "lng": 7.106 },
+      { "id": "gruyere-le-bry", "name": "Le Bry", "lat": 46.679, "lng": 7.092 },
+      { "id": "gruyere-gumefens", "name": "Gumefens", "lat": 46.656, "lng": 7.088 },
+      { "id": "gruyere-corbieres", "name": "Corbières", "lat": 46.632, "lng": 7.093 }
+    ]
   }
 ]
