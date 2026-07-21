@@ -551,10 +551,38 @@ function validCatalogue(c) {
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { "content-type": "application/json; charset=utf-8" } });
 
-const htmlPage = (html) =>
-  new Response(html, {
-    headers: { "content-type": "text/html; charset=utf-8", "x-robots-tag": "noindex" },
+// Hashes CSP des scripts inline d'une page, calculés DEPUIS la page elle-même.
+// Les pages admin en contiennent chacune un : une constante écrite à la main se
+// désynchroniserait au premier changement et casserait le back-office en
+// silence. Ignore les blocs `src=` (externes) et `application/ld+json` (données,
+// non exécutées). Mémoïsé : le HTML est importé, donc figé pour l'isolat.
+const cspCache = new Map();
+async function inlineHashes(html) {
+  if (cspCache.has(html)) return cspCache.get(html);
+  const hashes = [];
+  const re = /<script(?![^>]*\bsrc=)(?![^>]*application\/ld\+json)[^>]*>([\s\S]*?)<\/script>/g;
+  for (const m of html.matchAll(re)) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(m[1]));
+    hashes.push(`'sha256-${btoa(String.fromCharCode(...new Uint8Array(buf)))}'`);
+  }
+  const out = hashes.join(" ");
+  cspCache.set(html, out);
+  return out;
+}
+
+async function htmlPage(html) {
+  // CSP propre à la page : même politique, plus les hashes de ses scripts.
+  const csp = CSP.replace("script-src 'self'", `script-src 'self' ${await inlineHashes(html)}`);
+  return new Response(html, {
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "x-robots-tag": "noindex",
+      "content-security-policy": csp,
+      "x-content-type-options": "nosniff",
+      "referrer-policy": "strict-origin-when-cross-origin",
+    },
   });
+}
 
 async function handleAdmin(request, env, ctx, pathname) {
   // Ancienne route → redirection permanente vers la nouvelle.
@@ -563,22 +591,22 @@ async function handleAdmin(request, env, ctx, pathname) {
   }
   // Page par défaut de /admin = la correction de biais (alias /admin/correction).
   if (pathname === "/admin" || pathname === "/admin/" || pathname === "/admin/correction" || pathname === "/admin/correction/") {
-    return htmlPage(correctionHtml);
+    return await htmlPage(correctionHtml);
   }
 
   // Éditeur des plages, désormais sur son propre chemin.
   if (pathname === "/admin/plages" || pathname === "/admin/plages/") {
-    return htmlPage(plagesHtml);
+    return await htmlPage(plagesHtml);
   }
 
   // Éditeur des astuces « Le savais-tu ? ».
   if (pathname === "/admin/tips" || pathname === "/admin/tips/") {
-    return htmlPage(tipsHtml);
+    return await htmlPage(tipsHtml);
   }
 
   // Statistiques de consultation par plage.
   if (pathname === "/admin/stats" || pathname === "/admin/stats/") {
-    return htmlPage(statsHtml);
+    return await htmlPage(statsHtml);
   }
 
   if (pathname === "/admin/stats-data") {
@@ -1046,6 +1074,50 @@ async function statsFromArchive(env) {
   });
 }
 
+// --- En-têtes de sécurité -----------------------------------------------
+// Hash du script inline anti-CLS d'index.html (il doit tourner AVANT le 1er
+// rendu, donc il reste inline plutôt que d'ajouter un aller-retour réseau).
+// ⚠ Modifier ce script, même d'un espace, invalide le hash et le bloque :
+// recalculer avec  openssl dgst -sha256 -binary | openssl base64  sur son
+// contenu exact (entre <script> et </script>).
+const INLINE_BOOT_HASH = "'sha256-O0p2QTQ5ENFtnULxaiejgWLP1uUIE0e9iptJ/yiDxf8='";
+
+// style-src garde 'unsafe-inline' : des attributs style= sont générés à
+// l'exécution (rotation de la flèche de vent dans svgUse), et un hash ne
+// s'applique pas aux attributs. Compromis assumé — l'essentiel de la protection
+// contre le XSS vient de script-src, qui reste strict (pas d'inline autorisé).
+const CSP = [
+  "default-src 'self'",
+  `script-src 'self' ${INLINE_BOOT_HASH} https://challenges.cloudflare.com https://static.cloudflareinsights.com`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "font-src 'self'",
+  "connect-src 'self' https://cloudflareinsights.com https://challenges.cloudflare.com",
+  "frame-src https://challenges.cloudflare.com", // widget Turnstile
+  "worker-src 'self'", // service worker
+  "manifest-src 'self'",
+  "base-uri 'self'", // interdit de détourner les URLs relatives
+  "form-action 'self'",
+  "frame-ancestors 'none'", // anti-clickjacking (remplace X-Frame-Options)
+  "upgrade-insecure-requests",
+].join("; ");
+
+// Appliqués aux pages HTML seulement : inutiles sur une police ou du JSON, et
+// ça évite d'alourdir chaque réponse d'asset.
+function withSecurityHeaders(res) {
+  const type = res.headers.get("content-type") || "";
+  if (!type.includes("text/html")) return res;
+  // Une réponse qui a déjà sa CSP l'a calculée pour elle-même (pages admin et
+  // leurs hashes inline) : ne pas l'écraser par la politique générique.
+  if (res.headers.get("content-security-policy")) return res;
+  const h = new Headers(res.headers);
+  h.set("content-security-policy", CSP);
+  h.set("x-content-type-options", "nosniff");
+  h.set("referrer-policy", "strict-origin-when-cross-origin");
+  h.set("permissions-policy", "geolocation=(self), camera=(), microphone=(), payment=()");
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
+}
+
 export default {
   // Déclenché par le Cron Trigger (voir wrangler.toml).
   async scheduled(event, env, ctx) {
@@ -1055,6 +1127,13 @@ export default {
   },
 
   async fetch(request, env, ctx) {
+    return withSecurityHeaders(await routeRequest(request, env, ctx));
+  },
+};
+
+// Routeur principal. Séparé de fetch() pour que TOUTES les réponses traversent
+// withSecurityHeaders sans avoir à l'appeler sur chacun des nombreux return.
+async function routeRequest(request, env, ctx) {
     const url = new URL(request.url);
 
     if (url.pathname === "/admin" || url.pathname.startsWith("/admin/")) {
@@ -1110,5 +1189,4 @@ export default {
       }
     }
     return res;
-  },
-};
+}
