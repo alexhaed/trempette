@@ -571,8 +571,9 @@ async function inlineHashes(html) {
 }
 
 async function htmlPage(html) {
-  // CSP propre à la page : même politique, plus les hashes de ses scripts.
-  const csp = CSP.replace("script-src 'self'", `script-src 'self' ${await inlineHashes(html)}`);
+  // CSP propre à la page : politique du back-office, plus les hashes de ses
+  // scripts inline (htmlPage ne sert que /admin/*).
+  const csp = ADMIN_CSP.replace("script-src 'self'", `script-src 'self' ${await inlineHashes(html)}`);
   return new Response(html, {
     headers: {
       "content-type": "text/html; charset=utf-8",
@@ -1099,6 +1100,24 @@ const CSP = [
   "base-uri 'self'", // interdit de détourner les URLs relatives
   "form-action 'self'",
   "frame-ancestors 'none'", // anti-clickjacking (remplace X-Frame-Options)
+  "upgrade-insecure-requests",
+].join("; ");
+
+// CSP DISTINCTE pour le back-office : ses pages chargent des libs externes
+// (Chart.js, Leaflet) et les tuiles swisstopo, que la politique publique bloque.
+// Élargir la CSP publique pour autant aurait affaibli les 44 pages exposées au
+// public afin d'arranger 4 pages protégées par mot de passe — mauvais échange.
+// Chaque origine est donc listée ici, et seulement ici.
+const ADMIN_CSP = [
+  "default-src 'self'",
+  "script-src 'self' https://cdnjs.cloudflare.com https://unpkg.com", // Chart.js, Leaflet
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
+  "img-src 'self' data: https://unpkg.com https://wmts.geo.admin.ch", // fond de carte swisstopo
+  "font-src 'self' https://fonts.gstatic.com",
+  "connect-src 'self'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
   "upgrade-insecure-requests",
 ].join("; ");
 
