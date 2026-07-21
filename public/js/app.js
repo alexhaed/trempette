@@ -192,6 +192,29 @@ window.addEventListener("pageshow", (e) => {
 // ---- Helpers ----
 const byId = (id) => state.beaches.find((b) => b.id === id);
 
+// Échappement HTML de tout texte venant des données (noms de plage, de lac,
+// groupes…). Ces chaînes proviennent du catalogue éditable en admin : sans
+// échappement, un nom contenant du HTML s'exécuterait chez tous les visiteurs.
+// Le Worker fait déjà de même de son côté (esc()).
+const esc = (s) =>
+  String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+// Schémas de lien autorisés pour les astuces (éditables en admin) : une URL
+// `javascript:` y suffirait sinon à exécuter du code au clic.
+function safeHref(href) {
+  if (typeof href !== "string") return null;
+  const h = href.trim();
+  if (h === "#info" || h === "#install") return h;
+  if (/^https?:\/\//i.test(h)) return h;
+  if (/^\/[^/\\]/.test(h)) return h; // chemin interne (pas //, pas de schéma)
+  return null;
+}
+
 function fmt(v) {
   // 1 décimale, virgule française.
   return v == null ? null : (Math.round(v * 10) / 10).toFixed(1).replace(".", ",");
@@ -496,9 +519,9 @@ function heroCard(b) {
   const ang = windAngle(b.windDir);
   return `
     <div class="hero-card" data-id="${b.id}">
-      <span class="hero-card-dist">${svgUse("i-pin", 14)} ${b.group || b.lakeName}</span>
-      <div class="hero-card-name">${b.name}</div>
-      <div class="hero-card-sub">${b.lakeName}</div>
+      <span class="hero-card-dist">${svgUse("i-pin", 14)} ${esc(b.group || b.lakeName)}</span>
+      <div class="hero-card-name">${esc(b.name)}</div>
+      <div class="hero-card-sub">${esc(b.lakeName)}</div>
       <div class="hero-card-temp${water == null ? " na" : ""}">${
         water != null ? `${water}<span class="deg">°</span>` : "n/d"
       }</div>
@@ -624,7 +647,7 @@ function renderList() {
       h.dataset.lake = g.header;
       h.setAttribute("aria-expanded", String(!collapsed));
       h.innerHTML =
-        `${svgUse("i-waves", 14)}<span class="gt-name">${label}</span>` +
+        `${svgUse("i-waves", 14)}<span class="gt-name">${esc(label)}</span>` +
         `<span class="gt-count">${g.items.length}</span>` +
         `${svgUse("i-chevron", 16, "")}`;
       h.querySelector("svg:last-child").classList.add("gt-chev");
@@ -647,11 +670,11 @@ function beachRow(b, isFavMode) {
 
   const water = fmt(b.water);
   // Par lac : sous-titre = commune/région ; sinon = lac.
-  let sub = state.sort === "lake" ? b.group || b.lakeName : b.lakeName;
+  let sub = esc(state.sort === "lake" ? b.group || b.lakeName : b.lakeName);
   // Mode proximité : préfixe la distance depuis la position de l'utilisateur.
   if (state.sort === "near" && state.userPos) {
     const km = distanceKm(state.userPos.lat, state.userPos.lng, b.lat, b.lng);
-    sub = `<span class="dist-badge">${fmtDist(km)}</span> · ${b.lakeName}`;
+    sub = `<span class="dist-badge">${fmtDist(km)}</span> · ${esc(b.lakeName)}`;
   }
   const fav = isFav(b.id);
   const wx = weather(b.weatherCode, b.isDay);
@@ -660,7 +683,7 @@ function beachRow(b, isFavMode) {
   row.innerHTML = `
     ${isFavMode ? `<button class="drag-handle" aria-label="Réordonner">${svgUse("i-grip", 18)}</button>` : ""}
     <div class="beach-main">
-      <a class="beach-name" href="${beachPath(b)}">${b.name}</a>
+      <a class="beach-name" href="${beachPath(b)}">${esc(b.name)}</a>
       <div class="beach-sub">${sub}</div>
     </div>
     ${wxHtml}
@@ -716,11 +739,14 @@ function renderTip() {
   if (!pool.length) { box.hidden = true; return; }
   const t = pool[Math.floor(Math.random() * pool.length)];
   body.textContent = t.text || "";
-  if (t.cta && t.href) {
+  // Lien seulement si le schéma est autorisé : une astuce mal formée (ou
+  // malveillante) ne doit pas pouvoir poser une URL « javascript: ».
+  const href = safeHref(t.href);
+  if (t.cta && href) {
     body.append(" ");
     const a = document.createElement("a");
     a.textContent = t.cta;
-    a.href = t.href;
+    a.href = href;
     if (t.href === "#info") {
       a.addEventListener("click", (e) => {
         e.preventDefault();
@@ -837,6 +863,8 @@ function renderAbout(b) {
   const w = b.water;
   if (w == null) { box.hidden = true; box.innerHTML = ""; return; }
 
+  // Tout texte issu des données est échappé : il part dans innerHTML plus bas.
+  const eLake = esc(b.lakeName);
   // Plages du même lac AYANT une mesure → classement + moyenne du jour.
   const peers = state.beaches.filter((x) => x.lakeName === b.lakeName && x.water != null);
   let rankTxt = "";
@@ -845,8 +873,8 @@ function renderAbout(b) {
     const sorted = [...peers].sort((a, c) => c.water - a.water);
     const rank = sorted.findIndex((x) => x.id === b.id) + 1;
     rankTxt = rank === 1
-      ? `la plage la plus chaude du ${b.lakeName} aujourd'hui`
-      : `la ${rank}e plage la plus chaude du ${b.lakeName} aujourd'hui`;
+      ? `la plage la plus chaude du ${eLake} aujourd'hui`
+      : `la ${rank}e plage la plus chaude du ${eLake} aujourd'hui`;
     const avg = peers.reduce((s, x) => s + x.water, 0) / peers.length;
     const d = w - avg;
     avgTxt = Math.abs(d) < 0.3
@@ -864,11 +892,11 @@ function renderAbout(b) {
     else trendTxt = "Température plutôt stable ces prochaines heures.";
   }
 
-  const loc = b.group ? `${b.group}, ${b.lakeName}` : b.lakeName;
+  const loc = b.group ? `${esc(b.group)}, ${eLake}` : eLake;
   // « aux Bains des Pâquis » : calculé dans le pipeline (champ nameAt de
   // data.json) pour que client et Worker disent la même chose. Repli si le
   // data.json servi date d'avant l'ajout du champ.
-  const at = b.nameAt || `à ${b.name}`;
+  const at = esc(b.nameAt || `à ${b.name}`);
   const facts = [rankTxt, avgTxt].filter(Boolean).join(", ");
   const lead = `L'eau est à <strong>${fmt(w)}\u00A0°C</strong> ${at} (${loc})`;
   const body = `${facts ? `${lead} — ${facts}.` : `${lead}.`}${trendTxt ? " " + trendTxt : ""}`;

@@ -319,6 +319,9 @@ function handleSitemap(data) {
 }
 
 // Validation légère avant écriture (évite de casser le rendu de la page).
+// Schémas de lien admis pour une astuce (pendant serveur de safeHref côté client).
+const ALLOWED_HREF = /^(#info|#install|https?:\/\/|\/[^/\\])/i;
+
 function validTips(t) {
   if (!Array.isArray(t)) return "tips : tableau attendu";
   if (t.length > 50) return "trop d'astuces (max 50)";
@@ -327,6 +330,10 @@ function validTips(t) {
     if (x.text.length > 400) return "astuce trop longue (max 400)";
     if (x.cta != null && (typeof x.cta !== "string" || x.cta.length > 80)) return "libellé de lien invalide";
     if (x.href != null && (typeof x.href !== "string" || x.href.length > 300)) return "lien invalide";
+    // Schéma sur liste blanche : sans ça, un « javascript:… » enregistré ici
+    // s'exécuterait chez tous les visiteurs au clic sur l'astuce.
+    if (x.href != null && x.href.trim() && !ALLOWED_HREF.test(x.href.trim()))
+      return "lien refusé (seuls #info, #install, https:// et /chemin sont admis)";
     if (x.enabled != null && typeof x.enabled !== "boolean") return "champ actif invalide";
   }
   return null;
@@ -505,10 +512,20 @@ async function regenerate(env) {
 
 // --- Back-office /admin ---
 
+// Comparaison à temps constant : un `===` sort au 1er caractère différent et
+// laisse fuiter, en théorie, la longueur du préfixe correct via le temps de
+// réponse. Coût nul ici, autant ne pas laisser la question ouverte.
+function safeEqual(a, b) {
+  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 function authorized(request, env) {
   const token = env.ADMIN_TOKEN;
   if (!token) return false; // pas de secret configuré → tout refusé (fail closed)
-  return request.headers.get("X-Admin-Token") === token;
+  return safeEqual(request.headers.get("X-Admin-Token") || "", token);
 }
 
 // Validation légère d'un catalogue avant écriture (évite de corrompre le pipeline).
@@ -662,10 +679,12 @@ async function handleAdmin(request, env, ctx, pathname) {
 // perso dans le repo public. Posé via : wrangler secret put CONTACT_TO
 const CONTACT_FROM = "Trempette <contact@trempette.app>";
 
-// Vérifie le jeton Turnstile (anti-bot). Sans secret configuré → on laisse passer
-// (utile en dev local). En prod, TURNSTILE_SECRET est défini → vérification réelle.
-async function verifyTurnstile(token, ip, secret) {
-  if (!secret) return true;
+// Vérifie le jeton Turnstile (anti-bot).
+// Secret absent → on REFUSE, sauf en dev local. Auparavant on laissait passer :
+// une rotation ratée ou un secret oublié aurait désactivé l'anti-bot en silence,
+// alors que l'auth admin, elle, échoue en mode fermé. Même posture des deux côtés.
+async function verifyTurnstile(token, ip, secret, devLocal = false) {
+  if (!secret) return devLocal;
   const body = new FormData();
   body.append("secret", secret);
   body.append("response", token || "");
@@ -694,7 +713,10 @@ async function handleContact(request, env) {
   if (message.length < 2 || message.length > 5000) return json({ error: "message invalide" }, 400);
 
   const ip = request.headers.get("cf-connecting-ip");
-  if (!(await verifyTurnstile(body.turnstile, ip, env.TURNSTILE_SECRET))) {
+  // `localhost` uniquement : en prod le Worker répond sur trempette.app, cet
+  // assouplissement ne peut donc pas être déclenché depuis l'extérieur.
+  const devLocal = /^(localhost|127\.0\.0\.1)$/.test(new URL(request.url).hostname);
+  if (!(await verifyTurnstile(body.turnstile, ip, env.TURNSTILE_SECRET, devLocal))) {
     return json({ error: "anti-robot échoué" }, 403);
   }
 
