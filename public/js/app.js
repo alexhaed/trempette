@@ -368,17 +368,21 @@ function renderForecast(b) {
   let maxIdx = 0;
   for (let i = 1; i < pts.length; i++) if (pts[i].v > pts[maxIdx].v) maxIdx = i;
   const best = pts[maxIdx];
-  const gain = b.water != null ? best.v - b.water : null;
-  // Gain négligeable (≤ 0,2°) → on ne promet pas un « plus chaud » imperceptible :
-  // on considère alors « maintenant » comme le point le plus chaud.
-  // IMPORTANT : la phrase ET le point crème doivent partager CE choix (peakIdx),
-  // sinon la phrase dit « maintenant » pendant que le point est sur le lendemain.
-  const showLaterPeak = maxIdx > 0 && gain != null && gain > 0.2;
-  const peakIdx = showLaterPeak ? maxIdx : 0;
-  line.innerHTML = showLaterPeak
-    ? `Le plus chaud <span class="pk">${peakWhen(best.t)}</span> (${fmt(best.v)}°)`
-    : "C'est le plus chaud des prochaines 24 h.";
-  box.innerHTML = sparkline(pts, peakIdx, pts.length > fc.v.length ? 1 : 0);
+  // Écart mesuré sur la COURBE affichée (pts[0] = « maintenant ») : le texte doit
+  // décrire ce que l'utilisateur voit, et rien d'autre.
+  const gain = best.v - pts[0].v;
+  // Le point crème marque TOUJOURS le maximum de la courbe, et la phrase parle
+  // toujours de ce même point. Auparavant, un gain ≤ 0,2° renvoyait phrase et
+  // point sur « maintenant » alors que la courbe montait plus haut ensuite :
+  // l'axe affichait 24,9° pendant que la phrase annonçait 24,7° comme maximum.
+  // On nomme donc la hausse même quand elle est imperceptible — en le disant.
+  line.innerHTML =
+    maxIdx === 0
+      ? "C'est le plus chaud des prochaines 24 h."
+      : gain > 0.2
+        ? `Le plus chaud <span class="pk">${peakWhen(best.t)}</span> (${fmt(best.v)}°)`
+        : `À peine plus chaud <span class="pk">${peakWhen(best.t)}</span> (${fmt(best.v)}°)`;
+  box.innerHTML = sparkline(pts, maxIdx, pts.length > fc.v.length ? 1 : 0);
   line.hidden = box.hidden = false;
 }
 
