@@ -5,34 +5,59 @@
     "lake": "geneva",
     "regions": [
       {
-        "group": "Genève / La Côte",
+        "group": "Genève",
         "beaches": [
           { "id": "geneva-bains-des-paquis", "name": "Bains des Pâquis", "lat": 46.211, "lng": 6.1545 },
           { "id": "geneva-geneve-plage", "name": "Genève-Plage", "lat": 46.2126, "lng": 6.17 },
-          { "id": "geneva-versoix", "name": "Versoix", "lat": 46.287, "lng": 6.175 },
+          { "id": "geneva-versoix", "name": "Versoix", "lat": 46.287, "lng": 6.175 }
+        ]
+      },
+      {
+        "group": "La Côte",
+        "beaches": [
           { "id": "geneva-nyon", "name": "Nyon", "lat": 46.378, "lng": 6.2411 },
           { "id": "geneva-rolle", "name": "Rolle", "lat": 46.456, "lng": 6.34 },
           { "id": "geneva-morges", "name": "Morges", "lat": 46.503, "lng": 6.498 },
-          { "id": "geneva-saint-sulpice", "name": "Saint-Sulpice", "lat": 46.5062, "lng": 6.5575 },
           { "id": "geneva-preverenges", "name": "Préverenges", "lat": 46.5079, "lng": 6.5331 }
         ]
       },
       {
-        "group": "Lausanne / Lavaux",
+        "group": "Saint-Sulpice",
+        "beaches": [
+          { "id": "geneva-pelican", "name": "Pélican", "lat": 46.5118, "lng": 6.5732 }
+        ]
+      },
+      {
+        "group": "Lausanne",
         "beaches": [
           { "id": "geneva-vidy", "name": "Vidy", "lat": 46.508, "lng": 6.601 },
-          { "id": "geneva-ouchy", "name": "Ouchy", "lat": 46.504, "lng": 6.627 },
-          { "id": "geneva-pully", "name": "Pully", "lat": 46.504, "lng": 6.663 },
+          { "id": "geneva-ouchy", "name": "Ouchy", "lat": 46.504, "lng": 6.627 }
+        ]
+      },
+      {
+        "group": "Paudex",
+        "beaches": [
+          { "id": "geneva-pierre-ronde", "name": "Pierre ronde", "lat": 46.5031, "lng": 6.6718 }
+        ]
+      },
+      {
+        "group": "Lavaux",
+        "beaches": [
           { "id": "geneva-lutry", "name": "Lutry", "lat": 46.501, "lng": 6.688 },
           { "id": "geneva-cully", "name": "Cully", "lat": 46.485, "lng": 6.73 }
         ]
       },
       {
-        "group": "Riviera / Chablais",
+        "group": "Riviera",
         "beaches": [
           { "id": "geneva-vevey", "name": "Vevey", "lat": 46.456, "lng": 6.846 },
           { "id": "geneva-la-tour-de-peilz", "name": "La Tour-de-Peilz", "lat": 46.4494, "lng": 6.8564 },
-          { "id": "geneva-montreux", "name": "Montreux", "lat": 46.4321, "lng": 6.9071 },
+          { "id": "geneva-montreux", "name": "Montreux", "lat": 46.4321, "lng": 6.9071 }
+        ]
+      },
+      {
+        "group": "Chablais",
+        "beaches": [
           { "id": "geneva-villeneuve", "name": "Villeneuve", "lat": 46.3979, "lng": 6.9213 },
           { "id": "geneva-le-bouveret", "name": "Le Bouveret", "lat": 46.3872, "lng": 6.8559 }
         ]
