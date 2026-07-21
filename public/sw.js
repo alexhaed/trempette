@@ -5,7 +5,7 @@
 // À incrémenter à chaque release pour que le cache-first récupère le nouveau
 // shell (sinon les visiteurs récurrents gardent l'ancien JS/CSS). Aligné sur
 // le numéro de version affiché en bas de page.
-const VERSION = "v2.16";
+const VERSION = "v2.17";
 const SHELL = `trempette-shell-${VERSION}`;
 const DATA = `trempette-data-${VERSION}`;
 
@@ -14,6 +14,10 @@ const SHELL_ASSETS = [
   "index.html",
   "css/style.css",
   "js/app.js",
+  // Polices auto-hébergées : dans la coquille, donc disponibles hors ligne
+  // (avec Google Fonts, le texte retombait sur la police système hors ligne).
+  "fonts/bricolage-grotesque-latin.woff2",
+  "fonts/hanken-grotesk-latin.woff2",
   "manifest.webmanifest",
   "img/logo.png",
   "icons/icon.svg",
