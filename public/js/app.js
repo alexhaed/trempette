@@ -819,6 +819,57 @@ function forecastText(b) {
   return trendInfo(b.trend).txt;
 }
 
+// Bloc de contenu unique et VISIBLE par plage (SEO longue traîne + utilité).
+// Tout est tiré des données du jour → chaque plage a un texte différent (pas de
+// « thin content » : ni paragraphe figé, ni contenu caché/noscript).
+function renderAbout(b) {
+  const box = $("#d-about");
+  if (!box) return;
+  const w = b.water;
+  if (w == null) { box.hidden = true; box.innerHTML = ""; return; }
+
+  // Plages du même lac AYANT une mesure → classement + moyenne du jour.
+  const peers = state.beaches.filter((x) => x.lakeName === b.lakeName && x.water != null);
+  let rankTxt = "";
+  let avgTxt = "";
+  if (peers.length >= 3) {
+    const sorted = [...peers].sort((a, c) => c.water - a.water);
+    const rank = sorted.findIndex((x) => x.id === b.id) + 1;
+    rankTxt = rank === 1
+      ? `la plage la plus chaude du ${b.lakeName} aujourd'hui`
+      : `la ${rank}e plage la plus chaude du ${b.lakeName} aujourd'hui`;
+    const avg = peers.reduce((s, x) => s + x.water, 0) / peers.length;
+    const d = w - avg;
+    avgTxt = Math.abs(d) < 0.3
+      ? "dans la moyenne du lac"
+      : `~${fmt(Math.abs(d))} °C ${d > 0 ? "au-dessus" : "en dessous"} de la moyenne du lac`;
+  }
+
+  // Tendance à partir de la prévision (pic serveur sur les points futurs).
+  let trendTxt = "";
+  const fc = b.fc;
+  if (fc && fc.peak && typeof fc.peak.temp === "number" && Array.isArray(fc.v) && fc.v.length) {
+    const gain = fc.peak.temp - w;
+    if (gain > 0.2) trendTxt = `Tendance en hausse, pic attendu ${peakWhen(fc.peak.at)}.`;
+    else if (w - fc.v[fc.v.length - 1] > 0.2) trendTxt = "Tendance en légère baisse ces prochaines heures.";
+    else trendTxt = "Température plutôt stable ces prochaines heures.";
+  }
+
+  const loc = b.group ? `${b.group}, ${b.lakeName}` : b.lakeName;
+  const facts = [rankTxt, avgTxt].filter(Boolean).join(", ");
+  const lead = `L'eau est à <strong>${fmt(w)} °C</strong> à ${b.name} (${loc})`;
+  const body = `${facts ? `${lead} — ${facts}.` : `${lead}.`}${trendTxt ? " " + trendTxt : ""}`;
+  const recal = b.lake === "geneva" ? " recalée en temps réel sur les bouées du Léman" : "";
+
+  box.innerHTML =
+    `<h2 class="d-about-title">Température de l'eau à ${b.name} aujourd'hui</h2>` +
+    `<p class="d-about-body">${body}</p>` +
+    `<p class="d-about-method">Estimation du modèle Alplakes${recal}. ` +
+    `<button type="button" class="d-about-more">En savoir plus</button></p>`;
+  box.querySelector(".d-about-more").addEventListener("click", () => { closeDetail(); openInfo(); });
+  box.hidden = false;
+}
+
 function openDetail(b, push = true) {
   const water = fmt(b.water);
 
@@ -855,6 +906,7 @@ function openDetail(b, push = true) {
   };
 
   $("#d-share").onclick = () => shareBeach(b);
+  renderAbout(b);
 
   // URL partageable (deep link) + titre d'onglet adapté.
   if (push) history.pushState({ d: b.id }, "", beachPath(b));

@@ -153,7 +153,7 @@
         <a href="/lac/leman">Léman</a><a href="/lac/neuchatel">Neuchâtel</a><a href="/lac/bienne">Bienne</a><a href="/lac/morat">Morat</a><a href="/lac/joux">Joux</a><a href="/lac/gruyere">Gruyère</a>
       </nav>
       <p class="credits">Eau : Alplakes &amp; Datalakes · Air &amp; vent : open-meteo.com</p>
-      <p class="version">v2.08 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
+      <p class="version">v2.09 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
     </footer>
     </div>
   </div>
@@ -197,6 +197,10 @@
           </span>
         </div>
       </div>
+      <!-- Contenu unique par plage (rempli par le JS depuis data.json) : répond à
+           « quelle température à X aujourd'hui ? » avec des faits tirés des données.
+           Visible → utile à l'utilisateur ET indexable (anti « thin content »). -->
+      <section id="d-about" class="d-about" hidden></section>
       <a id="d-map" class="d-map" target="_blank" rel="noopener">Voir sur la carte
         <svg width="13" height="13" aria-hidden="true"><use href="#i-arrow"></use></svg>
       </a>
