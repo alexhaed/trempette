@@ -82,7 +82,61 @@ const beachPath = (b) => `/lac/${lakeSlugOf(b)}/${slugify(b.name)}`;
 
 const esc = (s) =>
   String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-const tempTxt = (v) => (v == null ? null : `${(Math.round(v * 10) / 10).toFixed(1)} °C`);
+// Décimale à la française (« 24,8 ») : même rendu que fmt() côté client.
+const fmtN = (v) => (Math.round(v * 10) / 10).toFixed(1).replace(".", ",");
+// Virgule ici aussi : ces textes sont lus par l'utilisateur (titre, description,
+// H1) et voisinaient un « 24,8 » côté corps de page.
+const tempTxt = (v) => (v == null ? null : `${fmtN(v)} °C`);
+
+// « vers 17 h » / « demain vers 17 h » en heure locale — pendant de peakWhen()
+// côté client, pour que le texte servi et le texte affiché soient identiques.
+function peakWhenTxt(at) {
+  const d = new Date(at);
+  const tz = { timeZone: "Europe/Zurich" };
+  const h = Number(
+    new Intl.DateTimeFormat("fr-CH", { ...tz, hour: "numeric", hourCycle: "h23" })
+      .formatToParts(d)
+      .find((p) => p.type === "hour").value
+  );
+  const sameDay = d.toLocaleDateString("fr-CH", tz) === new Date().toLocaleDateString("fr-CH", tz);
+  return `${sameDay ? "" : "demain "}vers ${h} h`;
+}
+
+// Texte unique par plage, calculé depuis les données du jour (classement dans le
+// lac, écart à la moyenne, tendance). Réplique renderAbout() côté client : le
+// crawler voit dès le 1er passage ce que l'utilisateur lit dans l'overlay.
+function aboutText(beach, lakeBeaches) {
+  const w = beach.water;
+  if (w == null) return null;
+  const peers = lakeBeaches.filter((x) => x.water != null);
+  let facts = "";
+  if (peers.length >= 3) {
+    const sorted = [...peers].sort((a, c) => c.water - a.water);
+    const rank = sorted.findIndex((x) => x.id === beach.id) + 1;
+    const rankTxt = rank === 1
+      ? `la plage la plus chaude du ${beach.lakeName} aujourd'hui`
+      : `la ${rank}e plage la plus chaude du ${beach.lakeName} aujourd'hui`;
+    const avg = peers.reduce((s, x) => s + x.water, 0) / peers.length;
+    const d = w - avg;
+    const avgTxt = Math.abs(d) < 0.3
+      ? "dans la moyenne du lac"
+      : `~${fmtN(Math.abs(d))} °C ${d > 0 ? "au-dessus" : "en dessous"} de la moyenne du lac`;
+    facts = `${rankTxt}, ${avgTxt}`;
+  }
+  let trend = "";
+  const fc = beach.fc;
+  if (fc && fc.peak && typeof fc.peak.temp === "number" && Array.isArray(fc.v) && fc.v.length) {
+    const gain = fc.peak.temp - w;
+    if (gain > 0.2) trend = `Tendance en hausse, pic attendu ${peakWhenTxt(fc.peak.at)}.`;
+    else if (w - fc.v[fc.v.length - 1] > 0.2) trend = "Tendance en légère baisse ces prochaines heures.";
+    else trend = "Température plutôt stable ces prochaines heures.";
+  }
+  const loc = beach.group ? `${beach.group}, ${beach.lakeName}` : beach.lakeName;
+  const lead = `L'eau est à ${fmtN(w)} °C à ${beach.name} (${loc})`;
+  const body = `${facts ? `${lead} — ${facts}.` : `${lead}.`}${trend ? " " + trend : ""}`;
+  const method = `Estimation du modèle Alplakes${beach.lake === "geneva" ? " recalée en temps réel sur les bouées du Léman" : ""}.`;
+  return { body, method };
+}
 
 async function getData(env) {
   let body = await env.DATA.get(DATA_KEY);
@@ -90,7 +144,7 @@ async function getData(env) {
   return JSON.parse(body);
 }
 
-function buildBeachMeta(beach, lakeSlug, lakeBeaches) {
+function buildBeachMeta(beach, lakeSlug, lakeBeaches, updatedAt) {
   const lakeName = beach.lakeName;
   const temp = tempTxt(beach.water);
   const canonical = SITE + beachPath(beach);
@@ -107,19 +161,30 @@ function buildBeachMeta(beach, lakeSlug, lakeBeaches) {
     .slice(0, 14)
     .map((x) => `<a href="${beachPath(x)}">${esc(x.name)}</a>`)
     .join(" · ");
+  // Bloc SERVI dans le corps (plus de <noscript>) : le contenu unique et les
+  // liens internes sont ainsi lus dès le 1er passage du crawler, sans dépendre
+  // du rendu JS (2e vague, plus tardive). L'app le retire au démarrage, car
+  // l'overlay affiche le même texte (renderAbout) — pas de doublon à l'écran.
+  // Placé en fin de <body> : hors écran, donc aucun flash avant le boot.
+  const about = aboutText(beach, lakeBeaches);
   const bodyHtml =
-    `<noscript><section style="max-width:680px;margin:0 auto;padding:18px;color:#F7F2E7;font-family:sans-serif">` +
-    `<h1>${esc(beach.name)} — eau ${esc(temp || "n/d")}</h1>` +
+    `<section class="seo-static" style="max-width:680px;margin:0 auto;padding:18px;color:#F7F2E7;font-family:sans-serif">` +
+    `<h1>Température de l'eau à ${esc(beach.name)} aujourd'hui${temp ? ` — ${esc(temp)}` : ""}</h1>` +
+    (about ? `<p>${esc(about.body)}</p>` : "") +
     `<p>${esc(lakeName)}${beach.group ? ` · ${esc(beach.group)}` : ""}. ${air}${wind}</p>` +
+    (about ? `<p>${esc(about.method)}</p>` : "") +
     (sibs ? `<p>Autres plages du ${esc(lakeName)} : ${sibs}</p>` : "") +
     `<p><a href="/lac/${lakeSlug}">${esc(lakeName)}</a> · <a href="/">Trempette — toutes les plages romandes</a></p>` +
-    `</section></noscript>`;
+    `</section>`;
 
   const place = {
     "@context": "https://schema.org",
     "@type": "Beach", // plus spécifique que Place (schema.org/Beach)
     name: beach.name,
     url: canonical,
+    description,
+    // Ces pages valent par leur fraîcheur : on la signale explicitement.
+    ...(updatedAt ? { dateModified: updatedAt } : {}),
     geo: { "@type": "GeoCoordinates", latitude: beach.lat, longitude: beach.lng },
     containedInPlace: { "@type": "BodyOfWater", name: lakeName },
     ...(beach.water != null
@@ -161,10 +226,12 @@ function buildLakeMeta(lakeSlug, lakeBeaches) {
   const items = warm
     .map((b) => `<li><a href="${beachPath(b)}">${esc(b.name)}</a>${b.water != null ? ` — ${esc(tempTxt(b.water))}` : ""}</li>`)
     .join("");
+  // Servi dans le corps (cf. buildBeachMeta) : liste et liens crawlables dès le
+  // 1er passage. Retiré par l'app au démarrage.
   const bodyHtml =
-    `<noscript><section style="max-width:680px;margin:0 auto;padding:18px;color:#F7F2E7;font-family:sans-serif">` +
+    `<section class="seo-static" style="max-width:680px;margin:0 auto;padding:18px;color:#F7F2E7;font-family:sans-serif">` +
     `<h1>Température de l'eau — ${esc(lakeName)}</h1><ul>${items}</ul>` +
-    `<p><a href="/">Trempette — tous les lacs romands</a></p></section></noscript>`;
+    `<p><a href="/">Trempette — tous les lacs romands</a></p></section>`;
 
   const itemList = {
     "@context": "https://schema.org",
@@ -226,13 +293,15 @@ async function handleLacRoute(request, env, url) {
   if (beachSlugWanted) {
     const beach = lakeBeaches.find((b) => slugify(b.name) === beachSlugWanted);
     if (!beach) return Response.redirect(new URL(`/lac/${lakeSlug}`, url).toString(), 302);
-    return renderShell(request, env, buildBeachMeta(beach, lakeSlug, lakeBeaches));
+    return renderShell(request, env, buildBeachMeta(beach, lakeSlug, lakeBeaches, data.updatedAt));
   }
   return renderShell(request, env, buildLakeMeta(lakeSlug, lakeBeaches));
 }
 
 function handleSitemap(data) {
-  const lastmod = (data.updatedAt || new Date().toISOString()).slice(0, 10);
+  // Horodatage complet (et non la date seule) : ces pages changent plusieurs
+  // fois par jour, autant que les moteurs le sachent pour recrawler plus souvent.
+  const lastmod = data.updatedAt || new Date().toISOString();
   const urls = [`${SITE}/`, ...Object.keys(SLUG_LAKE).map((s) => `${SITE}/lac/${s}`)];
   for (const b of data.beaches) urls.push(SITE + beachPath(b));
   const body =

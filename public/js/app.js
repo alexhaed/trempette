@@ -164,6 +164,11 @@ async function load() {
       routeApplied = true;
       applyInitialRoute();
     }
+    // Bloc SEO servi par le Worker (/lac/…) : l'app affiche désormais le même
+    // contenu (liste + overlay), on le retire pour éviter le doublon. Retiré
+    // SEULEMENT ici, en cas de succès : si le chargement échoue, il reste la
+    // seule information à l'écran.
+    document.querySelectorAll(".seo-static").forEach((el) => el.remove());
   } catch (e) {
     listEl.innerHTML = `<p class="empty">Impossible de charger les données.<br>${e.message}</p>`;
   }
