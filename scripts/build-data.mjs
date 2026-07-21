@@ -88,10 +88,16 @@ const DEPTH = 0.2;
 // disponible pour ces lacs (retenues, petits lacs).
 const DEPTH_1D = 1;
 
-// Fenêtre large : assez de points (passé + futur) pour interpoler « maintenant »
-// pendant ~24 h, jusqu'au prochain run quotidien, sans re-télécharger.
+// Fenêtre large : assez de points (passé + futur) pour couvrir « maintenant + 24 h »
+// à TOUT moment de la journée, entre deux runs quotidiens, sans re-télécharger.
+// La fenêtre est ancrée à l'heure du fetch et n'est ré-ancrée qu'~1×/jour ; d'ici
+// là `now` dérive de ~24 h. Comme la sparkline affiche une prévision 24 h, il faut :
+//   24 h (dérive de now) + 24 h (prévision) + marge ≈ 54 h vers le futur.
+// (Alplakes fournit ~70 h de prévision, donc c'est couvert ; forecast() plafonne
+//  de toute façon à 24 h.) Trop court (ex. 30 h) → l'horizon retombe à ~6 h en fin
+// de cycle et on rate un pic tardif.
 const WINDOW_BEFORE_H = 6;
-const WINDOW_AFTER_H = 30;
+const WINDOW_AFTER_H = 54;
 
 // Récupère la fenêtre brute de température d'eau d'une plage (points 3 h UTC).
 // Renvoie des tableaux parallèles { times:[ms], temps:[°C] }, valeurs finies.
