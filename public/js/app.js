@@ -871,7 +871,12 @@ function renderAbout(b) {
     `<p class="d-about-body">${body}</p>` +
     `<p class="d-about-method">Estimation du modèle Alplakes${recal}. ` +
     `<button type="button" class="d-about-more">En savoir plus</button></p>`;
-  box.querySelector(".d-about-more").addEventListener("click", () => { closeDetail(); openInfo(); });
+  // stopPropagation : le clic ne doit pas remonter jusqu'au fond du détail.
+  box.querySelector(".d-about-more").addEventListener("click", (e) => {
+    e.stopPropagation();
+    closeDetail();
+    openInfo();
+  });
   box.hidden = false;
 }
 
@@ -918,6 +923,7 @@ function openDetail(b, push = true) {
   document.title = `${b.name}${water != null ? ` — ${water}°` : ""} · Trempette`;
 
   $("#detail").hidden = false;
+  markOverlayOpened();
   syncScrollLock();
   track("open", b);
 
@@ -1005,6 +1011,15 @@ function applyInitialRoute() {
 function anyOverlayOpen() {
   return !$("#detail").hidden || !$("#info").hidden || !$("#install").hidden;
 }
+
+// Fermeture au clic sur le FOND d'un overlay : ignorée juste après l'ouverture.
+// Sur iOS, quand un même geste ferme un overlay et en ouvre un autre (« En savoir
+// plus »), le clic est redélivré à l'élément désormais sous le doigt — le fond du
+// nouvel overlay — qui refermait donc tout d'un coup. Personne ne ferme
+// volontairement un overlay dans les 400 ms suivant son ouverture.
+let overlayOpenedAt = 0;
+const markOverlayOpened = () => { overlayOpenedAt = Date.now(); };
+const backdropCloseAllowed = () => Date.now() - overlayOpenedAt > 400;
 
 // Bloque le défilement de la page tant qu'un overlay est ouvert (sinon, sur
 // mobile, le scroll « passe » à la page derrière et on se sent coincé).
@@ -1185,7 +1200,7 @@ async function refresh() {
 
 $("#d-close").addEventListener("click", closeDetail);
 $("#detail").addEventListener("click", (e) => {
-  if (e.target.id === "detail") closeDetail();
+  if (e.target.id === "detail" && backdropCloseAllowed()) closeDetail();
 });
 
 // ---- Infos & contact (overlay) ----
@@ -1196,6 +1211,7 @@ const closeInfo = () => {
 let turnstileLoaded = false;
 function openInfo() {
   $("#info").hidden = false;
+  markOverlayOpened();
   syncScrollLock();
   $("#info .detail-card").scrollTop = 0; // ouvre toujours en haut (bouton fermer visible)
   // Charge le script Turnstile à la 1re ouverture seulement (perf + rendu pendant
@@ -1212,7 +1228,7 @@ function openInfo() {
 $("#info-open").addEventListener("click", openInfo);
 $("#info-close").addEventListener("click", closeInfo);
 $("#info").addEventListener("click", (e) => {
-  if (e.target.id === "info") closeInfo();
+  if (e.target.id === "info" && backdropCloseAllowed()) closeInfo();
 });
 
 // ---- Ajout à l'écran d'accueil (overlay #install) ----
@@ -1270,6 +1286,7 @@ function installContent(kind) {
 function openInstall() {
   $("#install-body").innerHTML = installContent(platformInstall());
   $("#install").hidden = false;
+  markOverlayOpened();
   syncScrollLock();
   const go = $("#install-go");
   if (go)
@@ -1287,7 +1304,7 @@ const closeInstall = () => {
 };
 $("#install-close").addEventListener("click", closeInstall);
 $("#install").addEventListener("click", (e) => {
-  if (e.target.id === "install") closeInstall();
+  if (e.target.id === "install" && backdropCloseAllowed()) closeInstall();
 });
 $("#contact-form").addEventListener("submit", async (e) => {
   e.preventDefault();
