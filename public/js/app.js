@@ -651,7 +651,7 @@ function beachRow(b, isFavMode) {
   row.innerHTML = `
     ${isFavMode ? `<button class="drag-handle" aria-label="Réordonner">${svgUse("i-grip", 18)}</button>` : ""}
     <div class="beach-main">
-      <div class="beach-name">${b.name}</div>
+      <a class="beach-name" href="${beachPath(b)}">${b.name}</a>
       <div class="beach-sub">${sub}</div>
     </div>
     ${wxHtml}
@@ -662,7 +662,14 @@ function beachRow(b, isFavMode) {
     e.stopPropagation();
     toggleFav(b.id);
   });
-  row.addEventListener("click", () => openDetail(b));
+  row.addEventListener("click", (e) => {
+    // Le nom de plage est un vrai <a href> (lien interne crawlable pour le SEO).
+    // Clic normal → on ouvre l'overlay (SPA) au lieu de naviguer ; cmd/ctrl-clic →
+    // on laisse le navigateur ouvrir la page dans un nouvel onglet.
+    if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+    e.preventDefault();
+    openDetail(b);
+  });
   if (isFavMode) {
     row.querySelector(".drag-handle").addEventListener("pointerdown", (e) => startDrag(e, b.id));
   }

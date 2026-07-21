@@ -89,6 +89,7 @@ body {
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand-logo { border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); }
 .brand-name {
+  margin: 0; /* <h1> : neutralise la marge par défaut du navigateur */
   font-family: "Bricolage Grotesque", sans-serif;
   font-weight: 800;
   /* Taille fluide : suit la largeur de l'écran (plafond 32px au-delà du
@@ -440,6 +441,8 @@ body {
 
 .beach-main { flex: 1; min-width: 0; }
 .beach-name {
+  display: block;
+  text-decoration: none;
   font-weight: 700;
   font-size: 15px;
   color: var(--creme);

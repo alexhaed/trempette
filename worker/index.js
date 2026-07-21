@@ -115,9 +115,9 @@ function buildBeachMeta(beach, lakeSlug, lakeBeaches) {
     `<p><a href="/lac/${lakeSlug}">${esc(lakeName)}</a> · <a href="/">Trempette — toutes les plages romandes</a></p>` +
     `</section></noscript>`;
 
-  const jsonld = JSON.stringify({
+  const place = {
     "@context": "https://schema.org",
-    "@type": "Place",
+    "@type": "Beach", // plus spécifique que Place (schema.org/Beach)
     name: beach.name,
     url: canonical,
     geo: { "@type": "GeoCoordinates", latitude: beach.lat, longitude: beach.lng },
@@ -132,7 +132,18 @@ function buildBeachMeta(beach, lakeSlug, lakeBeaches) {
           },
         }
       : {}),
-  }).replace(/</g, "\\u003c");
+  };
+  // Fil d'Ariane (invisible) : affiche « Trempette › Léman › Ouchy » dans Google.
+  const breadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Trempette", item: SITE + "/" },
+      { "@type": "ListItem", position: 2, name: lakeName, item: SITE + `/lac/${lakeSlug}` },
+      { "@type": "ListItem", position: 3, name: beach.name, item: canonical },
+    ],
+  };
+  const jsonld = JSON.stringify([place, breadcrumb]).replace(/</g, "\\u003c");
 
   return { title, description, ogTitle, ogDescription: description, canonical, jsonld, bodyHtml };
 }
@@ -155,12 +166,22 @@ function buildLakeMeta(lakeSlug, lakeBeaches) {
     `<h1>Température de l'eau — ${esc(lakeName)}</h1><ul>${items}</ul>` +
     `<p><a href="/">Trempette — tous les lacs romands</a></p></section></noscript>`;
 
-  const jsonld = JSON.stringify({
+  const itemList = {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: `Plages du ${lakeName}`,
     itemListElement: warm.map((b, i) => ({ "@type": "ListItem", position: i + 1, name: b.name, url: SITE + beachPath(b) })),
-  }).replace(/</g, "\\u003c");
+  };
+  // Fil d'Ariane (invisible) : « Trempette › Léman » dans les résultats Google.
+  const breadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Trempette", item: SITE + "/" },
+      { "@type": "ListItem", position: 2, name: lakeName, item: canonical },
+    ],
+  };
+  const jsonld = JSON.stringify([itemList, breadcrumb]).replace(/</g, "\\u003c");
 
   return { title, description, ogTitle: title, ogDescription: description, canonical, jsonld, bodyHtml };
 }
