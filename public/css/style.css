@@ -710,7 +710,6 @@ body {
 .d-spark .ylab { text-anchor: end; }
 /* Ancre temporelle « maintenant » : un cran plus visible (repère de lecture). */
 .d-spark .xnow { fill: rgba(247, 242, 231, 0.62); font-weight: 600; }
-.d-spark .xarrow { fill: rgba(247, 242, 231, 0.4); font-size: 11px; }
 
 .d-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .d-cell {

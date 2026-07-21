@@ -295,7 +295,7 @@ function sparkline(pts, bestIdx, gridStart = 0) {
   // en local sur 2/5/8/11 h… (jamais un multiple de 6). L'index reste régulier.
   const hourOf = (t) => Number(new Intl.DateTimeFormat("fr-CH", { timeZone: "Europe/Zurich", hour: "numeric", hourCycle: "h23" })
     .formatToParts(new Date(t)).find((q) => q.type === "hour").value);
-  const first = gridStart; // saute le point « maintenant » préfixé
+  const first = gridStart; // indice du 1er point du modèle (0, ou 1 si « maintenant » préfixé)
   const hasNow = gridStart === 1; // pts[0] est la valeur actuelle (préfixée)
   // Ancrage adapté aux bords : centré déborderait du viewBox (libellé coupé).
   const anchor = (px) => (px < 16 ? "start" : px > W - 16 ? "end" : "middle");
@@ -306,15 +306,20 @@ function sparkline(pts, bestIdx, gridStart = 0) {
   if (hasNow) {
     labels.push(`<text class="xlab xnow" text-anchor="start" x="${L}" y="${H - 6}">maintenant</text>`);
   }
-  pts.forEach((p, i) => {
-    if ((i - first) < 0 || (i - first) % 2 !== 0) return;
-    if (hasNow && i === first) return; // 1re heure ronde trop proche de « maintenant »
-    const px = x(p.t);
-    if (px > R - 22) return; // réserve le coin droit pour la flèche de sens
-    labels.push(`<text class="xlab" text-anchor="${anchor(px)}" x="${px.toFixed(1)}" y="${H - 6}">${hourOf(p.t)} h</text>`);
-  });
-  // Flèche de sens : rappelle que la courbe va vers le futur (+24 h).
-  labels.push(`<text class="xlab xarrow" text-anchor="end" x="${R}" y="${H - 6}">→</text>`);
+  // Heures rondes : sélection par POSITION (et non par index). Un pas d'index
+  // fixe échouait sur une fenêtre courte (peu de points) : l'axe se retrouvait
+  // vide. Ici on écarte seulement la zone « maintenant » (gauche), puis on prend
+  // les points en respectant un écart minimal → toujours ≥ 1 repère utile, et le
+  // repère le plus à droite (souvent le pic) reste affiché.
+  const leftBound = hasNow ? L + 60 : L - 1; // laisse la place au libellé « maintenant »
+  const MIN_GAP = 52;
+  let lastX = -Infinity;
+  for (let i = first; i < pts.length; i++) {
+    const px = x(pts[i].t);
+    if (px < leftBound || px > R || px - lastX < MIN_GAP) continue;
+    labels.push(`<text class="xlab" text-anchor="${anchor(px)}" x="${px.toFixed(1)}" y="${H - 6}">${hourOf(pts[i].t)} h</text>`);
+    lastX = px;
+  }
   const xlab = labels.join("");
 
   // Point marquant le maximum de la courbe AFFICHÉE (peut être « maintenant »).
@@ -353,18 +358,22 @@ function renderForecast(b) {
   fc.v.forEach((v, i) => pts.push({ t: t0 + i * stepMs, v }));
 
   // Maximum de la courbe AFFICHÉE (et non `fc.peak`, calculé côté serveur sur
-  // les seuls points futurs) : si la température actuelle dépasse toute la
-  // suite, le vrai maximum est le 1er point. Une seule source de vérité pour la
-  // phrase ET le point, sinon les deux se contredisent.
-  let bestIdx = 0;
-  for (let i = 1; i < pts.length; i++) if (pts[i].v > pts[bestIdx].v) bestIdx = i;
-  const best = pts[bestIdx];
+  // les seuls points futurs) : si la température actuelle dépasse toute la suite,
+  // le vrai maximum est le 1er point.
+  let maxIdx = 0;
+  for (let i = 1; i < pts.length; i++) if (pts[i].v > pts[maxIdx].v) maxIdx = i;
+  const best = pts[maxIdx];
   const gain = b.water != null ? best.v - b.water : null;
-  // Gain négligeable → on ne promet pas un « plus chaud » imperceptible.
-  line.innerHTML = bestIdx > 0 && gain != null && gain > 0.2
+  // Gain négligeable (≤ 0,2°) → on ne promet pas un « plus chaud » imperceptible :
+  // on considère alors « maintenant » comme le point le plus chaud.
+  // IMPORTANT : la phrase ET le point crème doivent partager CE choix (peakIdx),
+  // sinon la phrase dit « maintenant » pendant que le point est sur le lendemain.
+  const showLaterPeak = maxIdx > 0 && gain != null && gain > 0.2;
+  const peakIdx = showLaterPeak ? maxIdx : 0;
+  line.innerHTML = showLaterPeak
     ? `Le plus chaud <span class="pk">${peakWhen(best.t)}</span> (${fmt(best.v)}°)`
     : "C'est le plus chaud des prochaines 24 h.";
-  box.innerHTML = sparkline(pts, bestIdx, pts.length > fc.v.length ? 1 : 0);
+  box.innerHTML = sparkline(pts, peakIdx, pts.length > fc.v.length ? 1 : 0);
   line.hidden = box.hidden = false;
 }
 
