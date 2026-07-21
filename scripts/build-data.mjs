@@ -15,6 +15,26 @@
 // id STABLE : on prend `b.id` explicite (catalogue), pour que les favoris des
 // utilisateurs survivent à un renommage ou changement de lac. Repli sur
 // `lake+slug` pour les anciens catalogues sans id (rétro-compat).
+// Nom précédé de la préposition correcte : « à Ouchy », « au Bouveret »,
+// « aux Bains des Pâquis ». Publié dans data.json (champ `nameAt`) pour que le
+// client ET le Worker lisent la même chaîne, au lieu de réécrire la règle
+// chacun de leur côté (ces textes ont déjà divergé par le passé).
+//
+// Seul « Le » pose problème : « à le » est agrammatical. « La » et « L' » ne se
+// contractent pas — « à La Tour-de-Peilz », « à L'Abbaye » sont déjà corrects.
+const AT_EXCEPTIONS = {
+  // Noms dont l'article ne figure pas dans le libellé mais s'entend à l'oral :
+  // impossible à déduire du nom seul, donc déclarés à la main.
+  "Bains des Pâquis": "aux Bains des Pâquis",
+  "Pélican": "au Pélican",
+  "Pointe du Grain": "à la Pointe du Grain",
+};
+export function nameAt(name) {
+  if (AT_EXCEPTIONS[name]) return AT_EXCEPTIONS[name];
+  const m = /^Le\s+(.+)$/.exec(name);
+  return m ? `au ${m[1]}` : `à ${name}`;
+}
+
 export function flattenLakes(lakes) {
   const out = [];
   for (const lk of lakes) {

@@ -22,6 +22,7 @@ import tipsHtml from "./tips.html";
 import statsHtml from "./stats.html";
 import {
   flattenLakes,
+  nameAt,
   fetchWindow,
   is1D,
   interpolate,
@@ -132,7 +133,9 @@ function aboutText(beach, lakeBeaches) {
     else trend = "Température plutôt stable ces prochaines heures.";
   }
   const loc = beach.group ? `${beach.group}, ${beach.lakeName}` : beach.lakeName;
-  const lead = `L'eau est à ${fmtN(w)}\u00A0°C à ${beach.name} (${loc})`;
+  // Repli : un data.json mis en cache avant l'ajout de `nameAt` n'a pas le champ.
+  const at = beach.nameAt || `à ${beach.name}`;
+  const lead = `L'eau est à ${fmtN(w)}\u00A0°C ${at} (${loc})`;
   const body = `${facts ? `${lead} — ${facts}.` : `${lead}.`}${trend ? " " + trend : ""}`;
   const method = `Estimation du modèle Alplakes${beach.lake === "geneva" ? " recalée en temps réel sur les bouées du Léman" : ""}.`;
   return { body, method };
@@ -148,9 +151,11 @@ function buildBeachMeta(beach, lakeSlug, lakeBeaches, updatedAt) {
   const lakeName = beach.lakeName;
   const temp = tempTxt(beach.water);
   const canonical = SITE + beachPath(beach);
+  // « à Ouchy » / « au Bouveret » / « aux Bains des Pâquis » (cf. nameAt).
+  const at = beach.nameAt || `à ${beach.name}`;
   const title = `${beach.name} — température de l'eau${temp ? ` (${temp})` : ""} | Trempette`;
   const description =
-    `Température de l'eau à ${beach.name}, ${lakeName}${temp ? ` : ${temp} actuellement` : ""}. ` +
+    `Température de l'eau ${at}, ${lakeName}${temp ? ` : ${temp} actuellement` : ""}. ` +
     `Air, vent et tendance — pour savoir si c'est le moment d'aller se baigner.`;
   const ogTitle = `${beach.name}${temp ? ` · ${temp}` : ""} — ${lakeName}`;
 
@@ -169,7 +174,7 @@ function buildBeachMeta(beach, lakeSlug, lakeBeaches, updatedAt) {
   const about = aboutText(beach, lakeBeaches);
   const bodyHtml =
     `<section class="seo-static" style="max-width:680px;margin:0 auto;padding:18px;color:#F7F2E7;font-family:sans-serif">` +
-    `<h1>Température de l'eau à ${esc(beach.name)} aujourd'hui${temp ? ` — ${esc(temp)}` : ""}</h1>` +
+    `<h1>Température de l'eau ${esc(at)} aujourd'hui${temp ? ` — ${esc(temp)}` : ""}</h1>` +
     (about ? `<p>${esc(about.body)}</p>` : "") +
     `<p>${esc(lakeName)}${beach.group ? ` · ${esc(beach.group)}` : ""}. ${air}${wind}</p>` +
     (about ? `<p>${esc(about.method)}</p>` : "") +
@@ -420,6 +425,7 @@ async function regenerate(env) {
     return {
       id: b.id,
       name: b.name,
+      nameAt: nameAt(b.name), // « aux Bains des Pâquis » — calculé une seule fois ici
       lat: b.lat,
       lng: b.lng,
       lakeName: b.lakeName,

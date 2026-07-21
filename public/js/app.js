@@ -865,13 +865,17 @@ function renderAbout(b) {
   }
 
   const loc = b.group ? `${b.group}, ${b.lakeName}` : b.lakeName;
+  // « aux Bains des Pâquis » : calculé dans le pipeline (champ nameAt de
+  // data.json) pour que client et Worker disent la même chose. Repli si le
+  // data.json servi date d'avant l'ajout du champ.
+  const at = b.nameAt || `à ${b.name}`;
   const facts = [rankTxt, avgTxt].filter(Boolean).join(", ");
-  const lead = `L'eau est à <strong>${fmt(w)}\u00A0°C</strong> à ${b.name} (${loc})`;
+  const lead = `L'eau est à <strong>${fmt(w)}\u00A0°C</strong> ${at} (${loc})`;
   const body = `${facts ? `${lead} — ${facts}.` : `${lead}.`}${trendTxt ? " " + trendTxt : ""}`;
   const recal = b.lake === "geneva" ? " recalée en temps réel sur les bouées du Léman" : "";
 
   box.innerHTML =
-    `<h2 class="d-about-title">Température de l'eau à ${b.name} aujourd'hui</h2>` +
+    `<h2 class="d-about-title">Température de l'eau ${at} aujourd'hui</h2>` +
     `<p class="d-about-body">${body}</p>` +
     `<p class="d-about-method">Estimation du modèle Alplakes${recal}. ` +
     `<button type="button" class="d-about-more">En savoir plus</button></p>`;
