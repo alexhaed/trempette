@@ -206,8 +206,8 @@ function verdict(t) {
 }
 function trendInfo(slope) {
   if (slope == null) return { cls: "", txt: "" };
-  if (slope > 0.05) return { cls: "trend-up", txt: `Se réchauffe (+${slope.toFixed(2)} °C/h)` };
-  if (slope < -0.05) return { cls: "trend-down", txt: `Se refroidit (${slope.toFixed(2)} °C/h)` };
+  if (slope > 0.05) return { cls: "trend-up", txt: `Se réchauffe (+${slope.toFixed(2)}\u00A0°C/h)` };
+  if (slope < -0.05) return { cls: "trend-down", txt: `Se refroidit (${slope.toFixed(2)}\u00A0°C/h)` };
   return { cls: "trend-flat", txt: "Stable" };
 }
 // La flèche pointe vers où VA le vent : direction d'origine + 180°.
@@ -512,7 +512,7 @@ function heroCard(b) {
           <div class="tile-label">${svgUse("i-wind", 15)} Vent</div>
           <div class="tile-wind-row">
             <span class="wind-pill">${svgUse("i-arrowup", 15, ang != null ? `transform:rotate(${ang}deg)` : "")}</span>
-            <span class="tile-val">${b.wind != null ? `${Math.round(b.wind)} km/h` : "n/d"}</span>
+            <span class="tile-val">${b.wind != null ? `${Math.round(b.wind)}\u00A0km/h` : "n/d"}</span>
           </div>
         </div>
       </div>
@@ -851,7 +851,7 @@ function renderAbout(b) {
     const d = w - avg;
     avgTxt = Math.abs(d) < 0.3
       ? "dans la moyenne du lac"
-      : `~${fmt(Math.abs(d))} °C ${d > 0 ? "au-dessus" : "en dessous"} de la moyenne du lac`;
+      : `~${fmt(Math.abs(d))}\u00A0°C ${d > 0 ? "au-dessus" : "en dessous"} de la moyenne du lac`;
   }
 
   // Tendance à partir de la prévision (pic serveur sur les points futurs).
@@ -866,7 +866,7 @@ function renderAbout(b) {
 
   const loc = b.group ? `${b.group}, ${b.lakeName}` : b.lakeName;
   const facts = [rankTxt, avgTxt].filter(Boolean).join(", ");
-  const lead = `L'eau est à <strong>${fmt(w)} °C</strong> à ${b.name} (${loc})`;
+  const lead = `L'eau est à <strong>${fmt(w)}\u00A0°C</strong> à ${b.name} (${loc})`;
   const body = `${facts ? `${lead} — ${facts}.` : `${lead}.`}${trendTxt ? " " + trendTxt : ""}`;
   const recal = b.lake === "geneva" ? " recalée en temps réel sur les bouées du Léman" : "";
 
@@ -899,7 +899,7 @@ function openDetail(b, push = true) {
   renderForecast(b);
 
   $("#d-air").textContent = b.air != null ? `${Math.round(b.air)}°` : "n/d";
-  $("#d-wind").textContent = b.wind != null ? `${Math.round(b.wind)} km/h` : "n/d";
+  $("#d-wind").textContent = b.wind != null ? `${Math.round(b.wind)}\u00A0km/h` : "n/d";
   const ang = windAngle(b.windDir);
   $("#d-wind-arrow").style.transform = ang != null ? `rotate(${ang}deg)` : "";
   $("#d-wind-arrow").style.opacity = ang != null ? "1" : "0";
@@ -955,7 +955,7 @@ async function shareBeach(b) {
   const url = location.origin + beachPath(b);
   const w = fmt(b.water);
   const title = `${b.name} — ${w != null ? w + "°" : "température de l'eau"}`;
-  const text = `${b.name} : ${w != null ? w + " °C" : "température de l'eau"} dans ${b.lakeName} 🌊`;
+  const text = `${b.name} : ${w != null ? w + "\u00A0°C" : "température de l'eau"} dans ${b.lakeName} 🌊`;
   try {
     if (navigator.share) return await navigator.share({ title, text, url });
     await navigator.clipboard.writeText(url);
@@ -1317,13 +1317,16 @@ $("#contact-form").addEventListener("submit", async (e) => {
   const website = $("#contact-hp").value; // honeypot (doit rester vide)
   const turnstile = (document.querySelector('[name="cf-turnstile-response"]') || {}).value || "";
   const status = $("#contact-status");
-  const fail = (msg) => {
+  // `field` : on ramène l'utilisateur au champ en cause, ce qui le fait aussi
+  // défiler jusqu'au message d'erreur.
+  const fail = (msg, field) => {
     status.className = "contact-status err";
     status.textContent = msg;
+    if (field) field.focus();
   };
   // Validation côté client (message immédiat, pas d'aller-retour serveur).
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail("Indique une adresse email valide.");
-  if (!message) return fail("Écris un message.");
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail("Indique une adresse email valide.", $("#contact-email"));
+  if (!message) return fail("Écris un message.", $("#contact-msg"));
 
   const btn = $("#contact-send");
   btn.disabled = true;

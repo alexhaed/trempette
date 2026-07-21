@@ -153,7 +153,7 @@
         <a href="/lac/leman">Léman</a><a href="/lac/neuchatel">Neuchâtel</a><a href="/lac/bienne">Bienne</a><a href="/lac/morat">Morat</a><a href="/lac/joux">Joux</a><a href="/lac/gruyere">Gruyère</a>
       </nav>
       <p class="credits">Eau : Alplakes &amp; Datalakes · Air &amp; vent : open-meteo.com</p>
-      <p class="version">v2.13 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
+      <p class="version">v2.14 · <button type="button" id="info-open" class="info-link">Infos &amp; contact</button></p>
     </footer>
     </div>
   </div>
@@ -232,8 +232,11 @@
         <textarea id="contact-msg" name="message" rows="4" placeholder="Ton message…" required></textarea>
         <input type="text" name="website" id="contact-hp" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
         <div class="cf-turnstile" data-sitekey="0x4AAAAAADqscZnIsrNJdzuN" data-theme="dark" data-appearance="interaction-only"></div>
-        <button type="submit" id="contact-send" class="contact-send">Envoyer</button>
+        <!-- Le message d'état précède le bouton : après un envoi refusé, il est
+             ainsi visible entre les champs et « Envoyer », et non relégué tout
+             en bas de l'overlay (souvent hors écran sur mobile). -->
         <p id="contact-status" class="contact-status" role="status" aria-live="polite"></p>
+        <button type="submit" id="contact-send" class="contact-send">Envoyer</button>
       </form>
     </div>
   </div>

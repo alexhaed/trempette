@@ -86,7 +86,7 @@ const esc = (s) =>
 const fmtN = (v) => (Math.round(v * 10) / 10).toFixed(1).replace(".", ",");
 // Virgule ici aussi : ces textes sont lus par l'utilisateur (titre, description,
 // H1) et voisinaient un « 24,8 » côté corps de page.
-const tempTxt = (v) => (v == null ? null : `${fmtN(v)} °C`);
+const tempTxt = (v) => (v == null ? null : `${fmtN(v)}\u00A0°C`);
 
 // « vers 17 h » / « demain vers 17 h » en heure locale — pendant de peakWhen()
 // côté client, pour que le texte servi et le texte affiché soient identiques.
@@ -120,7 +120,7 @@ function aboutText(beach, lakeBeaches) {
     const d = w - avg;
     const avgTxt = Math.abs(d) < 0.3
       ? "dans la moyenne du lac"
-      : `~${fmtN(Math.abs(d))} °C ${d > 0 ? "au-dessus" : "en dessous"} de la moyenne du lac`;
+      : `~${fmtN(Math.abs(d))}\u00A0°C ${d > 0 ? "au-dessus" : "en dessous"} de la moyenne du lac`;
     facts = `${rankTxt}, ${avgTxt}`;
   }
   let trend = "";
@@ -132,7 +132,7 @@ function aboutText(beach, lakeBeaches) {
     else trend = "Température plutôt stable ces prochaines heures.";
   }
   const loc = beach.group ? `${beach.group}, ${beach.lakeName}` : beach.lakeName;
-  const lead = `L'eau est à ${fmtN(w)} °C à ${beach.name} (${loc})`;
+  const lead = `L'eau est à ${fmtN(w)}\u00A0°C à ${beach.name} (${loc})`;
   const body = `${facts ? `${lead} — ${facts}.` : `${lead}.`}${trend ? " " + trend : ""}`;
   const method = `Estimation du modèle Alplakes${beach.lake === "geneva" ? " recalée en temps réel sur les bouées du Léman" : ""}.`;
   return { body, method };
@@ -154,8 +154,8 @@ function buildBeachMeta(beach, lakeSlug, lakeBeaches, updatedAt) {
     `Air, vent et tendance — pour savoir si c'est le moment d'aller se baigner.`;
   const ogTitle = `${beach.name}${temp ? ` · ${temp}` : ""} — ${lakeName}`;
 
-  const air = beach.air != null ? `Air ${Math.round(beach.air)} °C. ` : "";
-  const wind = beach.wind != null ? `Vent ${Math.round(beach.wind)} km/h.` : "";
+  const air = beach.air != null ? `Air ${Math.round(beach.air)}\u00A0°C. ` : "";
+  const wind = beach.wind != null ? `Vent ${Math.round(beach.wind)}\u00A0km/h.` : "";
   const sibs = lakeBeaches
     .filter((x) => x.id !== beach.id)
     .slice(0, 14)
